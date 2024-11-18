@@ -27,7 +27,7 @@ userRouter.post("/login", login);
 
 // Route to edit user profile
 // Authenticated users can update their profile information (requires valid token)
-userRouter.put("/edit/:userId", auth, edit);
+userRouter.put("/:userId", auth, edit);
 
 // Route to request a password reset
 // Sends an email with a reset link or code if the user forgets their password
