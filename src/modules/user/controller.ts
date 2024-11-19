@@ -175,7 +175,7 @@ export async function login(req: Request, res: Response): Promise<void> {
 
     // Generate JWT token for the authenticated user
     const token = await generateToken(userResponse, env.JWT_PRIVATE_KEY, {
-      expiresIn: "1h",
+      expiresIn: "5h",
     });
 
     // Respond with login success and token
@@ -378,6 +378,10 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
     if (role && Object.values(UserRole).includes(role)) {
       filters.role = role;
     }
+    const brokerId = req.query.brokerId;
+    if (brokerId) {
+      filters.brokerId = brokerId;
+    }
 
     // Total count and user retrieval with pagination
     const totalItems = await UserModel.countDocuments(filters);
@@ -387,11 +391,6 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
       .limit(limit);
 
     const totalPages = Math.ceil(totalItems / limit);
-
-    if (users.length === 0) {
-      send(res, 404, "No users found");
-      return;
-    }
 
     send(res, 200, "Retrieved successfully", users, {
       page,

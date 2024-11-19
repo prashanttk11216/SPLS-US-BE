@@ -28,11 +28,11 @@ const UserSchema: Schema = new Schema(
       // required: function() { return this.role === UserRole.BROKER_USER; } 
     },
 
-     // brokerId: {
-    //   type: Schema.Types.ObjectId,
-    //   ref: "User", // Reference to User model
-    //   required: true,
-    // },
+     brokerId: {
+      type: Schema.Types.ObjectId,
+      ref: "User", // Reference to User model
+      required: true,
+    },
 
     // Employee ID, specifically for broker users created by a main broker admin
     employeeId: { type: String },

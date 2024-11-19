@@ -23,6 +23,7 @@ export const createUserSchema = z
     ),
     company: z.string().optional(),
     avatarUrl: z.string().optional(),
+    brokerId: z.string(),
     employeeId: z.string().optional(),  // Optional by default
   })
   .superRefine((data, ctx) => {
