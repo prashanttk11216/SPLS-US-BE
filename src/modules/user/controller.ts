@@ -136,7 +136,7 @@ export async function login(req: Request, res: Response): Promise<void> {
 
     // Check if user is active
     if (!user.isActive) {
-      send(res, 403, "User account is deactivated. Please contact support.");
+      send(res, 403, "Account is deactivated. Please contact support.");
       return;
     }
 
@@ -412,11 +412,7 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
 export async function deleteUser(req: Request, res: Response): Promise<void> {
   try {
     const userId = req.params._id;
-    const user = await UserModel.findOneAndUpdate(
-      { _id: userId, isDeleted: false },
-      { isDeleted: true },
-      { new: true }
-    );
+    const user = await UserModel.findOneAndDelete({ _id: userId});
 
     if (!user) {
       send(res, 404, "User not found or already deleted");
