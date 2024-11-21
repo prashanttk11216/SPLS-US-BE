@@ -12,7 +12,7 @@ const UserSchema: Schema = new Schema(
     lastName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    contactNumber: { type: String, required: true },
+    primaryContact: { type: String, required: true },
 
     // Reference to Role model, ensuring proper role-based permissions
     // role: { type: Schema.Types.ObjectId, ref: "Role", required: true },
