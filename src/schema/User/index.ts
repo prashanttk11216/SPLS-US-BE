@@ -9,7 +9,7 @@ export const createUserSchema = z
     email: z.string().email("Invalid email address"),
     password: z.string().min(8, "Password must be at least 8 characters long"),
     confirmPassword: z.string().min(8, "Confirm password is required"),
-    contactNumber: z.string().min(10, "Contact number must be valid"),
+    primaryNumber: z.string().min(10, "Contact number must be valid"),
     role: z.enum(
       [
         UserRole.BROKER_ADMIN,
@@ -57,7 +57,7 @@ export const createUserSchema = z
 export const editUserSchema = z.object({
   firstName: z.string().optional(),
   lastName: z.string().optional(),
-  contactNumber: z.string().optional(),
+  primaryNumber: z.string().optional(),
   company: z.string().optional(),
   avatarUrl: z.string().optional(),
 });

@@ -37,7 +37,7 @@ export interface IUser extends Document {
   billingZip?: string;
 
   // Communication details
-  primaryContact?: string;
+  // primaryNumber?: string;
   telephone?: string;
   tollFree?: string;
   fax?: string;
