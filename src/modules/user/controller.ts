@@ -17,6 +17,7 @@ import {
 } from "../../schema/User";
 import { UserRole } from "../../enums/UserRole";
 import logger from "../../utils/logger"; // Ensure you have a logger utility
+import { SortOrder } from "mongoose";
 
 /**
  * Create a new user account, validate the input, hash the password, and handle the user verification process.
@@ -377,17 +378,43 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
     if (role && Object.values(UserRole).includes(role)) {
       filters.role = role;
     }
+
     const brokerId = req.query.brokerId;
     if (brokerId) {
       filters.brokerId = brokerId;
     }
 
-    // Total count and user retrieval with pagination
+    // Add all other query parameters dynamically into filters
+    for (const [key, value] of Object.entries(req.query)) {
+      if (!['page', 'limit', 'role', 'brokerId', 'sortBy', 'sortOrder', 'search'].includes(key)) {
+        filters[key] = value;
+      }
+    }
+
+    // Search functionality
+    const search = req.query.search as string;
+    if (search) {
+      filters.$or = [
+        { companyName: { $regex: search, $options: "i" } }, // Case-insensitive search
+        { firstName: { $regex: search, $options: "i" } },
+        { lastName: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // Sorting parameters
+    const sortBy = (req.query.sortBy as string) || "createdAt"; // Default to sorting by createdAt
+    const sortOrder: SortOrder = req.query.sortOrder === "desc" ? -1 : 1; // Default to ascending order
+
+    const sortOptions: { [key: string]: SortOrder } = { [sortBy]: sortOrder };
+
+    // Total count and user retrieval with pagination and sorting
     const totalItems = await UserModel.countDocuments(filters);
     const users = await UserModel.find(filters)
       .select("-password")
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .sort(sortOptions); // Apply sorting
 
     const totalPages = Math.ceil(totalItems / limit);
 
@@ -401,6 +428,7 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
     send(res, 500, "Server error");
   }
 }
+
 
 /**
  * Soft delete a user by setting the `isDeleted` flag to true.
