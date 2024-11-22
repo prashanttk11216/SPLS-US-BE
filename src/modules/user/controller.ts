@@ -299,7 +299,6 @@ export async function profile(req: Request, res: Response): Promise<void> {
         role: user.role,
         isActive: user.isActive,
         company: user.company,
-        accessLevel: user.accessLevel,
         avatarUrl: user.avatarUrl,
       },
     });

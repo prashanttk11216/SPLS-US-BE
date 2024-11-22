@@ -1,9 +1,8 @@
 import { Document } from "mongoose";
 import { UserRole } from "../enums/UserRole";
-import { RoleDocument } from "../modules/role/model";
 
 /**
- * IUser interface defining the structure of a User document in MongoDB
+ * IUser interface defining the structure of a User document in MongoDB.
  */
 export interface IUser extends Document {
   _id: string; // Unique identifier (added by Mongoose)
@@ -12,14 +11,11 @@ export interface IUser extends Document {
   email: string; // User's email
   password: string; // Encrypted password
   primaryNumber: string; // User's contact number
-  company?: string;
+  company?: string; // Company name (optional)
 
-  role: RoleDocument["_id"]; // Role reference (using ObjectId)
-  accessLevel?: "full" | "limited"; // Access level for broker users
-
-  // Customer-specific fields
-  customerId?: string;
-  address?: string;
+  role: UserRole; // Role of the user
+  
+  address?: string; // Primary address (optional for non-customers)
   addressLine2?: string;
   addressLine3?: string;
   country?: string;
@@ -27,7 +23,7 @@ export interface IUser extends Document {
   city?: string;
   zip?: string;
 
-  // Billing-specific fields
+  // Billing-specific fields (only for customers)
   billingAddress?: string;
   billingAddressLine2?: string;
   billingAddressLine3?: string;
@@ -36,31 +32,17 @@ export interface IUser extends Document {
   billingCity?: string;
   billingZip?: string;
 
-  // Communication details
-  // primaryNumber?: string;
-  telephone?: string;
-  tollFree?: string;
-  fax?: string;
-  secondaryContact?: string;
-  secondaryEmail?: string;
-  billingEmail?: string;
-  billingTelephone?: string;
-
   // Broker and regulatory details
-  brokerId?: string;
-  employeeId?: string;
-  mcNumber?: string;
-  ursNumber?: string;
-
+  brokerId?: string; // Reference to the broker (if applicable)
+  employeeId?: string; // Employee ID (for brokers)
+  
   // Flags
-  isVerified: boolean;
-  isDeleted: boolean;
-  isActive: boolean;
-  isBroker?: boolean;
-  isBlacklisted?: boolean;
+  isVerified: boolean; // Email verification status
+  isDeleted: boolean; // Soft delete flag
+  isActive: boolean; // Activation status
 
   // Avatar and timestamps
-  avatarUrl?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  avatarUrl?: string; // URL for profile picture
+  createdAt: Date; // Document creation timestamp
+  updatedAt: Date; // Document last update timestamp
 }
