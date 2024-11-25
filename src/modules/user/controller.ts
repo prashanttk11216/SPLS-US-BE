@@ -546,11 +546,7 @@ export async function toggleActiveStatus(
     send(
       res,
       200,
-      `User ${user.isActive ? "activated" : "deactivated"} successfully`,
-      {
-        userId: user._id,
-        isActive: user.isActive,
-      }
+      `User ${user.isActive ? "activated" : "deactivated"} successfully`
     );
   } catch (error) {
     logger.error("Error toggling user active status:", error);

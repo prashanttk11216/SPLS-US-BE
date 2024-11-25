@@ -6,6 +6,8 @@ import otpRouter from "./modules/otp";
 import loadRouter from "./modules/load";
 import roleRouter from "./modules/role";
 import uploadRouter from "./modules/upload";
+import shipperRouter from "./modules/shipper";
+import consigneeRouter from "./modules/consignee";
 
 const router = Router();
 
@@ -24,6 +26,14 @@ const handlers: Record<string, { path: Router; IsPrivateModule?: boolean }> = {
   },
   role: {
     path: roleRouter,
+    IsPrivateModule: true,
+  },
+  shipper: {
+    path: shipperRouter,
+    IsPrivateModule: true,
+  },
+  consignee: {
+    path: consigneeRouter,
     IsPrivateModule: true,
   },
   upload: {
