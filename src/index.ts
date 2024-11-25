@@ -12,6 +12,7 @@ import { Server } from "http";
 import connectDB from "./db/connection";
 import errorHandler from "./middleware/errorHandler";
 import logger from "./utils/logger";
+import path from "path";
 
 const app: Express = express();
 const PORT: number = env.PORT || 5000;
@@ -27,8 +28,13 @@ if (!env.MONGO_URI || !env.PORT) {
 app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
 app.use(helmet()); // Secure headers
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan("combined")); // Logger
+
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+
+
 
 // Connect to the database
 const startDatabase = async () => {

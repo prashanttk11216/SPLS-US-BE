@@ -5,6 +5,7 @@ import auth from "./middleware/auth";
 import otpRouter from "./modules/otp";
 import loadRouter from "./modules/load";
 import roleRouter from "./modules/role";
+import uploadRouter from "./modules/upload";
 
 const router = Router();
 
@@ -23,6 +24,10 @@ const handlers: Record<string, { path: Router; IsPrivateModule?: boolean }> = {
   },
   role: {
     path: roleRouter,
+    IsPrivateModule: true,
+  },
+  upload: {
+    path: uploadRouter,
     IsPrivateModule: true,
   },
 };
