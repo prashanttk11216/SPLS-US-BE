@@ -4,9 +4,13 @@ import {
   editConsignee,
   deleteConsignee,
   toggleActiveConsignee,
+  getConsignee,
 } from "./controller";
+import auth from "../../middleware/auth";
 
 const consigneeRouter = Router();
+
+consigneeRouter.get("/", auth, getConsignee);
 
 // Create a new consignee
 consigneeRouter.post("/", createConsignee);
