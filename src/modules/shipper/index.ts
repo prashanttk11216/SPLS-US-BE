@@ -4,9 +4,13 @@ import {
   editShipper,
   deleteShipper,
   toggleActiveShipper,
+  getShipper,
 } from "./controller";
+import auth from "../../middleware/auth";
 
 const shipperRouter = Router();
+
+shipperRouter.get("/", auth, getShipper);
 
 // Create a new shipper
 shipperRouter.post("/", createShipper);
