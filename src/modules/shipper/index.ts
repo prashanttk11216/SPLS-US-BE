@@ -6,11 +6,10 @@ import {
   toggleActiveShipper,
   getShipper,
 } from "./controller";
-import auth from "../../middleware/auth";
 
 const shipperRouter = Router();
 
-shipperRouter.get("/", auth, getShipper);
+shipperRouter.get("/:_id?", getShipper);
 
 // Create a new shipper
 shipperRouter.post("/", createShipper);

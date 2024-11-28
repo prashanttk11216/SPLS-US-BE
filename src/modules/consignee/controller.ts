@@ -7,69 +7,86 @@ import {
 import send from "../../utils/apiResponse";
 import logger from "../../utils/logger";
 import { z } from "zod";
+import { SortOrder } from "mongoose";
 
 /**
  * Get all Consignees with optional filters, pagination, and sorting.
  */
-export const getConsignee = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export async function getConsignee(req: Request, res: Response): Promise<void> {
   try {
-    const {
-      page = 1,
-      limit = 10,
-      search = "",
-      isActive,
-      sortBy,
-      sortOrder,
-    } = req.query;
+    const { _id } = req.params;
 
-    // Build the query object
-    const query: any = {};
+    if (_id) {
+      const user = await ConsigneeModel.findOne({
+        _id,
+        isDeleted: false,
+      });
 
-    // Filter by search term (e.g., first name, last name, or email)
+      if (!user) {
+        send(res, 404, "Consignee not found");
+        return;
+      }
+
+      send(res, 200, "Retrieved successfully", user);
+      return;
+    }
+
+    // Pagination parameters
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    // Role filter
+    const filters: any = { isDeleted: false };
+
+    const brokerId = req.query.brokerId;
+    if (brokerId) {
+      filters.brokerId = brokerId;
+    }
+
+    // Add all other query parameters dynamically into filters
+    for (const [key, value] of Object.entries(req.query)) {
+      if (!['page', 'limit', 'brokerId', 'sortBy', 'sortOrder', 'search'].includes(key)) {
+        filters[key] = value;
+      }
+    }
+
+    // Search functionality
+    const search = req.query.search as string;
     if (search) {
-      query.$or = [
+      filters.$or = [
         { firstName: { $regex: search, $options: "i" } },
         { lastName: { $regex: search, $options: "i" } },
         { email: { $regex: search, $options: "i" } },
       ];
     }
 
-    // Filter by active status (if provided)
-    if (isActive !== undefined) {
-      query.isActive = isActive === "true"; // Convert string to boolean
-    }
+    // Sorting parameters
+    const sortBy = (req.query.sortBy as string) || "createdAt"; // Default to sorting by createdAt
+    const sortOrder: SortOrder = req.query.sortOrder === "desc" ? -1 : 1; // Default to ascending order
 
-    // Sorting
-    const sort: any = {};
-    if (sortBy && sortOrder) {
-      sort[sortBy as string] = sortOrder === "asc" ? 1 : -1; // Ascending or descending order
-    }
+    const sortOptions: { [key: string]: SortOrder } = { [sortBy]: sortOrder };
 
-    // Pagination
-    const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
-    const consignees = await ConsigneeModel.find(query)
+    // Total count and user retrieval with pagination and sorting
+    const totalItems = await ConsigneeModel.countDocuments(filters);
+    const users = await ConsigneeModel.find(filters)
+      .select("-password")
       .skip(skip)
-      .limit(parseInt(limit as string))
-      .sort(sort);
+      .limit(limit)
+      .sort(sortOptions); // Apply sorting
 
-    const totalItems = await ConsigneeModel.countDocuments(query);
-    const totalPages = Math.ceil(totalItems / parseInt(limit as string));
+    const totalPages = Math.ceil(totalItems / limit);
 
-    // Send the response
-    send(res, 200, "Consignees fetched successfully.", consignees, {
-      totalItems,
+    send(res, 200, "Retrieved successfully", users, {
+      page,
+      limit,
       totalPages,
-      page: parseInt(page as string),
-      limit: parseInt(limit as string),
+      totalItems,
     });
   } catch (error) {
-    logger.error("Unexpected error during consignee fetching:", error);
     send(res, 500, "Server error");
   }
-};
+}
 
 /**
  * Create a new Consignee.
