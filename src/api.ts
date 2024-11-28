@@ -8,6 +8,10 @@ import roleRouter from "./modules/role";
 import uploadRouter from "./modules/upload";
 import shipperRouter from "./modules/shipper";
 import consigneeRouter from "./modules/consignee";
+import equipmentRouter from "./modules/loadProcess/equipment";
+import modeRouter from "./modules/loadProcess/mode";
+import loadOptionsRouter from "./modules/loadProcess/loadOption";
+import commodityRouter from "./modules/loadProcess/commodity";
 
 const router = Router();
 
@@ -39,6 +43,18 @@ const handlers: Record<string, { path: Router; IsPrivateModule?: boolean }> = {
   upload: {
     path: uploadRouter,
     IsPrivateModule: true,
+  },
+  equipment: {
+    path: equipmentRouter,
+  },
+  mode: {
+    path: modeRouter,
+  },
+  loadOption: {
+    path: loadOptionsRouter,
+  },
+  commodity: {
+    path: commodityRouter,
   },
 };
 

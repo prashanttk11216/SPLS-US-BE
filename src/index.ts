@@ -13,6 +13,7 @@ import connectDB from "./db/connection";
 import errorHandler from "./middleware/errorHandler";
 import logger from "./utils/logger";
 import path from "path";
+import equipmentRouter from "./modules/loadProcess/equipment";
 
 const app: Express = express();
 const PORT: number = env.PORT || 5000;
@@ -33,7 +34,6 @@ app.use(cookieParser());
 app.use(morgan("combined")); // Logger
 
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
-
 
 
 // Connect to the database
