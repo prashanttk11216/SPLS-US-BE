@@ -1,42 +1,68 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
+import { Equipment } from "../../enums/Equipment";
+import { Mode } from "../../enums/Mode";
+import { Commodity } from "../../enums/Commodity";
 import { ILoad } from "../../types/Load";
 
-const LoadSchema: Schema = new Schema(
+// Define Load interface extending Mongoose's Document
+
+
+const StopSchema: Schema = new Schema({
+  address: { type: String },
+  earlyPickupDate: { type: Date },
+  latePickupDate: { type: Date },
+  earlyDropoffDate: { type: Date },
+  lateDropoffDate: { type: Date },
+});
+
+
+const LoadSchema: Schema = new Schema<ILoad>(
   {
-    customerId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    customerId: { type: Schema.Types.ObjectId, ref: "User" },
     brokerId: { type: Schema.Types.ObjectId, ref: "User" },
     carrierId: { type: Schema.Types.ObjectId, ref: "User" },
-    title: { type: String, required: true },
-    origin: {
-      city: { type: String, required: true },
-      state: { type: String, required: true },
-    },
-    destination: {
-      city: { type: String, required: true },
-      state: { type: String, required: true },
-    },
-    stops: [
-      {
-        city: { type: String },
-        state: { type: String },
-        date: { type: Date },
-      },
-    ],
-    equipment: { type: String, required: true },
-    mode: { type: String, required: true },
-    allInRate: { type: Number, required: true },
-    weight: { type: Number, required: true },
-    dimensions: {
-      length: { type: Number, required: true },
-      width: { type: Number, required: true },
-      height: { type: Number },
-    },
+    
+    origin: { type: String, required: true },
+    originEarlyPickupDate: { type: Date, required: true },
+    originLatePickupDate: { type: Date },
+    originEarlyDropoffTime: { type: Date },
+    originLateDropoffTime: { type: Date },
+    originStops: [StopSchema],
+
+    destination: { type: String, required: true },
+    destinationEarlyDropoffDate: { type: Date },
+    destinationLateDropoffDate: { type: Date },
+    destinationEarlyDropoffTime: { type: Date },
+    destinationLateDropoffTime: { type: Date },
+
+    destinationStops: [StopSchema],
+
+    equipment: { type: String, enum: Equipment, required: true },
+    mode: { type: String, enum: Mode, required: true },
+    
+    allInRate: { type: Number, min: 0 },
+    customerRate: { type: Number, min: 0 },
+    weight: { type: Number, required: true, min: 0 },
+    length: { type: Number, required: true, min: 0 },
+    width: { type: Number, required: true, min: 0 },
+    height: { type: Number, min: 0 },
+    distance: { type: Number, min: 0 },
+    pieces: { type: Number, min: 0 },
+    pallets: { type: Number, min: 0 },
+    loadOption: { type: String },
+    specialInstructions: { type: String },
+    commodity: { type: String, enum: Commodity },
+    loadNumber: { type: String, unique: true },
+
+    postedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    isDaft: {type: Boolean, default: false},
+
     status: {
       type: String,
       enum: ["pending", "in_transit", "completed", "canceled"],
       default: "pending",
+      index: true,
     },
-    specialInfo: { type: String },
   },
   {
     timestamps: true,

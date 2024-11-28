@@ -17,7 +17,7 @@ loadRouter.post("/create", createLoad);
 
 // Route to edit an existing load
 // This route allows authorized users to modify load information after creation
-loadRouter.put("/edit/:loadId", editLoad);
+loadRouter.put("/edit", editLoad);
   
 // Route to retrieve all loads
 // Used to get a list of loads, potentially with filters for brokers, carriers, and customers

@@ -1,43 +1,65 @@
 import { z } from "zod";
+import { Equipment } from "../../enums/Equipment";
+import { Mode } from "../../enums/Mode";
+import { Commodity } from "../../enums/Commodity";
 
+// Common schema for Stop objects
+const StopSchema = z.object({
+  address: z.string().optional(),
+  earlyPickupDate: z.string().optional(),
+  latePickupDate: z.string().optional(),
+  earlyDropoffDate: z.string().optional(),
+  lateDropoffDate: z.string().optional(),
+});
+
+// Validation for create operation
 export const createLoadSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  origin: z.object({
-    city: z.string().min(1, "City is required"),
-    state: z.string().min(1, "State is required"),
-  }),
-  destination: z.object({
-    city: z.string().min(1, "City is required"),
-    state: z.string().min(1, "State is required"),
-  }),
-  stops: z
-    .array(
-      z.object({
-        city: z.string().min(1, "City is required"),
-        state: z.string().min(1, "State is required"),
-        date: z.date().optional(),
-      })
-    )
-    .optional(),
-  equipment: z.string().min(1, "Equipment is required"),
-  mode: z.string().min(1, "Mode is required"),
-  allInRate: z.number().positive("Rate must be positive"),
-  weight: z.number().positive("Weight must be positive"),
-  dimensions: z.object({
-    length: z.number().positive("Length must be positive"),
-    width: z.number().positive("Width must be positive"),
-    height: z.number().optional(),
-  }),
-  specialInfo: z.string().optional(),
-  customerId: z.string().optional(),
+  customerId: z.string().optional(), // Optional since it's not always required
   brokerId: z.string().optional(),
   carrierId: z.string().optional(),
+
+  origin: z.string().min(1, { message: "Origin is required" }),
+  originEarlyPickupDate: z.string({ required_error: "Origin early pickup date is required" }),
+  originLatePickupDate: z.string().optional(),
+  originEarlyDropoffTime: z.string().optional(),
+  originLateDropoffTime: z.string().optional(),
+  originStops: z.array(StopSchema).optional(),
+
+  destination: z.string().min(1, { message: "Destination is required" }),
+  destinationEarlyDropoffDate: z.string().optional(),
+  destinationLateDropoffDate: z.string().optional(),
+  destinationEarlyDropoffTime: z.string().optional(),
+  destinationLateDropoffTime: z.string().optional(),
+  destinationStops: z.array(StopSchema).optional(),
+
+  equipment: z.nativeEnum(Equipment, { required_error: "Equipment is required" }),
+  mode: z.nativeEnum(Mode, { required_error: "Mode is required" }),
+
+  allInRate: z.number().min(0, { message: "Rate must be a positive number" }).optional(),
+  customerRate: z.number().min(0, { message: "Rate must be a positive number" }).optional(),
+  weight: z.number().min(0, { message: "Weight is required and must be a positive number" }).optional(),
+  length: z.number().min(0, { message: "Length is required and must be a positive number" }).optional(),
+  width: z.number().min(0, { message: "Width is required and must be a positive number" }).optional(),
+  height: z.number().min(0, { message: "Height must be a positive number" }).optional(),
+  distance: z.number().min(0, { message: "Distance must be a positive number" }).optional(),
+  pieces: z.number().min(0, { message: "Pieces must be a positive number" }).optional(),
+  pallets: z.number().min(0, { message: "Pallets must be a positive number" }).optional(),
+  loadOption: z.string().optional(),
+  specialInstructions: z.string().optional(),
+  commodity: z.nativeEnum(Commodity).optional(),
+  loadNumber: z.string().optional(),
+
+  postedBy: z.string().optional(),
+  isDaft: z.boolean().optional(),
+
+  status: z.enum(["pending", "in_transit", "completed", "canceled"]).optional(),
 });
 
-
-export const editLoadSchema = createLoadSchema.partial().extend({
+// Validation for update operation (all fields optional)
+export const updateLoadSchema = createLoadSchema.partial().extend({
   loadId: z.string().nonempty("Load ID is required")
 });
+
 
 // export const assignCarrierSchema = z.object({
 //   loadId: z.string().nonempty("Load ID is required"),
@@ -53,11 +75,10 @@ export const updateLoadStatusSchema = z.object({
 
 export const loadFilterSchema = z.object({
   status: z.enum(["pending", "in_progress", "completed", "canceled"]).optional(),
-  originCity: z.string().optional(),
-  destinationCity: z.string().optional(),
-  mode: z.string().optional(),
-  startDate: z.date().optional(),
-  endDate: z.date().optional(),
   page: z.string().optional(),
   limit: z.string().optional(),
+  isDaft: z.string().optional(),
+  brokerId: z.string().optional(),
+  postedBy: z.string().optional(),
+  customerId: z.string().optional(),
 });
