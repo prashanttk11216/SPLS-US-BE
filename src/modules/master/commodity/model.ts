@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import { ICommodity } from "../../../types/loadprocess";
+import { ICommodity } from "../../../types/SelectOption";
 
 /**
  * Mongoose schema for Commodity.

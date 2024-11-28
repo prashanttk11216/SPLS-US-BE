@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import { IEquipment } from "../../../types/loadprocess";
+import { IEquipment } from "../../../types/SelectOption";
 
 /**
  * Mongoose schema for Equipment.

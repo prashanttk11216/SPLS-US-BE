@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import { IMode } from "../../../types/loadprocess";
+import { IMode } from "../../../types/SelectOption";
 
 /**
  * Mongoose schema for Mode.
