@@ -8,6 +8,7 @@ import roleRouter from "./modules/role";
 import uploadRouter from "./modules/upload";
 import shipperRouter from "./modules/shipper";
 import consigneeRouter from "./modules/consignee";
+import masterRouter from "./modules/master";
 
 const router = Router();
 
@@ -38,6 +39,10 @@ const handlers: Record<string, { path: Router; IsPrivateModule?: boolean }> = {
   },
   upload: {
     path: uploadRouter,
+    IsPrivateModule: true,
+  },
+  master: {
+    path: masterRouter,
     IsPrivateModule: true,
   },
 };
