@@ -8,10 +8,7 @@ import roleRouter from "./modules/role";
 import uploadRouter from "./modules/upload";
 import shipperRouter from "./modules/shipper";
 import consigneeRouter from "./modules/consignee";
-import equipmentRouter from "./modules/master/equipment";
-import modeRouter from "./modules/master/mode";
-import loadOptionsRouter from "./modules/master/loadOption";
-import commodityRouter from "./modules/master/commodity";
+import masterRouter from "./modules/master";
 
 const router = Router();
 
@@ -44,33 +41,14 @@ const handlers: Record<string, { path: Router; IsPrivateModule?: boolean }> = {
     path: uploadRouter,
     IsPrivateModule: true,
   },
-  equipment: {
-    path: equipmentRouter,
-    IsPrivateModule: true,
-  },
-  mode: {
-    path: modeRouter,
-    IsPrivateModule: true,
-  },
-  loadOption: {
-    path: loadOptionsRouter,
-    IsPrivateModule: true,
-  },
-  commodity: {
-    path: commodityRouter,
+  master: {
+    path: masterRouter,
     IsPrivateModule: true,
   },
 };
 
 for (const [moduleName, handler] of Object.entries(handlers)) {
-  // const path = `/${moduleName}`; // Consistent prefixing
-  const isMasterModule = [
-    "equipment",
-    "mode",
-    "loadOption",
-    "commodity",
-  ].includes(moduleName);
-  const path = isMasterModule ? `/master/${moduleName}` : `/${moduleName}`;
+  const path = `/${moduleName}`; // Consistent prefixing
 
   if (handler.IsPrivateModule) {
     router.use(path, auth, handler.path); // Use the auth middleware for private modules
