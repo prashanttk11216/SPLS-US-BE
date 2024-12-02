@@ -11,8 +11,8 @@ export interface ILoad extends Document {
   origin: string;
   originEarlyPickupDate: Date;
   originLatePickupDate?: Date;
-  originEarlyDropoffTime?: Date;
-  originLateDropoffTime?: Date;
+  originEarlyPickupTime?: Date;
+  originLatePickupTime?: Date;
   originStops?: {
     address: string;
     earlyPickupDate?: Date;
@@ -46,7 +46,7 @@ export interface ILoad extends Document {
   loadOption?: string;
   specialInstructions?: string;
   commodity: Commodity;
-  loadNumber?: string;
+  loadNumber?: number;
   postedBy?: mongoose.Types.ObjectId;
   status: "pending" | "in_transit" | "completed" | "canceled";
   isDaft?: boolean; 

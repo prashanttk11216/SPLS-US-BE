@@ -2,6 +2,7 @@ import express from "express";
 import { 
   assignLoadToCarrier, 
   createLoad, 
+  deleteLoad, 
   editLoad, 
   getAssignedLoads, 
   getLoads, 
@@ -13,15 +14,15 @@ const loadRouter = express.Router();
 
 // Route to create a new load
 // This route is typically used by a broker or admin to create load details in the system
-loadRouter.post("/create", createLoad);
+loadRouter.post("/", createLoad);
 
 // Route to edit an existing load
 // This route allows authorized users to modify load information after creation
-loadRouter.put("/edit/:loadId", editLoad);
+loadRouter.put("/:loadId", editLoad);
   
 // Route to retrieve all loads
 // Used to get a list of loads, potentially with filters for brokers, carriers, and customers
-loadRouter.get("/", getLoads);
+loadRouter.get("/:loadId?", getLoads);
 
 // Route to update the status of a load by ID
 // Allows status updates for a specific load (e.g., in-transit, delivered) based on loadId
@@ -42,5 +43,9 @@ loadRouter.get("/assigned", getAssignedLoads);
 // Route to update the load status by a carrier
 // Carriers can update their progress status on the assigned load (e.g., en-route, delivered)
 loadRouter.get("/status", updateLoadStatus);
+
+
+loadRouter.delete("/:loadId", deleteLoad);
+
 
 export default loadRouter;

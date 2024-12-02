@@ -5,13 +5,13 @@ import { z } from "zod";
 import {
   createLoadSchema,
   updateLoadSchema,
-  loadFilterSchema,
 } from "../../schema/Load/Load";
 import { IUser } from "../../types/User";
 import { UserModel } from "../user/model";
 import { UserRole } from "../../enums/UserRole";
 import { sendEmail } from "../../utils/emailHelper";
 import { LoadModel } from "./model";
+import logger from "../../utils/logger";
 
 /**
  * Create a new load entry, ensuring the user is authorized (broker or customer),
@@ -116,28 +116,53 @@ export async function editLoad(req: Request, res: Response): Promise<void> {
  */
 export async function getLoads(req: Request, res: Response): Promise<void> {
   try {
+    const {   loadId } = req.params;
+
+    if (loadId) {
+      // Fetch a single load by its ID
+      const load = await LoadModel.findOne({ _id: loadId })
+        .populate("brokerId", "company");
+
+      if (!load) {
+        send(res, 404, "Load not found");
+        return;
+      }
+
+      send(res, 200, "Load retrieved successfully", load);
+      return;
+    }
+
     const user = (req as Request & { user?: IUser })?.user;
-    const filters = loadFilterSchema.parse(req.query); // Parse and validate query parameters
+    const filters: any = {}; // Parse and validate query parameters
 
     // Default pagination values
-    const page = parseInt(filters.page as string) || 1;
-    const limit = parseInt(filters.limit as string) || 10;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    let loads;
     // Role-based query conditions
     if (user?.role === UserRole.BROKER_USER) {
       filters.postedBy = user._id;
     } else if (user?.role === UserRole.CUSTOMER) {
       filters.customerId = user._id;
     } else if (user?.role === UserRole.CARRIER) {
+      // Add any additional conditions for the carrier role here if needed
     }
 
+    // Add all other query parameters dynamically into filters
+    for (const [key, value] of Object.entries(req.query)) {
+      if (!['page', 'limit'].includes(key)) {
+        filters[key] = value;
+      }
+    }
+
+    console.log(filters);
+
     // Execute the query with pagination, populate relevant fields
-    loads = await LoadModel.find(filters)
-    .populate("brokerId", "company")
-    .skip(skip)
-    .limit(limit);
+    const loads = await LoadModel.find(filters)
+      .populate("brokerId", "company")
+      .skip(skip)
+      .limit(limit);
 
     // Get total count for pagination metadata
     const totalCount = await LoadModel.countDocuments(filters);
@@ -159,6 +184,7 @@ export async function getLoads(req: Request, res: Response): Promise<void> {
     send(res, 500, "Server error");
   }
 }
+
 
 /**
  * Allow a carrier to express interest in a pending load.
@@ -364,6 +390,23 @@ export async function updateLoadStatus(
 
     send(res, 200, "Load status updated successfully. Notifications sent.");
   } catch (error) {
+    send(res, 500, "Server error");
+  }
+}
+
+
+export async function deleteLoad(req: Request, res: Response): Promise<void> {
+  try {
+    const user = await LoadModel.findOneAndDelete({ _id: req.params.loadId});
+
+    if (!user) {
+      send(res, 404, "Load not found or already deleted");
+      return;
+    }
+
+    send(res, 200, "Load deleted successfully");
+  } catch (error) {
+    logger.error("Unexpected error during user deletion:", error);
     send(res, 500, "Server error");
   }
 }

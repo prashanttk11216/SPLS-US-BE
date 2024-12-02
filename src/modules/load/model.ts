@@ -7,12 +7,20 @@ import { ILoad } from "../../types/Load";
 // Define Load interface extending Mongoose's Document
 
 
-const StopSchema: Schema = new Schema({
+const originStopSchema: Schema = new Schema({
   address: { type: String },
   earlyPickupDate: { type: Date },
   latePickupDate: { type: Date },
+  earlyPickupTime: { type: Date },
+  latePickupTime: { type: Date },
+});
+
+const destinationStopSchema: Schema = new Schema({
+  address: { type: String },
   earlyDropoffDate: { type: Date },
   lateDropoffDate: { type: Date },
+  earlyDropoffTime: { type: Date },
+  lateDropoffTime: { type: Date },
 });
 
 
@@ -25,9 +33,9 @@ const LoadSchema: Schema = new Schema<ILoad>(
     origin: { type: String, required: true },
     originEarlyPickupDate: { type: Date, required: true },
     originLatePickupDate: { type: Date },
-    originEarlyDropoffTime: { type: Date },
-    originLateDropoffTime: { type: Date },
-    originStops: [StopSchema],
+    originEarlyPickupTime: { type: Date },
+    originLatePickupTime: { type: Date },
+    originStops: [originStopSchema],
 
     destination: { type: String, required: true },
     destinationEarlyDropoffDate: { type: Date },
@@ -35,24 +43,24 @@ const LoadSchema: Schema = new Schema<ILoad>(
     destinationEarlyDropoffTime: { type: Date },
     destinationLateDropoffTime: { type: Date },
 
-    destinationStops: [StopSchema],
+    destinationStops: [destinationStopSchema],
 
     equipment: { type: String, enum: Equipment, required: true },
     mode: { type: String, enum: Mode, required: true },
     
     allInRate: { type: Number, min: 0 },
     customerRate: { type: Number, min: 0 },
-    weight: { type: Number, required: true, min: 0 },
-    length: { type: Number, required: true, min: 0 },
-    width: { type: Number, required: true, min: 0 },
+    weight: { type: Number, min: 0 },
+    length: { type: Number, min: 0 },
+    width: { type: Number, min: 0 },
     height: { type: Number, min: 0 },
     distance: { type: Number, min: 0 },
     pieces: { type: Number, min: 0 },
     pallets: { type: Number, min: 0 },
     loadOption: { type: String },
     specialInstructions: { type: String },
-    commodity: { type: String, enum: Commodity },
-    loadNumber: { type: String, unique: true },
+    commodity: { type: String, enum: [...Object.values(Commodity), ""] },
+    loadNumber: { type: Number, unique: true },
 
     postedBy: { type: Schema.Types.ObjectId, ref: "User" },
     isDaft: {type: Boolean, default: false},

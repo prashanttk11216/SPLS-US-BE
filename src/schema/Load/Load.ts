@@ -21,8 +21,8 @@ export const createLoadSchema = z.object({
   origin: z.string().min(1, { message: "Origin is required" }),
   originEarlyPickupDate: z.string({ required_error: "Origin early pickup date is required" }),
   originLatePickupDate: z.string().optional(),
-  originEarlyDropoffTime: z.string().optional(),
-  originLateDropoffTime: z.string().optional(),
+  originEarlyPickupTime: z.string().optional(),
+  originLatePickupTime: z.string().optional(),
   originStops: z.array(StopSchema).optional(),
 
   destination: z.string().min(1, { message: "Destination is required" }),
@@ -46,8 +46,8 @@ export const createLoadSchema = z.object({
   pallets: z.number().min(0, { message: "Pallets must be a positive number" }).optional(),
   loadOption: z.string().optional(),
   specialInstructions: z.string().optional(),
-  commodity: z.nativeEnum(Commodity).optional(),
-  loadNumber: z.string().optional(),
+  commodity: z.union([z.nativeEnum(Commodity), z.string().max(0)]).optional(),
+  loadNumber: z.number().optional(),
 
   postedBy: z.string().optional(),
   isDaft: z.boolean().optional(),
@@ -56,9 +56,7 @@ export const createLoadSchema = z.object({
 });
 
 // Validation for update operation (all fields optional)
-export const updateLoadSchema = createLoadSchema.partial().extend({
-  loadId: z.string().nonempty("Load ID is required")
-});
+export const updateLoadSchema = createLoadSchema.partial();
 
 
 // export const assignCarrierSchema = z.object({
@@ -70,15 +68,4 @@ export const updateLoadSchema = createLoadSchema.partial().extend({
 export const updateLoadStatusSchema = z.object({
   loadId: z.string().nonempty("Load ID is required"),
   status: z.enum(["pending", "in_transit", "completed", "canceled"]),
-});
-
-
-export const loadFilterSchema = z.object({
-  status: z.enum(["pending", "in_progress", "completed", "canceled"]).optional(),
-  page: z.string().optional(),
-  limit: z.string().optional(),
-  isDaft: z.string().optional(),
-  brokerId: z.string().optional(),
-  postedBy: z.string().optional(),
-  customerId: z.string().optional(),
 });
