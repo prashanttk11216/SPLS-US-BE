@@ -4,9 +4,12 @@ import {
   editShipper,
   deleteShipper,
   toggleActiveShipper,
+  getShipper,
 } from "./controller";
 
 const shipperRouter = Router();
+
+shipperRouter.get("/:_id?", getShipper);
 
 // Create a new shipper
 shipperRouter.post("/", createShipper);

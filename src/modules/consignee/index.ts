@@ -4,9 +4,12 @@ import {
   editConsignee,
   deleteConsignee,
   toggleActiveConsignee,
+  getConsignee,
 } from "./controller";
 
 const consigneeRouter = Router();
+
+consigneeRouter.get("/:_id?", getConsignee);
 
 // Create a new consignee
 consigneeRouter.post("/", createConsignee);
