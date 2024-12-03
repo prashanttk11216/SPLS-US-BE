@@ -30,7 +30,7 @@ loadRouter.put("/:loadId/status", updateLoadStatus);
 
 // Route for carriers to request a load
 // Carriers can indicate interest in transporting a load, awaiting broker approval or assignment
-loadRouter.post("/request", requestLoad);
+loadRouter.post("/request/:loadId", requestLoad);
 
 // Route for brokers to assign a load to a specific carrier
 // Brokers can directly assign loads to carriers after they request or based on availability
@@ -42,7 +42,7 @@ loadRouter.get("/assigned", getAssignedLoads);
 
 // Route to update the load status by a carrier
 // Carriers can update their progress status on the assigned load (e.g., en-route, delivered)
-loadRouter.get("/status", updateLoadStatus);
+// loadRouter.get("/status", getLoadStatus);
 
 
 loadRouter.delete("/:loadId", deleteLoad);

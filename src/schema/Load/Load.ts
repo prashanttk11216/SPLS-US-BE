@@ -50,22 +50,17 @@ export const createLoadSchema = z.object({
   loadNumber: z.number().optional(),
 
   postedBy: z.string().optional(),
-  isDaft: z.boolean().optional(),
-
-  status: z.enum(["pending", "in_transit", "completed", "canceled"]).optional(),
+  status: z.enum(['Draft', 
+        'Published', 
+        'Pending Response', 
+        'Negotiation', 
+        'Assigned', 
+        'In Transit', 
+        'Delivered', 
+        'Completed', 
+        'Cancelled']).optional(),
 });
 
 // Validation for update operation (all fields optional)
 export const updateLoadSchema = createLoadSchema.partial();
 
-
-// export const assignCarrierSchema = z.object({
-//   loadId: z.string().nonempty("Load ID is required"),
-//   carrierId: z.string().nonempty("Carrier ID is required"),
-// });
-
-
-export const updateLoadStatusSchema = z.object({
-  loadId: z.string().nonempty("Load ID is required"),
-  status: z.enum(["pending", "in_transit", "completed", "canceled"]),
-});

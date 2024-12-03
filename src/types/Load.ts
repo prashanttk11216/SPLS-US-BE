@@ -48,8 +48,7 @@ export interface ILoad extends Document {
   commodity: Commodity;
   loadNumber?: number;
   postedBy?: mongoose.Types.ObjectId;
-  status: "pending" | "in_transit" | "completed" | "canceled";
-  isDaft?: boolean; 
+  status: string;
   createdAt?: Date;
   updatedAt?: Date;
 }

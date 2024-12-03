@@ -58,9 +58,9 @@ export async function create(req: Request, res: Response): Promise<void> {
     let isVerified = false;
     let verificationCode;
 
-    if (req.query.isAdmin && validatedData.role == UserRole.CUSTOMER) {
+    if (req.query.isAdmin && (validatedData.role == UserRole.CUSTOMER || validatedData.role == UserRole.CARRIER)) {
       isVerified = true;
-      logger.info(`Customer account created for ${validatedData.email}`);
+      logger.info(`User account created for ${validatedData.email}`);
       // await sendEmail({
       //   to: validatedData.email,
       //   subject: "Account Created",
