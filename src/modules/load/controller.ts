@@ -12,6 +12,19 @@ import { UserRole } from "../../enums/UserRole";
 import { sendEmail } from "../../utils/emailHelper";
 import { LoadModel } from "./model";
 import logger from "../../utils/logger";
+import { LoadStatus } from "../../enums/LoadStatus";
+
+const validTransitions: Record<string, string[]> = {
+  Draft: ['Published'],
+  Published: ['Pending Response', 'Cancelled'],
+  'Pending Response': ['Negotiation', 'Cancelled'],
+  Negotiation: ['Assigned', 'Cancelled'],
+  Assigned: ['In Transit'],
+  'In Transit': ['Delivered'],
+  Delivered: ['Completed'],
+  Completed: [],
+  Cancelled: [],
+};
 
 /**
  * Create a new load entry, ensuring the user is authorized (broker or customer),
@@ -29,7 +42,6 @@ export async function createLoad(req: Request, res: Response): Promise<void> {
 
     // Additional validation for broker role
     if (user?.role === UserRole.CUSTOMER) {
-      validatedData.isDaft = true;
       validatedData.brokerId = user.brokerId;
       validatedData.customerId = user._id;
 
@@ -41,9 +53,8 @@ export async function createLoad(req: Request, res: Response): Promise<void> {
     }
 
     // Additional validation for broker role
-    if (
-      user?.role === UserRole.BROKER_ADMIN ||
-      user?.role === UserRole.BROKER_USER
+    if (!validatedData.postedBy && (user?.role === UserRole.BROKER_ADMIN ||
+      user?.role === UserRole.BROKER_USER)
     ) {
       validatedData.postedBy = user._id;
     }
@@ -56,7 +67,9 @@ export async function createLoad(req: Request, res: Response): Promise<void> {
       validatedData.brokerId = user.brokerId;
     }
 
-    // console.log(validatedData);
+    if(user?.role !== UserRole.CUSTOMER){
+        validatedData.status = LoadStatus.Published;
+    }
 
     const load = new LoadModel({ ...validatedData });
 
@@ -67,8 +80,6 @@ export async function createLoad(req: Request, res: Response): Promise<void> {
       send(res, 400, "Invalid input data", { errors: error.errors });
       return;
     }
-    console.log(error);
-
     send(res, 500, "Server error");
   }
 }
@@ -146,7 +157,7 @@ export async function getLoads(req: Request, res: Response): Promise<void> {
     } else if (user?.role === UserRole.CUSTOMER) {
       filters.customerId = user._id;
     } else if (user?.role === UserRole.CARRIER) {
-      // Add any additional conditions for the carrier role here if needed
+      filters.status = LoadStatus.Published;
     }
 
     // Add all other query parameters dynamically into filters
@@ -157,7 +168,7 @@ export async function getLoads(req: Request, res: Response): Promise<void> {
     }
 
     console.log(filters);
-
+    
     // Execute the query with pagination, populate relevant fields
     const loads = await LoadModel.find(filters)
       .populate("brokerId", "company")
@@ -185,7 +196,6 @@ export async function getLoads(req: Request, res: Response): Promise<void> {
   }
 }
 
-
 /**
  * Allow a carrier to express interest in a pending load.
  * The broker is notified via email when a carrier expresses interest.
@@ -203,11 +213,7 @@ export async function requestLoad(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const { loadId } = req.body;
-    const load = await LoadModel.findById(loadId).populate<{ brokerId: IUser }>(
-      "brokerId",
-      "email"
-    );
+    const load = await LoadModel.findById(req.params.loadId).populate<{ brokerId: IUser }>("brokerId","email");
     if (!load) {
       send(res, 404, "Load not found");
       return;
@@ -342,58 +348,77 @@ export async function getAssignedLoads(
  * @param req - Express request object containing the load ID and the new status.
  * @param res - Express response object to send back results or errors.
  */
-export async function updateLoadStatus(
-  req: Request,
-  res: Response
-): Promise<void> {
+export const updateLoadStatus = async (req: Request, res: Response) => {
   try {
     const user = (req as Request & { user?: IUser })?.user;
+    const { status } = req.body;
+    const currentUserRole = user?.role;
+    const changedBy = user?._id;
 
-    if (user?.role !== UserRole.CARRIER) {
-      send(res, 403, "Only carriers can update the status of a load");
+    const load = await LoadModel.findById(req.params.loadId)
+    .populate<{ brokerId: IUser }>("brokerId", "email")
+    .populate<{ customerId: IUser }>("customerId", "email");;
+
+    if (!load) {
+      send(res, 404, "Load not found");
       return;
     }
 
-    const { loadId, status } = req.body;
+  const currentStatus = load.status;
 
-    // Validate status
-    if (!["in_transit", "completed"].includes(status)) {
-      send(res, 400, "Invalid load status");
-      return;
-    }
+  if (!validTransitions[currentStatus].includes(status)) {
+    send(res, 400, `Invalid status transition from ${currentStatus} to ${status}`);
+    return;
+  }
 
-    const load = await LoadModel.findById(loadId)
-      .populate<{ brokerId: IUser }>("brokerId", "email")
-      .populate<{ customerId: IUser }>("customerId", "email");
+  if (
+    ['Negotiation', 'Assigned', 'In Transit'].includes(status) &&
+    !['broker_users', 'admin'].includes(currentUserRole!)
+  ) {
+    send(res, 403, 'You do not have permission to perform this action.');
+    return;
+  }
 
-    if (!load || load.carrierId?.toString() !== user._id.toString()) {
-      send(res, 404, "Load not found or not assigned to this carrier");
-      return;
-    }
+  // Update status in the database
+  load.status = status;
+  await load.save();
 
-    load.status = status;
-    await load.save();
 
-    // Notify broker and customer about the status update
-    // await Promise.all([
-    //   sendEmail({
-    //     to: load.brokerId.email,
-    //     subject: "Load Status Update",
-    //     text: `The status of Load ${load.title} has been updated to ${status} by carrier ${user.company}.`,
-    //   }),
-    //   sendEmail({
-    //     to: load.customerId.email,
-    //     subject: "Load Status Update",
-    //     text: `The status of your Load ${load.title} has been updated to ${status}.`,
-    //   }),
-    // ]);
+  // Notify broker and customer about the status update
+  // await Promise.all([
+  //   sendEmail({
+  //     to: load.brokerId.email,
+  //     subject: "Load Status Update",
+  //     text: `The status of Load with Reference Number ${load.loadNumber} has been updated to ${status} by carrier ${user.company}.`,
+  //   }),
+  //   sendEmail({
+  //     to: load.customerId.email,
+  //     subject: "Load Status Update",
+  //     text: `The status of your Load with Reference Number ${load.loadNumber} has been updated to ${status}.`,
+  //   }),
+  // ]);
+
+  // Log status change in audit trail
+  // await LoadAudit.updateOne(
+  //   { loadId },
+  //   {
+  //     $push: {
+  //       statusChanges: {
+  //         previousStatus: currentStatus,
+  //         status,
+  //         changedBy,
+  //         timestamp: new Date(),
+  //       },
+  //     },
+  //   },
+  //   { upsert: true }
+  // );
 
     send(res, 200, "Load status updated successfully. Notifications sent.");
-  } catch (error) {
+  } catch (error: any) {
     send(res, 500, "Server error");
   }
-}
-
+};
 
 export async function deleteLoad(req: Request, res: Response): Promise<void> {
   try {
@@ -410,3 +435,6 @@ export async function deleteLoad(req: Request, res: Response): Promise<void> {
     send(res, 500, "Server error");
   }
 }
+
+
+

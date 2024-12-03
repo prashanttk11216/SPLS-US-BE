@@ -63,13 +63,20 @@ const LoadSchema: Schema = new Schema<ILoad>(
     loadNumber: { type: Number, unique: true },
 
     postedBy: { type: Schema.Types.ObjectId, ref: "User" },
-    isDaft: {type: Boolean, default: false},
-
-    status: {
-      type: String,
-      enum: ["pending", "in_transit", "completed", "canceled"],
-      default: "pending",
-      index: true,
+    status: { 
+      type: String, 
+      enum: [
+        'Draft', 
+        'Published', 
+        'Pending Response', 
+        'Negotiation', 
+        'Assigned', 
+        'In Transit', 
+        'Delivered', 
+        'Completed', 
+        'Cancelled'
+      ], 
+      default: 'Draft' 
     },
   },
   {
