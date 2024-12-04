@@ -5,6 +5,7 @@ import send from "../../utils/apiResponse";
 import logger from "../../utils/logger";
 import { z } from "zod";
 import { SortOrder } from "mongoose";
+import { escapeAndNormalizeSearch } from "../../utils/regexHelper";
 
 
 /**
@@ -86,10 +87,11 @@ export async function getShipper(req: Request, res: Response): Promise<void> {
     // Search functionality
     const search = req.query.search as string;
     if (search) {
+      const escapedSearch = escapeAndNormalizeSearch(search);
       filters.$or = [
-        { firstName: { $regex: search, $options: "i" } },
-        { lastName: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
+        { firstName: { $regex: escapedSearch, $options: "i" } },
+        { lastName: { $regex: escapedSearch, $options: "i" } },
+        { email: { $regex: escapedSearch, $options: "i" } },
       ];
     }
 
