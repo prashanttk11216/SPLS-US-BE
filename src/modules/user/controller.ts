@@ -18,6 +18,7 @@ import {
 import { UserRole } from "../../enums/UserRole";
 import logger from "../../utils/logger"; // Ensure you have a logger utility
 import { SortOrder } from "mongoose";
+import { escapeAndNormalizeSearch } from "../../utils/regexHelper";
 
 /**
  * Create a new user account, validate the input, hash the password, and handle the user verification process.
@@ -384,21 +385,15 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
       filters.brokerId = brokerId;
     }
 
-    // Add all other query parameters dynamically into filters
-    for (const [key, value] of Object.entries(req.query)) {
-      if (!['page', 'limit', 'role', 'brokerId', 'sortBy', 'sortOrder', 'search'].includes(key)) {
-        filters[key] = value;
-      }
-    }
-
     // Search functionality
     const search = req.query.search as string;
     if (search) {
+      const escapedSearch = escapeAndNormalizeSearch(search);
       filters.$or = [
-        { companyName: { $regex: search, $options: "i" } }, // Case-insensitive search
-        { firstName: { $regex: search, $options: "i" } },
-        { lastName: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
+        { company: { $regex: escapedSearch, $options: "i" } },
+        { email: { $regex: escapedSearch, $options: "i" } },
+        { firstName: { $regex: escapedSearch, $options: "i" } },
+        { lastName: { $regex: escapedSearch, $options: "i" } },
       ];
     }
 
@@ -408,9 +403,17 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
 
     const sortOptions: { [key: string]: SortOrder } = { [sortBy]: sortOrder };
 
+    // Add all other query parameters dynamically into filters
+    for (const [key, value] of Object.entries(req.query)) {
+      if (!['page', 'limit', 'role', 'brokerId', 'sortBy', 'sortOrder', 'search'].includes(key)) {
+        filters[key] = value;
+      }
+    }
+
     // Total count and user retrieval with pagination and sorting
     const totalItems = await UserModel.countDocuments(filters);
-    const users = await UserModel.find(filters)
+
+    const users = await UserModel.find({...filters, })
       .select("-password")
       .skip(skip)
       .limit(limit)
@@ -425,9 +428,11 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
       totalItems,
     });
   } catch (error) {
+    console.error("Error in getUsers:", error);
     send(res, 500, "Server error");
   }
 }
+
 
 
 /**
