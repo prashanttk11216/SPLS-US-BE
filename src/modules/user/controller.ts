@@ -19,6 +19,7 @@ import { UserRole } from "../../enums/UserRole";
 import logger from "../../utils/logger"; // Ensure you have a logger utility
 import { SortOrder } from "mongoose";
 import { escapeAndNormalizeSearch } from "../../utils/regexHelper";
+import { SendEmailOptions, sendNotificationEmail } from "../../services/emailService";
 
 /**
  * Create a new user account, validate the input, hash the password, and handle the user verification process.
@@ -179,6 +180,18 @@ export async function login(req: Request, res: Response): Promise<void> {
     const token = await generateToken(userResponse, env.JWT_PRIVATE_KEY, {
       expiresIn: "5h",
     });
+
+    if(validatedData.employeeId){
+      // const emailOptions: SendEmailOptions = {
+    //   to: "",
+    //   subject: 'User Login Notification',
+    //   templateName: 'userLogin',
+    //   templateData: { employeeId:"abd", firstName:"CD", lastName:"Ccdc", loginTime:"Cdjc" },
+    // };
+  
+    // await sendNotificationEmail(emailOptions);
+    }
+
 
     // Respond with login success and token
     send(res, 200, "Login successful", { user: userResponse, token });
