@@ -64,9 +64,8 @@ export const createUserSchema = z
         code: z.ZodIssueCode.custom,
       });
     }
-
-    if (data.role === UserRole.CUSTOMER) {
-      // Billing fields are mandatory for customers
+      // Billing fields are mandatory for customers and carrier
+    if (data.role === UserRole.CUSTOMER || data.role === UserRole.CARRIER) {
       const requiredFields = [
         "billingAddress",
         "billingCountry",
