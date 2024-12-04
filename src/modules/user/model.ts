@@ -28,14 +28,14 @@ const UserSchema: Schema = new Schema(
     city: { type: String}, // City of the customer
     zip: { type: String}, // Zip code of the customer's address
 
-    // Billing-specific fields for Customer
-      billingAddress: { type: String}, // Primary billing address
-      billingAddressLine2: { type: String }, // Optional billing address line 2
-      billingAddressLine3: { type: String }, // Optional billing address line 3
-      billingCountry: { type: String}, // Billing country
-      billingState: { type: String}, // Billing state
-      billingCity: { type: String }, // Billing city
-      billingZip: { type: String }, // Billing zip code
+    // Billing-specific fields for Customer and Carrier
+    billingAddress: { type: String}, // Primary billing address
+    billingAddressLine2: { type: String }, // Optional billing address line 2
+    billingAddressLine3: { type: String }, // Optional billing address line 3
+    billingCountry: { type: String}, // Billing country
+    billingState: { type: String}, // Billing state
+    billingCity: { type: String }, // Billing city
+    billingZip: { type: String }, // Billing zip code
 
   
     // Broker and regulatory details
