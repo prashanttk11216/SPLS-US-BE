@@ -12,9 +12,9 @@ const StopSchema = z.object({
   lateDropoffDate: z.string().optional(),
 });
 
-// Validation for create operation
-export const createLoadSchema = z.object({
-  customerId: z.string().optional(), // Optional since it's not always required
+// Base schema for load operations
+const baseLoadSchema = z.object({
+  customerId: z.string().optional(),
   brokerId: z.string().optional(),
   carrierId: z.string().optional(),
 
@@ -50,17 +50,30 @@ export const createLoadSchema = z.object({
   loadNumber: z.number().optional(),
 
   postedBy: z.string().optional(),
-  status: z.enum(['Draft', 
-        'Published', 
-        'Pending Response', 
-        'Negotiation', 
-        'Assigned', 
-        'In Transit', 
-        'Delivered', 
-        'Completed', 
-        'Cancelled']).optional(),
+  status: z
+    .enum([
+      "Draft",
+      "Published",
+      "Pending Response",
+      "Negotiation",
+      "Assigned",
+      "In Transit",
+      "Delivered",
+      "Completed",
+      "Cancelled",
+    ])
+    .optional(),
 });
 
-// Validation for update operation (all fields optional)
-export const updateLoadSchema = createLoadSchema.partial();
+// Transform logic with explicit type assertions
+function cleanData<T extends Record<string, unknown>>(data: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(data).filter(([_, value]) => value !== undefined && value !== null)
+  ) as Partial<T>;
+}
 
+// Validation for create operation
+export const createLoadSchema = baseLoadSchema.transform((data) => cleanData(data));
+
+// Validation for update operation (all fields optional)
+export const updateLoadSchema = baseLoadSchema.partial().transform((data) => cleanData(data));
