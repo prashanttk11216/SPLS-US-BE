@@ -71,6 +71,34 @@ export async function createLoad(req: Request, res: Response): Promise<void> {
         validatedData.status = LoadStatus.Published;
     }
 
+    // Handle `loadNumber` logic
+    if (validatedData.loadNumber) {
+      console.log("here", validatedData.loadNumber);
+    
+      // Check if the provided loadNumber already exists
+      const existingLoad = await LoadModel.findOne({ loadNumber: validatedData.loadNumber });
+      if (existingLoad) {
+        // Fetch the next available load number
+        const lastLoad = await LoadModel.findOne({ loadNumber: { $exists: true, $ne: null } })
+          .sort({ loadNumber: -1 })
+          .select("loadNumber");
+        const nextLoadNumber = lastLoad ? lastLoad.loadNumber! + 1 : 1;
+    
+        send(res, 400, `The provided loadNumber is already in use. Please use a unique loadNumber. Suggested loadNumber: ${nextLoadNumber}`);
+        return;
+      }
+    } else {
+      // Auto-generate loadNumber if not provided
+      const lastLoad = await LoadModel.findOne({ loadNumber: { $exists: true, $ne: null } })
+        .sort({ loadNumber: -1 })
+        .select("loadNumber");
+      console.log(lastLoad);
+    
+      validatedData.loadNumber = lastLoad ? lastLoad.loadNumber! + 1 : 1; // Start from 1 if no loads exist
+    }
+    
+
+
     const load = new LoadModel({ ...validatedData });
 
     await load.save();
@@ -434,7 +462,7 @@ export async function deleteLoad(req: Request, res: Response): Promise<void> {
     logger.error("Unexpected error during user deletion:", error);
     send(res, 500, "Server error");
   }
-}
+};
 
 
 
