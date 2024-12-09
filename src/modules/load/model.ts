@@ -69,11 +69,7 @@ const LoadSchema: Schema = new Schema<ILoad>(
         'Draft', 
         'Published', 
         'Pending Response', 
-        'Negotiation', 
-        'Assigned', 
-        'In Transit', 
-        'Delivered', 
-        'Completed', 
+        'Deal Closed',
         'Cancelled'
       ], 
       default: 'Draft' 

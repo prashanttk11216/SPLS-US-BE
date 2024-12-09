@@ -13,18 +13,16 @@ import { sendEmail } from "../../utils/emailHelper";
 import { LoadModel } from "./model";
 import logger from "../../utils/logger";
 import { LoadStatus } from "../../enums/LoadStatus";
+import { SendEmailOptions, sendNotificationEmail } from "../../services/emailService";
 
-const validTransitions: Record<string, string[]> = {
-  Draft: ['Published'],
-  Published: ['Pending Response', 'Cancelled'],
-  'Pending Response': ['Negotiation', 'Cancelled'],
-  Negotiation: ['Assigned', 'Cancelled'],
-  Assigned: ['In Transit'],
-  'In Transit': ['Delivered'],
-  Delivered: ['Completed'],
-  Completed: [],
-  Cancelled: [],
+const validTransitions: Record<LoadStatus, LoadStatus[]> = {
+  [LoadStatus.Draft]: [LoadStatus.Published],
+  [LoadStatus.Published]: [LoadStatus.PendingResponse, LoadStatus.Cancelled],
+  [LoadStatus.PendingResponse]: [LoadStatus.DealClosed, LoadStatus.Cancelled],
+  [LoadStatus.DealClosed]: [],
+  [LoadStatus.Cancelled]: [],
 };
+
 
 /**
  * Create a new load entry, ensuring the user is authorized (broker or customer),
@@ -247,20 +245,61 @@ export async function requestLoad(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    if (load.status !== "pending") {
-      send(res, 400, "Only pending loads can be chosen by carriers");
+    if (load.status !== LoadStatus.Published) {
+      send(res, 400, "Only Published loads can be chosen by carriers");
       return;
     }
 
-    // Send email notification to broker
-    // await sendEmail({
-    //   to: load?.brokerId?.email,
-    //   subject: "Carrier Interested in Load",
-    //   text: `Carrier ${user.company} is interested in Load ${load.title}. Details: ${load.origin.city} to ${load.destination.city}.`,
-    // });
+    const emailOptions: SendEmailOptions = {
+      to: "",
+      subject: 'Carrier Interested in Load',
+      templateName: 'carrierInterestedInLoad',
+      templateData: { company:"abd", loadNumber:"CD", origin:"Ccdc", destination:"Cdjc" },
+    };
+  
+    // await sendNotificationEmail(emailOptions);
 
-    send(res, 200, "Interest in load submitted successfully. Broker notified.");
+    send(res, 200, "Interest in the load has been submitted successfully. The broker has been notified.");
   } catch (error) {
+    console.log(error);
+    
+    send(res, 500, "Server error");
+  }
+}
+
+export async function notifyRateConfirmCustomer(req: Request, res: Response): Promise<void> {
+  try {
+    const user = (req as Request & { user?: IUser })?.user;
+
+    const load = await LoadModel.findById(req.params.loadId).populate<{ brokerId: IUser }>("brokerId","email");
+    if (!load) {
+      send(res, 404, "Load not found");
+      return;
+    }
+
+    if (load.status !== LoadStatus.PendingResponse) {
+      send(res, 400, "Only Pending Response loads can be chosen by Broker");
+      return;
+    }
+
+    const emailOptions: SendEmailOptions = {
+      to: "", // Replace with the customer's email address
+      subject: "Load Rate Confirmation",
+      templateName: "loadRateConfirmation",
+      templateData: {
+        customerName: "John Doe", // Replace with the customer's name
+        loadNumber: "LR12345",
+        origin: "Los Angeles, CA",
+        destination: "Houston, TX",
+        rate: "2000", // Replace with the confirmed rate
+      },
+    };
+  
+    // await sendNotificationEmail(emailOptions);
+
+    send(res, 200, "Rate confirmation has been submitted successfully. The customer has been notified.");
+  } catch (error) {
+    console.log(error);
     send(res, 500, "Server error");
   }
 }
@@ -384,69 +423,72 @@ export const updateLoadStatus = async (req: Request, res: Response) => {
     const changedBy = user?._id;
 
     const load = await LoadModel.findById(req.params.loadId)
-    .populate<{ brokerId: IUser }>("brokerId", "email")
-    .populate<{ customerId: IUser }>("customerId", "email");;
+      .populate<{ brokerId: IUser }>("brokerId", "email")
+      .populate<{ customerId: IUser }>("customerId", "email");
 
     if (!load) {
       send(res, 404, "Load not found");
       return;
     }
 
-  const currentStatus = load.status;
+    const currentStatus = load.status;
 
-  if (!validTransitions[currentStatus].includes(status)) {
-    send(res, 400, `Invalid status transition from ${currentStatus} to ${status}`);
-    return;
-  }
+    if (!validTransitions[currentStatus as LoadStatus]?.includes(status as LoadStatus)) {
+      send(res, 400, `Invalid status transition from ${currentStatus} to ${status}`);
+      return;
+    }
+    
 
-  if (
-    ['Negotiation', 'Assigned', 'In Transit'].includes(status) &&
-    !['broker_users', 'admin'].includes(currentUserRole!)
-  ) {
-    send(res, 403, 'You do not have permission to perform this action.');
-    return;
-  }
+    // Ensure the user has the correct role for status updates
+    if (
+      [LoadStatus.DealClosed, LoadStatus.Published, LoadStatus.PendingResponse]?.includes(status) &&
+      ![UserRole.BROKER_USER, UserRole.BROKER_ADMIN]?.includes(currentUserRole!)
+    ) {
+      send(res, 403, 'You do not have permission to perform this action.');
+      return;
+    }
 
-  // Update status in the database
-  load.status = status;
-  await load.save();
+    // Update status in the database
+    load.status = status;
+    await load.save();
 
+    // Notify broker and customer about the status update
+    // await Promise.all([
+    //   sendEmail({
+    //     to: load.brokerId.email,
+    //     subject: "Load Status Update",
+    //     text: `The status of Load with Reference Number ${load.loadNumber} has been updated to ${status} by carrier ${user.company}.`,
+    //   }),
+    //   sendEmail({
+    //     to: load.customerId.email,
+    //     subject: "Load Status Update",
+    //     text: `The status of your Load with Reference Number ${load.loadNumber} has been updated to ${status}.`,
+    //   }),
+    // ]);
 
-  // Notify broker and customer about the status update
-  // await Promise.all([
-  //   sendEmail({
-  //     to: load.brokerId.email,
-  //     subject: "Load Status Update",
-  //     text: `The status of Load with Reference Number ${load.loadNumber} has been updated to ${status} by carrier ${user.company}.`,
-  //   }),
-  //   sendEmail({
-  //     to: load.customerId.email,
-  //     subject: "Load Status Update",
-  //     text: `The status of your Load with Reference Number ${load.loadNumber} has been updated to ${status}.`,
-  //   }),
-  // ]);
-
-  // Log status change in audit trail
-  // await LoadAudit.updateOne(
-  //   { loadId },
-  //   {
-  //     $push: {
-  //       statusChanges: {
-  //         previousStatus: currentStatus,
-  //         status,
-  //         changedBy,
-  //         timestamp: new Date(),
-  //       },
-  //     },
-  //   },
-  //   { upsert: true }
-  // );
+    // Log status change in audit trail
+    // await LoadAudit.updateOne(
+    //   { loadId: load._id },
+    //   {
+    //     $push: {
+    //       statusChanges: {
+    //         previousStatus: currentStatus,
+    //         status,
+    //         changedBy,
+    //         timestamp: new Date(),
+    //       },
+    //     },
+    //   },
+    //   { upsert: true }
+    // );
 
     send(res, 200, "Load status updated successfully. Notifications sent.");
   } catch (error: any) {
+    console.log(error);
     send(res, 500, "Server error");
   }
 };
+
 
 export async function deleteLoad(req: Request, res: Response): Promise<void> {
   try {

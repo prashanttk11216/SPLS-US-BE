@@ -6,6 +6,7 @@ import {
   editLoad, 
   getAssignedLoads, 
   getLoads, 
+  notifyRateConfirmCustomer, 
   requestLoad, 
   updateLoadStatus 
 } from "./controller";
@@ -31,6 +32,10 @@ loadRouter.put("/:loadId/status", updateLoadStatus);
 // Route for carriers to request a load
 // Carriers can indicate interest in transporting a load, awaiting broker approval or assignment
 loadRouter.post("/request/:loadId", requestLoad);
+
+
+loadRouter.post("/rateconfirm/:loadId", notifyRateConfirmCustomer);
+
 
 // Route for brokers to assign a load to a specific carrier
 // Brokers can directly assign loads to carriers after they request or based on availability

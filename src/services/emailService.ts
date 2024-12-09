@@ -21,7 +21,7 @@ export const sendNotificationEmail = async (options: SendEmailOptions): Promise<
 
   // Send the email
   await transporter.sendMail({
-    from: "",
+    from: "avipatel4love6@gmail.com",
     to,
     subject,
     html: emailContent,
