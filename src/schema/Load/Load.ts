@@ -12,20 +12,32 @@ const StopSchema = z.object({
   lateDropoffDate: z.string().optional(),
 });
 
+const originSchema = z.object({
+  str: z.string().min(1, { message: "Origin is required" }), // String representation
+  lat: z.number().min(-90).max(90).optional().refine((val) => val !== undefined, { message: "Latitude is required" }), // Latitude
+  lng: z.number().min(-180).max(180).optional().refine((val) => val !== undefined, { message: "Longitude is required" }), // Longitude
+});
+
+const destinationSchema = z.object({
+  str: z.string().min(1, { message: "destination is required" }), // String representation
+  lat: z.number().min(-90).max(90).optional().refine((val) => val !== undefined, { message: "Latitude is required" }), // Latitude
+  lng: z.number().min(-180).max(180).optional().refine((val) => val !== undefined, { message: "Longitude is required" }), // Longitude
+});
+
 // Base schema for load operations
 const baseLoadSchema = z.object({
   customerId: z.string().optional(),
   brokerId: z.string().optional(),
   carrierId: z.string().optional(),
 
-  origin: z.string().min(1, { message: "Origin is required" }),
+  origin: originSchema,
   originEarlyPickupDate: z.string({ required_error: "Origin early pickup date is required" }),
   originLatePickupDate: z.string().optional(),
   originEarlyPickupTime: z.string().optional(),
   originLatePickupTime: z.string().optional(),
   originStops: z.array(StopSchema).optional(),
 
-  destination: z.string().min(1, { message: "Destination is required" }),
+  destination: destinationSchema,
   destinationEarlyDropoffDate: z.string().optional(),
   destinationLateDropoffDate: z.string().optional(),
   destinationEarlyDropoffTime: z.string().optional(),
@@ -44,6 +56,7 @@ const baseLoadSchema = z.object({
   distance: z.number().min(0, { message: "Distance must be a positive number" }).optional(),
   pieces: z.number().min(0, { message: "Pieces must be a positive number" }).optional(),
   pallets: z.number().min(0, { message: "Pallets must be a positive number" }).optional(),
+  miles: z.number().min(0, { message: "Miles must be a positive number" }).optional(),
   loadOption: z.string().optional(),
   specialInstructions: z.string().optional(),
   commodity: z.union([z.nativeEnum(Commodity), z.string().max(0)]).optional(),

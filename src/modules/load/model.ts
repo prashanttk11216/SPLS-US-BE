@@ -23,6 +23,18 @@ const destinationStopSchema: Schema = new Schema({
   lateDropoffTime: { type: Date },
 });
 
+const originSchema = new mongoose.Schema({
+  str: { type: String, required: true }, // String representation
+  lat: { type: Number, required: true }, // Latitude
+  lng: { type: Number, required: true }, // Longitude
+});
+
+const destinationSchema = new mongoose.Schema({
+  str: { type: String, required: true }, // String representation
+  lat: { type: Number, required: true }, // Latitude
+  lng: { type: Number, required: true }, // Longitude
+});
+
 
 const LoadSchema: Schema = new Schema<ILoad>(
   {
@@ -30,14 +42,20 @@ const LoadSchema: Schema = new Schema<ILoad>(
     brokerId: { type: Schema.Types.ObjectId, ref: "User" },
     carrierId: { type: Schema.Types.ObjectId, ref: "User" },
     
-    origin: { type: String, required: true },
+    origin: { 
+      type: originSchema, 
+      required: true 
+    },
     originEarlyPickupDate: { type: Date, required: true },
     originLatePickupDate: { type: Date },
     originEarlyPickupTime: { type: Date },
     originLatePickupTime: { type: Date },
     originStops: [originStopSchema],
 
-    destination: { type: String, required: true },
+    destination:{ 
+      type: destinationSchema, 
+      required: true 
+    },
     destinationEarlyDropoffDate: { type: Date },
     destinationLateDropoffDate: { type: Date },
     destinationEarlyDropoffTime: { type: Date },
@@ -57,6 +75,7 @@ const LoadSchema: Schema = new Schema<ILoad>(
     distance: { type: Number, min: 0 },
     pieces: { type: Number, min: 0 },
     pallets: { type: Number, min: 0 },
+    miles: { type: Number, min: 0 },
     loadOption: { type: String },
     specialInstructions: { type: String },
     commodity: { type: String, enum: [...Object.values(Commodity), ""] },

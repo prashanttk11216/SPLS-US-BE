@@ -8,7 +8,11 @@ export interface ILoad extends Document {
   brokerId?: mongoose.Types.ObjectId;
   adminId?: mongoose.Types.ObjectId;
   carrierId?: mongoose.Types.ObjectId;
-  origin: string;
+  origin: {
+    str: string; // String representation of the address
+    lat: number; // Latitude
+    lng: number; // Longitude
+  }; 
   originEarlyPickupDate: Date;
   originLatePickupDate?: Date;
   originEarlyPickupTime?: Date;
@@ -20,7 +24,11 @@ export interface ILoad extends Document {
     earlyPickupTime?: Date;
     latePickupTime?: Date;
   }[];
-  destination: string;
+  destination: {
+    str: string; // String representation of the address
+    lat: number; // Latitude
+    lng: number; // Longitude
+  };
   destinationEarlyDropoffDate?: Date;
   destinationLateDropoffDate?: Date;
   destinationEarlyDropoffTime?: Date;
@@ -43,6 +51,7 @@ export interface ILoad extends Document {
   distance?: number;
   pieces?: number;
   pallets?: number;
+  miles?: number;
   loadOption?: string;
   specialInstructions?: string;
   commodity: Commodity;
