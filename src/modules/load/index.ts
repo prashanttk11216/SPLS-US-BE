@@ -7,6 +7,7 @@ import {
   getAssignedLoads, 
   getLoads, 
   notifyRateConfirmCustomer, 
+  refreshAgeForLoads, 
   requestLoad, 
   updateLoadStatus 
 } from "./controller";
@@ -51,6 +52,15 @@ loadRouter.get("/assigned", getAssignedLoads);
 
 
 loadRouter.delete("/:loadId", deleteLoad);
+
+
+/**
+ * @route   POST /api/loads/refresh-age
+ * @desc    Refresh the age of single or multiple loads
+ * @access  Protected
+ */
+loadRouter.post("/refresh-age", refreshAgeForLoads);
+
 
 
 export default loadRouter;

@@ -58,6 +58,7 @@ export interface ILoad extends Document {
   loadNumber?: number;
   postedBy?: mongoose.Types.ObjectId;
   status: string;
+  age?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 }

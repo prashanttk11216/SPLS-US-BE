@@ -93,11 +93,51 @@ const LoadSchema: Schema = new Schema<ILoad>(
       ], 
       default: 'Draft' 
     },
+    age: { type: Date }, // Persistent Age Field
   },
   {
     timestamps: true,
     versionKey: false,
   }
 );
+
+LoadSchema.set("toJSON", { virtuals: true });
+LoadSchema.set("toObject", { virtuals: true });
+LoadSchema.virtual<ILoad>("formattedAge").get(function () {
+  if (!this.age) return null; // Ensure age is defined
+  const now = new Date(); // Current date
+  const ageDate = new Date(this.age); // Age as a Date object
+
+  // Difference in time (in milliseconds)
+  const differenceInTime = now.getTime() - ageDate.getTime();
+
+  // Calculate time in different units
+  const ageInSeconds = Math.floor(differenceInTime / 1000); // Seconds
+  const ageInMinutes = Math.floor(ageInSeconds / 60); // Minutes
+  const ageInHours = Math.floor(ageInMinutes / 60); // Hours
+  const ageInDays = Math.floor(ageInHours / 24); // Days
+  const ageInMonths = Math.floor(ageInDays / 30.44); // Approximate months
+  const ageInYears = Math.floor(ageInDays / 365.25); // Approximate years
+
+  // Create a formatted string with abbreviations
+  if (ageInYears > 0) {
+    return `${ageInYears}y`; // Years
+  } else if (ageInMonths > 0) {
+    return `${ageInMonths}m`; // Months
+  } else if (ageInDays > 0) {
+    return `${ageInDays}d`; // Days
+  } else if (ageInHours > 0) {
+    return `${ageInHours}h`; // Hours
+  } else if (ageInMinutes > 0) {
+    return `${ageInMinutes}m`; // Minutes
+  } else if (ageInSeconds > 0) {
+    return `${ageInSeconds}s`; // Seconds
+  }
+
+  return null;
+});
+
+
+
 
 export const LoadModel = mongoose.model<ILoad>("Load", LoadSchema);
