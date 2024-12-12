@@ -432,7 +432,8 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
         "isActive",
         "name",
         "company",
-        "createdAt"
+        "createdAt",
+        "employeeId"
       ]; // Define valid fields
 
       sortFields.forEach((field) => {
