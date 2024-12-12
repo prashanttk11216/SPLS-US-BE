@@ -410,17 +410,38 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
       ];
     }
 
-    // Sorting parameters
-    const sortBy = (req.query.sortBy as string) || "createdAt"; // Default to sorting by createdAt
-    const sortOrder: SortOrder = req.query.sortOrder === "desc" ? -1 : 1; // Default to ascending order
-
-    const sortOptions: { [key: string]: SortOrder } = { [sortBy]: sortOrder };
 
     // Add all other query parameters dynamically into filters
     for (const [key, value] of Object.entries(req.query)) {
-      if (!['page', 'limit', 'role', 'brokerId', 'sortBy', 'sortOrder', 'search'].includes(key)) {
+      if (!['page', 'limit', 'role', 'brokerId', 'sort', 'search'].includes(key)) {
         filters[key] = value;
       }
+    }
+
+
+
+    // Sort functionality
+    const sortQuery = req.query.sort as string | undefined;
+    let sortOptions: [string, SortOrder][] = []; // Array of tuples for sorting
+
+    if (sortQuery) {
+      const sortFields = sortQuery.split(","); // Support multiple sort fields (comma-separated)
+      const validFields = [
+        "email",
+        "primaryNumber",
+        "isActive",
+        "name",
+        "company",
+        "createdAt"
+      ]; // Define valid fields
+
+      sortFields.forEach((field) => {
+        const [key, order] = field.split(":");
+        if (validFields.includes(key)) {
+          // Push the sort field and direction as a tuple
+          sortOptions.push([key, order === "desc" ? -1 : 1]);
+        }
+      });
     }
 
     // Total count and user retrieval with pagination and sorting

@@ -233,6 +233,7 @@ export async function getLoads(req: Request, res: Response): Promise<void> {
         "loadNumber",
         "origin.str",
         "destination.str",
+        "originEarlyPickupDate",
         "createdAt",
         "miles",
         "allInRate",
