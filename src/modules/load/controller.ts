@@ -172,7 +172,7 @@ export async function getLoads(req: Request, res: Response): Promise<void> {
       const load = await LoadModel.findOne({ _id: loadId }).populate(
         "brokerId",
         "company"
-      );
+      ).populate("postedBy");
 
       if (!load) {
         send(res, 404, "Load not found");
@@ -259,7 +259,7 @@ export async function getLoads(req: Request, res: Response): Promise<void> {
     if ((originLat && originLng) || (destinationLat && destinationLng)) {
       // Fetch all loads matching base filters
       const allLoads = await LoadModel.find(filters)
-        .populate("brokerId", "company")
+        .populate("brokerId", "company").populate("postedBy", {"firstName": 1, "lastName": 1, "company": 1, "email": 1, "primaryNumber": 1})
         .skip(skip)
         .limit(limit)
         .sort(sortOptions);
@@ -324,7 +324,7 @@ export async function getLoads(req: Request, res: Response): Promise<void> {
 
     // Execute the query with pagination, sorting, and populating relevant fields
     const loads = await LoadModel.find(filters)
-      .populate("brokerId", "company")
+      .populate("brokerId", "company").populate("postedBy",  {"firstName": 1, "lastName": 1, "company": 1, "email": 1, "primaryNumber": 1})
       .skip(skip)
       .limit(limit)
       .sort(sortOptions); // Cast to the correct type if needed
