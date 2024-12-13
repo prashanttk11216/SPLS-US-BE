@@ -203,6 +203,26 @@ export async function getLoads(req: Request, res: Response): Promise<void> {
       filters.status = LoadStatus.Published;
     }
 
+    
+    if (req.query.fromDate || req.query.toDate) {
+      const fromDate = req.query.fromDate ? new Date(req.query.fromDate as string) : undefined;
+      const toDate = req.query.toDate ? new Date(req.query.toDate as string) : undefined;
+    
+      filters.createdAt = {};
+    
+      if (fromDate) {
+        filters.createdAt.$gte = fromDate; // Records on or after fromDate
+      }
+    
+      if (toDate) {
+        filters.createdAt.$lte = toDate; // Records on or before toDate
+      }
+    }
+    
+
+   
+
+
     // Add all other query parameters dynamically into filters
     for (const [key, value] of Object.entries(req.query)) {
       if (
@@ -216,6 +236,8 @@ export async function getLoads(req: Request, res: Response): Promise<void> {
           "originLng",
           "destinationLat",
           "destinationLng",
+          "fromDate",
+          "toDate"
         ].includes(key)
       ) {
         filters[key] = value;
@@ -249,8 +271,8 @@ export async function getLoads(req: Request, res: Response): Promise<void> {
     }
 
     // Handle Deadhead Origin and Deadhead Destination filters
-    const dhoRadius = parseFloat(req.query.dhoRadius as string); // Radius for Deadhead Origin filter
-    const dhdRadius = parseFloat(req.query.dhdRadius as string); // Radius for Deadhead Destination filter
+    const dhoRadius = parseFloat(req.query.dhoRadius as string) || 0; // Radius for Deadhead Origin filter
+    const dhdRadius = parseFloat(req.query.dhdRadius as string)  || 0; // Radius for Deadhead Destination filter
     const originLat = parseFloat(req.query.originLat as string);
     const originLng = parseFloat(req.query.originLng as string);
     const destinationLat = parseFloat(req.query.destinationLat as string);
@@ -291,6 +313,7 @@ export async function getLoads(req: Request, res: Response): Promise<void> {
                 load.destination.lng
               )
             : undefined;
+console.log(dhoDistance, dhdDistance, dhoRadius );
 
         const isWithinDHO =
           dhoDistance !== undefined ? dhoDistance <= dhoRadius : true;
