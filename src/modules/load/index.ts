@@ -6,6 +6,7 @@ import {
   editLoad, 
   getAssignedLoads, 
   getLoads, 
+  notifyCarrierAboutLoads, 
   notifyRateConfirmCustomer, 
   refreshAgeForLoads, 
   requestLoad, 
@@ -17,6 +18,10 @@ const loadRouter = express.Router();
 // Route to create a new load
 // This route is typically used by a broker or admin to create load details in the system
 loadRouter.post("/", createLoad);
+
+
+loadRouter.post("/create-alert", notifyCarrierAboutLoads);
+
 
 // Route to edit an existing load
 // This route allows authorized users to modify load information after creation

@@ -434,35 +434,45 @@ export async function notifyRateConfirmCustomer(
   res: Response
 ): Promise<void> {
   try {
-    const user = (req as Request & { user?: IUser })?.user;
-
+    // Fetch load details and populate broker email
     const load = await LoadModel.findById(req.params.loadId).populate<{
       brokerId: IUser;
     }>("brokerId", "email");
+
     if (!load) {
       send(res, 404, "Load not found");
       return;
     }
 
+    // Validate load status
     if (load.status !== LoadStatus.PendingResponse) {
       send(res, 400, "Only Pending Response loads can be chosen by Broker");
       return;
     }
 
+    const { emails } = req.body;
+
+    // Validate email input
+    if (!emails || !emails.length || !emails[0]) {
+      send(res, 400, "Customer email is required to send a notification");
+      return;
+    }
+
+    // Prepare dynamic email data
     const emailOptions: SendEmailOptions = {
-      to: "", // Replace with the customer's email address
+      to: emails, // First email in the list
       subject: "Load Rate Confirmation",
       templateName: "loadRateConfirmation",
       templateData: {
-        customerName: "John Doe", // Replace with the customer's name
-        loadNumber: "LR12345",
-        origin: "Los Angeles, CA",
-        destination: "Houston, TX",
-        rate: "2000", // Replace with the confirmed rate
+        loadNumber: load.loadNumber || "N/A", // Replace with actual load number
+        origin: load.origin || "Unknown Origin",
+        destination: load.destination || "Unknown Destination",
+        rate: load.allInRate || "N/A", // Replace with the confirmed rate
       },
     };
 
-    // await sendNotificationEmail(emailOptions);
+    // Send email notification
+    await sendNotificationEmail(emailOptions);
 
     send(
       res,
@@ -470,10 +480,105 @@ export async function notifyRateConfirmCustomer(
       "Rate confirmation has been submitted successfully. The customer has been notified."
     );
   } catch (error) {
-    console.log(error);
-    send(res, 500, "Server error");
+    console.error("Error notifying customer:", error);
+    send(res, 500, "An unexpected server error occurred.");
   }
 }
+
+
+export async function notifyCarrierAboutLoads(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    const { loadIds, emails, internalCarrier } = req.body;
+
+    // Validate load IDs and emails
+    if (!loadIds || !loadIds.length) {
+      send(res, 400, "At least one load ID is required.");
+      return;
+    }
+
+    if ((!emails || !emails.length) && !internalCarrier) {
+      send(
+        res,
+        400,
+        "At least one carrier email or internalCarrier flag is required."
+      );
+      return;
+    }
+
+    // Fetch all load details for the given load IDs
+    const loads = await LoadModel.find({ _id: { $in: loadIds } }).populate<{
+      brokerId: IUser;
+    }>("brokerId", "email");
+
+    if (!loads.length) {
+      send(res, 404, "No loads found for the provided IDs.");
+      return;
+    }
+
+    // Collect carrier emails
+    let carrierEmails: string[] = [];
+
+    if (emails && emails.length) {
+      carrierEmails.push(...emails);
+    }
+
+    // If internalCarrier flag is true, fetch all active carriers
+    if (internalCarrier) {
+      const activeCarriers = await UserModel.find(
+        { role: UserRole.CARRIER, isActive: true },
+        "email"
+      );
+
+      const internalCarrierEmails = activeCarriers
+        .map((carrier) => carrier.email)
+        .filter((email) => email); // Ensure no empty emails
+
+      carrierEmails.push(...internalCarrierEmails);
+    }
+
+    // Remove duplicates by converting to a Set and back to an array
+    carrierEmails = Array.from(new Set(carrierEmails));
+
+    if (!carrierEmails.length) {
+      send(res, 400, "No valid carrier emails found to notify.");
+      return;
+    }
+
+    // Combine all loads into a single email template data
+    const loadDetails = loads.map((load) => ({
+      loadNumber: load.loadNumber || "N/A",
+      origin: load.origin || "Unknown Origin",
+      destination: load.destination || "Unknown Destination",
+      rate: load.allInRate || "N/A",
+    }));
+
+    // Prepare email options with combined load details
+    const emailOptions: SendEmailOptions = {
+      to: carrierEmails,
+      subject: "New Load Notifications",
+      templateName: "multipleLoadNotification", // Template for multiple loads
+      templateData: {
+        loads: loadDetails,
+      },
+    };
+
+    // Send a single email
+    await sendNotificationEmail(emailOptions);
+
+    send(
+      res,
+      200,
+      "Load notifications have been sent successfully to the carriers."
+    );
+  } catch (error) {
+    console.error("Error notifying carriers:", error);
+    send(res, 500, "An unexpected server error occurred.");
+  }
+}
+
 
 /**
  * Assign a carrier to a load and update its status to 'in_transit'.

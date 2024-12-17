@@ -8,7 +8,9 @@ export interface EmailData {
 }
 
 export interface SendEmailOptions {
-  to: string;
+  to?: string | string[],
+  cc?: string | string[],
+  bcc?: string | string[],
   subject: string;
   templateName: string;
   templateData: EmailData;
