@@ -13,6 +13,7 @@ import connectDB from "./db/connection";
 import errorHandler from "./middleware/errorHandler";
 import logger from "./utils/logger";
 import path from "path";
+import sgMail from '@sendgrid/mail'
 
 const app: Express = express();
 const PORT: number = env.PORT || 5000;
@@ -23,6 +24,8 @@ if (!env.MONGO_URI || !env.PORT) {
   logger.error("Required environment variables are missing");
   process.exit(1);
 }
+
+sgMail.setApiKey(env.SEND_GRID_EMAIL_API);
 
 // Middleware configuration
 app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
