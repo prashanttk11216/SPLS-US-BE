@@ -1,13 +1,8 @@
 import mongoose, { Schema, Document } from "mongoose";
 import { Equipment } from "../../enums/Equipment";
-import { Mode } from "../../enums/Mode";
-import { Commodity } from "../../enums/Commodity";
-import { ILoad } from "../../types/Load";
+import { ITruck } from "../../types/Truck";
 
 // Define Load interface extending Mongoose's Document
-
-
-
 
 const originSchema = new mongoose.Schema({
   str: { type: String, required: true }, // String representation
@@ -21,48 +16,29 @@ const destinationSchema = new mongoose.Schema({
   lng: { type: Number, required: true }, // Longitude
 });
 
-
-const LoadSchema: Schema = new Schema<ILoad>(
+const TruckSchema: Schema = new Schema<ITruck>(
   {
-    customerId: { type: Schema.Types.ObjectId, ref: "User" },
     brokerId: { type: Schema.Types.ObjectId, ref: "User" },
-    carrierId: { type: Schema.Types.ObjectId, ref: "User" },
-    
-    origin: { 
-      type: originSchema, 
-      required: true 
+    origin: {
+      type: originSchema,
+      required: true,
     },
     originEarlyPickupDate: { type: Date, required: true },
-    destination:{ 
-      type: destinationSchema, 
-      required: true 
+    destination: {
+      type: destinationSchema,
+      required: true,
     },
 
     equipment: { type: String, enum: Equipment, required: true },
-    mode: { type: String, enum: Mode, required: true },
-    
+
     allInRate: { type: Number, min: 0 },
-    customerRate: { type: Number, min: 0 },
     weight: { type: Number, min: 0 },
     length: { type: Number, min: 0 },
     miles: { type: Number, min: 0 },
-    loadOption: { type: String },
     specialInstructions: { type: String },
-    commodity: { type: String, enum: [...Object.values(Commodity), ""] },
-    loadNumber: { type: Number, unique: true },
+    referenceNumber: { type: Number, unique: true },
 
     postedBy: { type: Schema.Types.ObjectId, ref: "User" },
-    status: { 
-      type: String, 
-      enum: [
-        'Draft', 
-        'Published', 
-        'Pending Response', 
-        'Deal Closed',
-        'Cancelled'
-      ], 
-      default: 'Draft' 
-    },
     age: { type: Date }, // Persistent Age Field
   },
   {
@@ -71,9 +47,9 @@ const LoadSchema: Schema = new Schema<ILoad>(
   }
 );
 
-LoadSchema.set("toJSON", { virtuals: true });
-LoadSchema.set("toObject", { virtuals: true });
-LoadSchema.virtual<ILoad>("formattedAge").get(function () {
+TruckSchema.set("toJSON", { virtuals: true });
+TruckSchema.set("toObject", { virtuals: true });
+TruckSchema.virtual<ITruck>("formattedAge").get(function () {
   if (!this.age) return null; // Ensure age is defined
   const now = new Date(); // Current date
   const ageDate = new Date(this.age); // Age as a Date object
@@ -107,7 +83,4 @@ LoadSchema.virtual<ILoad>("formattedAge").get(function () {
   return null;
 });
 
-
-
-
-export const LoadModel = mongoose.model<ILoad>("Load", LoadSchema);
+export const TruckModal = mongoose.model<ITruck>("Truck", TruckSchema);
