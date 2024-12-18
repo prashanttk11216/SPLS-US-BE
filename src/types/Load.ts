@@ -48,7 +48,6 @@ export interface ILoad extends Document {
   length?: number;
   width?: number;
   height?: number;
-  distance?: number;
   pieces?: number;
   pallets?: number;
   miles?: number;

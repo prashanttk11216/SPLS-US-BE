@@ -53,7 +53,6 @@ const baseLoadSchema = z.object({
   length: z.number().min(0, { message: "Length is required and must be a positive number" }).optional(),
   width: z.number().min(0, { message: "Width is required and must be a positive number" }).optional(),
   height: z.number().min(0, { message: "Height must be a positive number" }).optional(),
-  distance: z.number().min(0, { message: "Distance must be a positive number" }).optional(),
   pieces: z.number().min(0, { message: "Pieces must be a positive number" }).optional(),
   pallets: z.number().min(0, { message: "Pallets must be a positive number" }).optional(),
   miles: z.number().min(0, { message: "Miles must be a positive number" }).optional(),

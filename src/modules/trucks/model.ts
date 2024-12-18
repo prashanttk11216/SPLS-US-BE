@@ -7,21 +7,7 @@ import { ILoad } from "../../types/Load";
 // Define Load interface extending Mongoose's Document
 
 
-const originStopSchema: Schema = new Schema({
-  address: { type: String },
-  earlyPickupDate: { type: Date },
-  latePickupDate: { type: Date },
-  earlyPickupTime: { type: Date },
-  latePickupTime: { type: Date },
-});
 
-const destinationStopSchema: Schema = new Schema({
-  address: { type: String },
-  earlyDropoffDate: { type: Date },
-  lateDropoffDate: { type: Date },
-  earlyDropoffTime: { type: Date },
-  lateDropoffTime: { type: Date },
-});
 
 const originSchema = new mongoose.Schema({
   str: { type: String, required: true }, // String representation
@@ -47,21 +33,10 @@ const LoadSchema: Schema = new Schema<ILoad>(
       required: true 
     },
     originEarlyPickupDate: { type: Date, required: true },
-    originLatePickupDate: { type: Date },
-    originEarlyPickupTime: { type: Date },
-    originLatePickupTime: { type: Date },
-    originStops: [originStopSchema],
-
     destination:{ 
       type: destinationSchema, 
       required: true 
     },
-    destinationEarlyDropoffDate: { type: Date },
-    destinationLateDropoffDate: { type: Date },
-    destinationEarlyDropoffTime: { type: Date },
-    destinationLateDropoffTime: { type: Date },
-
-    destinationStops: [destinationStopSchema],
 
     equipment: { type: String, enum: Equipment, required: true },
     mode: { type: String, enum: Mode, required: true },
@@ -70,10 +45,6 @@ const LoadSchema: Schema = new Schema<ILoad>(
     customerRate: { type: Number, min: 0 },
     weight: { type: Number, min: 0 },
     length: { type: Number, min: 0 },
-    width: { type: Number, min: 0 },
-    height: { type: Number, min: 0 },
-    pieces: { type: Number, min: 0 },
-    pallets: { type: Number, min: 0 },
     miles: { type: Number, min: 0 },
     loadOption: { type: String },
     specialInstructions: { type: String },
