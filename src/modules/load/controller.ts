@@ -137,7 +137,10 @@ export async function createLoadHandler(
  * @param req - Express request object containing the load ID and updated fields.
  * @param res - Express response object to send back results or errors.
  */
-export async function updateLoadHandler(req: Request, res: Response): Promise<void> {
+export async function updateLoadHandler(
+  req: Request,
+  res: Response
+): Promise<void> {
   try {
     // Step 1: Validate incoming data using Zod schema
     const validatedData = updateLoadSchema.parse(req.body); // Ensure the incoming data matches the expected format
@@ -174,7 +177,10 @@ export async function updateLoadHandler(req: Request, res: Response): Promise<vo
  * @param req - Express request object containing filter and pagination query parameters.
  * @param res - Express response object to send back loads and pagination metadata.
  */
-export async function fetchLoadsHandler(req: Request, res: Response): Promise<void> {
+export async function fetchLoadsHandler(
+  req: Request,
+  res: Response
+): Promise<void> {
   try {
     const { loadId } = req.params;
 
@@ -401,7 +407,10 @@ export async function fetchLoadsHandler(req: Request, res: Response): Promise<vo
  * @param req - Express request object containing the load ID.
  * @param res - Express response object to send back results or errors.
  */
-export async function requestLoadHandler(req: Request, res: Response): Promise<void> {
+export async function requestLoadHandler(
+  req: Request,
+  res: Response
+): Promise<void> {
   try {
     const user = (req as Request & { user?: IUser })?.user;
 
@@ -517,7 +526,6 @@ export async function confirmRateWithCustomerHandler(
     );
   } catch (error) {
     console.error("Error notifying customer:", error);
-
     // Respond with a server error
     send(res, 500, "An unexpected server error occurred.");
   }
@@ -641,7 +649,10 @@ export async function notifyCarrierAboutLoadHandler(
  * @param req - Express request object containing load ID and new status.
  * @param res - Express response object to send back results or errors.
  */
-export async function updateLoadStatusHandler(req: Request, res: Response): Promise<void> {
+export async function updateLoadStatusHandler(
+  req: Request,
+  res: Response
+): Promise<void> {
   try {
     const user = (req as Request & { user?: IUser })?.user;
     const { status } = req.body;
@@ -725,7 +736,7 @@ export async function updateLoadStatusHandler(req: Request, res: Response): Prom
     console.log(error);
     send(res, 500, "Server error");
   }
-};
+}
 
 /**
  * Deletes a load by its ID.
@@ -734,7 +745,10 @@ export async function updateLoadStatusHandler(req: Request, res: Response): Prom
  * @param req - Express request object containing the load ID as a route parameter.
  * @param res - Express response object to send back results or errors.
  */
-export async function deleteLoadHandler(req: Request, res: Response): Promise<void> {
+export async function deleteLoadHandler(
+  req: Request,
+  res: Response
+): Promise<void> {
   try {
     const { loadId } = req.params;
 
@@ -760,10 +774,10 @@ export async function deleteLoadHandler(req: Request, res: Response): Promise<vo
  * @param req - Express request object containing an array of load IDs in the body.
  * @param res - Express response object to send back results or errors.
  */
-export const refreshLoadAgeHandler = async (
+export async function refreshLoadAgeHandler(
   req: Request,
   res: Response
-): Promise<void> => {
+): Promise<void> {
   try {
     const { ids } = req.body;
 
@@ -803,7 +817,7 @@ export const refreshLoadAgeHandler = async (
       "An unexpected server error occurred while refreshing load age"
     );
   }
-};
+}
 
 /**
  * Assign a carrier to a load and update its status to 'in_transit'.
