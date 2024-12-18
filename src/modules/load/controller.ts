@@ -33,17 +33,23 @@ const validTransitions: Record<LoadStatus, LoadStatus[]> = {
  * @param req - Express request object containing load details.
  * @param res - Express response object to send back results or errors.
  */
-export async function createLoad(req: Request, res: Response): Promise<void> {
+export async function createLoadHandler(
+  req: Request,
+  res: Response
+): Promise<void> {
   try {
-    const validatedData = createLoadSchema.parse(req.body); // Validate with Zod
+    // Validate incoming request data using Zod schema
+    const validatedData = createLoadSchema.parse(req.body);
 
-    const user = (req as Request & { user?: IUser })?.user;
+    const user = (req as Request & { user?: IUser })?.user; // Extract user data from request
 
-    // Additional validation for broker role
+    // Handle the case where the user is a customer
     if (user?.role === UserRole.CUSTOMER) {
+      // Associate the load with the customer and broker (if applicable)
       validatedData.brokerId = user.brokerId;
       validatedData.customerId = user._id;
 
+      // Validate if the customer exists and is not deleted
       const customer = await UserModel.findById(validatedData.customerId);
       if (!customer || customer.isDeleted) {
         send(res, 404, "Customer not found");
@@ -51,37 +57,35 @@ export async function createLoad(req: Request, res: Response): Promise<void> {
       }
     }
 
-    // Additional validation for broker role
+    // Ensure that broker/admin assigns a 'postedBy' field if missing
     if (
       !validatedData.postedBy &&
       (user?.role === UserRole.BROKER_ADMIN ||
         user?.role === UserRole.BROKER_USER)
     ) {
-      validatedData.postedBy = user._id;
+      validatedData.postedBy = user._id; // Assign the current broker/admin as the poster
     }
 
+    // Set the brokerId based on the user's role
     if (user?.role === UserRole.BROKER_ADMIN) {
       validatedData.brokerId = user._id;
-    }
-
-    if (user?.role === UserRole.BROKER_USER) {
+    } else if (user?.role === UserRole.BROKER_USER) {
       validatedData.brokerId = user.brokerId;
     }
 
+    // Set default load status for non-customer roles
     if (user?.role !== UserRole.CUSTOMER) {
-      validatedData.status = LoadStatus.Published;
+      validatedData.status = LoadStatus.Published; // Brokers/Admins can publish loads
     }
 
-    // Handle `loadNumber` logic
+    // Handle load number logic
     if (validatedData.loadNumber) {
-      console.log("here", validatedData.loadNumber);
-
-      // Check if the provided loadNumber already exists
+      // Validate if the provided loadNumber already exists in the database
       const existingLoad = await LoadModel.findOne({
         loadNumber: validatedData.loadNumber,
       });
       if (existingLoad) {
-        // Fetch the next available load number
+        // If the loadNumber exists, suggest the next available number
         const lastLoad = await LoadModel.findOne({
           loadNumber: { $exists: true, $ne: null },
         })
@@ -92,32 +96,36 @@ export async function createLoad(req: Request, res: Response): Promise<void> {
         send(
           res,
           400,
-          `The provided loadNumber is already in use. Please use a unique loadNumber. Suggested loadNumber: ${nextLoadNumber}`
+          `The provided loadNumber is already in use. Suggested loadNumber: ${nextLoadNumber}`
         );
         return;
       }
     } else {
-      // Auto-generate loadNumber if not provided
+      // Auto-generate load number if not provided
       const lastLoad = await LoadModel.findOne({
         loadNumber: { $exists: true, $ne: null },
       })
         .sort({ loadNumber: -1 })
         .select("loadNumber");
-      console.log(lastLoad);
 
       validatedData.loadNumber = lastLoad ? lastLoad.loadNumber! + 1 : 1; // Start from 1 if no loads exist
     }
 
+    // Create and save the new load entry
     const load = new LoadModel({ ...validatedData });
-    load.age = new Date();
+    load.age = new Date(); // Set the creation date (age) of the load
 
-    await load.save();
-    send(res, 201, "Load created successfully", load);
+    await load.save(); // Save the load to the database
+
+    send(res, 201, "Load created successfully", load); // Send a success response with the created load
   } catch (error) {
+    // Handle validation errors from Zod
     if (error instanceof z.ZodError) {
       send(res, 400, "Invalid input data", { errors: error.errors });
       return;
     }
+
+    // Handle any other unexpected errors
     send(res, 500, "Server error");
   }
 }
@@ -129,29 +137,32 @@ export async function createLoad(req: Request, res: Response): Promise<void> {
  * @param req - Express request object containing the load ID and updated fields.
  * @param res - Express response object to send back results or errors.
  */
-export async function editLoad(req: Request, res: Response): Promise<void> {
+export async function updateLoadHandler(req: Request, res: Response): Promise<void> {
   try {
-    const validatedData = updateLoadSchema.parse(req.body);
+    // Step 1: Validate incoming data using Zod schema
+    const validatedData = updateLoadSchema.parse(req.body); // Ensure the incoming data matches the expected format
 
+    // Step 2: Find and update the load by its ID
     const updatedLoad = await LoadModel.findByIdAndUpdate(
-      req.params.loadId,
-      validatedData,
-      {
-        new: true,
-      }
+      req.params.loadId, // Load ID from the URL parameter
+      validatedData, // Updated load details from the request body
+      { new: true } // Return the updated document rather than the original
     );
 
+    // Step 3: Check if the load exists and was updated
     if (!updatedLoad) {
-      send(res, 404, "Load not found");
+      send(res, 404, "Load not found"); // Return an error if the load is not found
       return;
     }
 
-    send(res, 200, "Load updated successfully", updatedLoad);
+    // Step 4: Send a success response with the updated load
+    send(res, 200, "Load updated successfully", updatedLoad); // Return the updated load data
   } catch (error) {
+    // Step 5: Handle errors based on the type of error
     if (error instanceof z.ZodError) {
-      send(res, 400, "Validation error", error.errors);
+      send(res, 400, "Validation error", error.errors); // If Zod validation fails, send a 400 response with validation errors
     } else {
-      send(res, 500, "Server error");
+      send(res, 500, "Server error"); // If any other error occurs, send a 500 response
     }
   }
 }
@@ -163,16 +174,15 @@ export async function editLoad(req: Request, res: Response): Promise<void> {
  * @param req - Express request object containing filter and pagination query parameters.
  * @param res - Express response object to send back loads and pagination metadata.
  */
-export async function getLoads(req: Request, res: Response): Promise<void> {
+export async function fetchLoadsHandler(req: Request, res: Response): Promise<void> {
   try {
     const { loadId } = req.params;
 
     if (loadId) {
       // Fetch a single load by its ID
-      const load = await LoadModel.findOne({ _id: loadId }).populate(
-        "brokerId",
-        "company"
-      ).populate("postedBy");
+      const load = await LoadModel.findOne({ _id: loadId })
+        .populate("brokerId", "company")
+        .populate("postedBy");
 
       if (!load) {
         send(res, 404, "Load not found");
@@ -193,36 +203,34 @@ export async function getLoads(req: Request, res: Response): Promise<void> {
 
     // Role-based query conditions
     if (user?.role === UserRole.BROKER_USER) {
-      filters.postedBy = user._id;
+      filters.postedBy = user._id; // Filter by broker's posted loads
     } else if (user?.role === UserRole.CUSTOMER) {
-      filters.customerId = user._id;
+      filters.customerId = user._id; // Filter by customer-specific loads
     }
 
     // Show only Published Loads to the Carrier
     if (user?.role === UserRole.CARRIER) {
-      filters.status = LoadStatus.Published;
+      filters.status = LoadStatus.Published; // Only published loads for carriers
     }
 
-    
+    // Apply date range filter if provided
     if (req.query.fromDate || req.query.toDate) {
-      const fromDate = req.query.fromDate ? new Date(req.query.fromDate as string) : undefined;
-      const toDate = req.query.toDate ? new Date(req.query.toDate as string) : undefined;
-    
+      const fromDate = req.query.fromDate
+        ? new Date(req.query.fromDate as string)
+        : undefined;
+      const toDate = req.query.toDate
+        ? new Date(req.query.toDate as string)
+        : undefined;
       filters.createdAt = {};
-    
+
       if (fromDate) {
-        filters.createdAt.$gte = fromDate; // Records on or after fromDate
+        filters.createdAt.$gte = fromDate; // Filter records on or after fromDate
       }
-    
+
       if (toDate) {
-        filters.createdAt.$lte = toDate; // Records on or before toDate
+        filters.createdAt.$lte = toDate; // Filter records on or before toDate
       }
     }
-    
-
-   
-
-
     // Add all other query parameters dynamically into filters
     for (const [key, value] of Object.entries(req.query)) {
       if (
@@ -237,16 +245,16 @@ export async function getLoads(req: Request, res: Response): Promise<void> {
           "destinationLat",
           "destinationLng",
           "fromDate",
-          "toDate"
+          "toDate",
         ].includes(key)
       ) {
-        filters[key] = value;
+        filters[key] = value; // Add non-pagination, non-special filters
       }
     }
 
-    // Sort functionality
+    // Handle sorting functionality
     const sortQuery = req.query.sort as string | undefined;
-    let sortOptions: [string, SortOrder][] = []; // Array of tuples for sorting
+    let sortOptions: [string, SortOrder][] = []; // Sorting options as an array of tuples
 
     if (sortQuery) {
       const sortFields = sortQuery.split(","); // Support multiple sort fields (comma-separated)
@@ -259,29 +267,36 @@ export async function getLoads(req: Request, res: Response): Promise<void> {
         "createdAt",
         "miles",
         "allInRate",
-      ]; // Define valid fields
+      ]; // Define valid fields for sorting
 
       sortFields.forEach((field) => {
         const [key, order] = field.split(":");
         if (validFields.includes(key)) {
-          // Push the sort field and direction as a tuple
+          // Add valid sort fields and direction to sortOptions
           sortOptions.push([key, order === "desc" ? -1 : 1]);
         }
       });
     }
 
-    // Handle Deadhead Origin and Deadhead Destination filters
+    // Handle Deadhead Origin and Destination filters
     const dhoRadius = parseFloat(req.query.dhoRadius as string) || 0; // Radius for Deadhead Origin filter
-    const dhdRadius = parseFloat(req.query.dhdRadius as string)  || 0; // Radius for Deadhead Destination filter
+    const dhdRadius = parseFloat(req.query.dhdRadius as string) || 0; // Radius for Deadhead Destination filter
     const originLat = parseFloat(req.query.originLat as string);
     const originLng = parseFloat(req.query.originLng as string);
     const destinationLat = parseFloat(req.query.destinationLat as string);
     const destinationLng = parseFloat(req.query.destinationLng as string);
 
+    // Fetch all loads matching base filters
     if ((originLat && originLng) || (destinationLat && destinationLng)) {
-      // Fetch all loads matching base filters
       const allLoads = await LoadModel.find(filters)
-        .populate("brokerId", "company").populate("postedBy", {"firstName": 1, "lastName": 1, "company": 1, "email": 1, "primaryNumber": 1})
+        .populate("brokerId", "company")
+        .populate("postedBy", {
+          firstName: 1,
+          lastName: 1,
+          company: 1,
+          email: 1,
+          primaryNumber: 1,
+        })
         .skip(skip)
         .limit(limit)
         .sort(sortOptions);
@@ -313,7 +328,8 @@ export async function getLoads(req: Request, res: Response): Promise<void> {
                 load.destination.lng
               )
             : undefined;
-console.log(dhoDistance, dhdDistance, dhoRadius );
+
+        console.log(dhoDistance, dhdDistance, dhoRadius);
 
         const isWithinDHO =
           dhoDistance !== undefined ? dhoDistance <= dhoRadius : true;
@@ -331,7 +347,7 @@ console.log(dhoDistance, dhdDistance, dhoRadius );
       const totalCount = enhancedLoads.length;
       const totalPages = Math.ceil(totalCount / limit);
 
-      let pagination = {
+      const pagination = {
         page,
         limit,
         totalPages,
@@ -342,21 +358,25 @@ console.log(dhoDistance, dhdDistance, dhoRadius );
       return;
     }
 
-    console.log("Filters:", filters);
-    console.log("Sort Options:", sortOptions);
-
     // Execute the query with pagination, sorting, and populating relevant fields
     const loads = await LoadModel.find(filters)
-      .populate("brokerId", "company").populate("postedBy",  {"firstName": 1, "lastName": 1, "company": 1, "email": 1, "primaryNumber": 1})
+      .populate("brokerId", "company")
+      .populate("postedBy", {
+        firstName: 1,
+        lastName: 1,
+        company: 1,
+        email: 1,
+        primaryNumber: 1,
+      })
       .skip(skip)
       .limit(limit)
-      .sort(sortOptions); // Cast to the correct type if needed
+      .sort(sortOptions);
 
     // Get total count for pagination metadata
     const totalCount = await LoadModel.countDocuments(filters);
     const totalPages = Math.ceil(totalCount / limit);
 
-    let pagination = {
+    const pagination = {
       page,
       limit,
       totalPages,
@@ -365,6 +385,7 @@ console.log(dhoDistance, dhdDistance, dhoRadius );
 
     send(res, 200, "Loads retrieved successfully", loads, pagination);
   } catch (error) {
+    // Handle errors gracefully
     if (error instanceof z.ZodError) {
       send(res, 400, "Invalid filter parameters", { errors: error.errors });
       return;
@@ -380,7 +401,7 @@ console.log(dhoDistance, dhdDistance, dhoRadius );
  * @param req - Express request object containing the load ID.
  * @param res - Express response object to send back results or errors.
  */
-export async function requestLoad(req: Request, res: Response): Promise<void> {
+export async function requestLoadHandler(req: Request, res: Response): Promise<void> {
   try {
     const user = (req as Request & { user?: IUser })?.user;
 
@@ -390,90 +411,105 @@ export async function requestLoad(req: Request, res: Response): Promise<void> {
       return;
     }
 
+    // Fetch the load by its ID
     const load = await LoadModel.findById(req.params.loadId).populate<{
       brokerId: IUser;
     }>("brokerId", "email");
+
+    // Check if the load exists
     if (!load) {
       send(res, 404, "Load not found");
       return;
     }
 
+    // Ensure the load status is "Published" before allowing the carrier to express interest
     if (load.status !== LoadStatus.Published) {
       send(res, 400, "Only Published loads can be chosen by carriers");
       return;
     }
 
+    // Set up the email notification options
     const emailOptions: SendEmailOptions = {
-      to: "",
+      to: load.brokerId.email, // Send the notification to the broker's email
       subject: "Carrier Interested in Load",
       templateName: "carrierInterestedInLoad",
       templateData: {
-        company: "abd",
-        loadNumber: "CD",
-        origin: "Ccdc",
-        destination: "Cdjc",
+        company: user.company, // Assuming the carrier has a 'company' property
+        loadNumber: load.loadNumber,
+        origin: load.origin.str,
+        destination: load.destination.str,
       },
     };
 
+    // Send email notification to the broker (uncomment this when email functionality is ready)
     // await sendNotificationEmail(emailOptions);
 
+    // Respond back to the carrier confirming their interest in the load
     send(
       res,
       200,
       "Interest in the load has been submitted successfully. The broker has been notified."
     );
   } catch (error) {
-    console.log(error);
-
+    console.error(error);
     send(res, 500, "Server error");
   }
 }
 
-export async function notifyRateConfirmCustomer(
+/**
+ * Notify a customer about rate confirmation for a load.
+ * Sends an email to the customer with load details and confirmed rate information.
+ *
+ * @param req - Express request object containing load ID and customer email(s).
+ * @param res - Express response object to send back results or errors.
+ */
+export async function confirmRateWithCustomerHandler(
   req: Request,
   res: Response
 ): Promise<void> {
   try {
-    // Fetch load details and populate broker email
+    // Fetch load details and populate broker's email
     const load = await LoadModel.findById(req.params.loadId).populate<{
       brokerId: IUser;
     }>("brokerId", "email");
 
+    // Check if the load exists
     if (!load) {
       send(res, 404, "Load not found");
       return;
     }
 
-    // Validate load status
+    // Validate that the load is in "PendingResponse" status
     if (load.status !== LoadStatus.PendingResponse) {
-      send(res, 400, "Only Pending Response loads can be chosen by Broker");
+      send(res, 400, "Only Pending Response loads can be chosen by a Broker");
       return;
     }
 
     const { emails } = req.body;
 
-    // Validate email input
-    if (!emails || !emails.length || !emails[0]) {
+    // Validate the presence and format of email addresses
+    if (!emails || !Array.isArray(emails) || !emails.length || !emails[0]) {
       send(res, 400, "Customer email is required to send a notification");
       return;
     }
 
-    // Prepare dynamic email data
+    // Prepare dynamic email content for the customer
     const emailOptions: SendEmailOptions = {
-      to: emails, // First email in the list
+      to: emails[0], // Sending to the first email in the list (can be extended to multiple)
       subject: "Load Rate Confirmation",
       templateName: "loadRateConfirmation",
       templateData: {
-        loadNumber: load.loadNumber || "N/A", // Replace with actual load number
-        origin: load.origin || "Unknown Origin",
-        destination: load.destination || "Unknown Destination",
-        rate: load.allInRate || "N/A", // Replace with the confirmed rate
+        loadNumber: load.loadNumber || "N/A", // Load number or default if not available
+        origin: load.origin || "Unknown Origin", // Load origin or default
+        destination: load.destination || "Unknown Destination", // Load destination or default
+        rate: load.allInRate || "N/A", // Confirmed rate or default
       },
     };
 
-    // Send email notification
+    // Send the email notification
     await sendNotificationEmail(emailOptions);
 
+    // Respond with success
     send(
       res,
       200,
@@ -481,34 +517,46 @@ export async function notifyRateConfirmCustomer(
     );
   } catch (error) {
     console.error("Error notifying customer:", error);
+
+    // Respond with a server error
     send(res, 500, "An unexpected server error occurred.");
   }
 }
 
-
-export async function notifyCarrierAboutLoads(
+/**
+ * Notify carriers about new loads.
+ * Sends load details to the specified carrier emails or all active internal carriers.
+ *
+ * @param req - Express request object containing load IDs, carrier emails, and internalCarrier flag.
+ * @param res - Express response object to send back results or errors.
+ */
+export async function notifyCarrierAboutLoadHandler(
   req: Request,
   res: Response
 ): Promise<void> {
   try {
     const { loadIds, emails, internalCarrier } = req.body;
 
-    // Validate load IDs and emails
-    if (!loadIds || !loadIds.length) {
+    // Validate that at least one load ID is provided
+    if (!loadIds || !Array.isArray(loadIds) || !loadIds.length) {
       send(res, 400, "At least one load ID is required.");
       return;
     }
 
-    if ((!emails || !emails.length) && !internalCarrier) {
+    // Validate that either emails or internalCarrier is provided
+    if (
+      (!emails || !Array.isArray(emails) || !emails.length) &&
+      !internalCarrier
+    ) {
       send(
         res,
         400,
-        "At least one carrier email or internalCarrier flag is required."
+        "At least one carrier email or the internalCarrier flag is required."
       );
       return;
     }
 
-    // Fetch all load details for the given load IDs
+    // Fetch load details for the provided load IDs
     const loads = await LoadModel.find({ _id: { $in: loadIds } }).populate<{
       brokerId: IUser;
     }>("brokerId", "email");
@@ -521,25 +569,27 @@ export async function notifyCarrierAboutLoads(
     // Collect carrier emails
     let carrierEmails: string[] = [];
 
+    // Add provided emails if available
     if (emails && emails.length) {
       carrierEmails.push(...emails);
     }
 
-    // If internalCarrier flag is true, fetch all active carriers
+    // Fetch internal carriers' emails if the flag is true
     if (internalCarrier) {
       const activeCarriers = await UserModel.find(
         { role: UserRole.CARRIER, isActive: true },
         "email"
       );
 
+      // Add internal carriers' emails, ensuring no empty values
       const internalCarrierEmails = activeCarriers
         .map((carrier) => carrier.email)
-        .filter((email) => email); // Ensure no empty emails
+        .filter((email) => email);
 
       carrierEmails.push(...internalCarrierEmails);
     }
 
-    // Remove duplicates by converting to a Set and back to an array
+    // Remove duplicate emails
     carrierEmails = Array.from(new Set(carrierEmails));
 
     if (!carrierEmails.length) {
@@ -547,7 +597,7 @@ export async function notifyCarrierAboutLoads(
       return;
     }
 
-    // Combine all loads into a single email template data
+    // Prepare load details for the email template
     const loadDetails = loads.map((load) => ({
       loadNumber: load.loadNumber || "N/A",
       origin: load.origin || "Unknown Origin",
@@ -555,7 +605,7 @@ export async function notifyCarrierAboutLoads(
       rate: load.allInRate || "N/A",
     }));
 
-    // Prepare email options with combined load details
+    // Configure email options with combined load details
     const emailOptions: SendEmailOptions = {
       to: carrierEmails,
       subject: "New Load Notifications",
@@ -565,9 +615,10 @@ export async function notifyCarrierAboutLoads(
       },
     };
 
-    // Send a single email
+    // Send the email to carriers
     await sendNotificationEmail(emailOptions);
 
+    // Respond with success
     send(
       res,
       200,
@@ -575,129 +626,28 @@ export async function notifyCarrierAboutLoads(
     );
   } catch (error) {
     console.error("Error notifying carriers:", error);
+
+    // Respond with a server error
     send(res, 500, "An unexpected server error occurred.");
   }
 }
 
-
 /**
- * Assign a carrier to a load and update its status to 'in_transit'.
- * Only brokers can assign loads to carriers.
+ * Allows carriers to update the status of loads assigned to them.
+ * Only authorized users (e.g., carriers or brokers) can perform this action.
+ * Validates the status transition and ensures the load exists and is assigned to the user.
+ * Sends notifications to the broker and customer upon a successful status update.
  *
- * @param req - Express request object containing load and carrier IDs.
+ * @param req - Express request object containing load ID and new status.
  * @param res - Express response object to send back results or errors.
  */
-export async function assignLoadToCarrier(
-  req: Request,
-  res: Response
-): Promise<void> {
-  try {
-    const user = (req as Request & { user?: IUser })?.user;
-
-    // Ensure the user is a broker
-    if (
-      user?.role !== UserRole.BROKER_ADMIN &&
-      user?.role !== UserRole.BROKER_USER
-    ) {
-      send(res, 403, "Only brokers can assign loads to carriers");
-      return;
-    }
-
-    const { loadId, carrierId } = req.body;
-    const load = await LoadModel.findById(loadId);
-
-    if (!load) {
-      send(res, 404, "Load not found");
-      return;
-    }
-
-    if (load.status !== "pending") {
-      send(res, 400, "Only pending loads can be assigned to carriers");
-      return;
-    }
-
-    load.carrierId = carrierId;
-    load.status = "in_transit";
-    await load.save();
-
-    send(res, 200, "Load assigned to carrier successfully", { load });
-  } catch (error) {
-    send(res, 500, "Server error");
-  }
-}
-
-/**
- * Retrieve a specific load's details by its ID.
- *
- * @param req - Express request object containing load ID.
- * @param res - Express response object to send back results or errors.
- */
-export async function getAssignedLoads(
-  req: Request,
-  res: Response
-): Promise<void> {
-  try {
-    const user = (req as Request & { user?: IUser })?.user;
-
-    if (user?.role !== UserRole.CARRIER) {
-      send(res, 403, "Only carriers can view their assigned loads");
-      return;
-    }
-
-    // Parse pagination parameters from the query
-    const page = parseInt(req.query.page as string, 10) || 1;
-    const limit = parseInt(req.query.limit as string, 10) || 10;
-    const skip = (page - 1) * limit;
-
-    // Retrieve loads with pagination
-    const loads = await LoadModel.find({ carrierId: user._id })
-      .skip(skip)
-      .limit(limit);
-
-    // Get total count for pagination metadata
-    const totalLoads = await LoadModel.countDocuments({ carrierId: user._id });
-    const totalPages = Math.ceil(totalLoads / limit);
-
-    let pagination = {
-      totalLoads,
-      totalPages,
-      currentPage: page,
-      pageSize: loads.length,
-    };
-
-    send(
-      res,
-      200,
-      "Assigned loads retrieved successfully",
-      {
-        loads,
-      },
-      pagination
-    );
-  } catch (error) {
-    send(res, 500, "Server error");
-  }
-}
-
-/**
- * This function allows carriers to update the status of loads assigned to them.
- * Only carriers who are assigned to a load can change its status.
- * The function validates the provided status and ensures that the load exists
- * and is assigned to the current carrier before proceeding with the update.
- *
- * After updating the load status, notifications (email) are sent to the broker
- * and customer about the status change. (Email sending functionality is commented out for now).
- *
- * @param req - Express request object containing the load ID and the new status.
- * @param res - Express response object to send back results or errors.
- */
-export const updateLoadStatus = async (req: Request, res: Response) => {
+export async function updateLoadStatusHandler(req: Request, res: Response): Promise<void> {
   try {
     const user = (req as Request & { user?: IUser })?.user;
     const { status } = req.body;
     const currentUserRole = user?.role;
-    const changedBy = user?._id;
 
+    // Fetch the load details and populate related broker and customer info
     const load = await LoadModel.findById(req.params.loadId)
       .populate<{ brokerId: IUser }>("brokerId", "email")
       .populate<{ customerId: IUser }>("customerId", "email");
@@ -709,6 +659,7 @@ export const updateLoadStatus = async (req: Request, res: Response) => {
 
     const currentStatus = load.status;
 
+    // Validate the status transition
     if (
       !validTransitions[currentStatus as LoadStatus]?.includes(
         status as LoadStatus
@@ -776,53 +727,202 @@ export const updateLoadStatus = async (req: Request, res: Response) => {
   }
 };
 
-export async function deleteLoad(req: Request, res: Response): Promise<void> {
+/**
+ * Deletes a load by its ID.
+ * Ensures the load exists before deletion and handles errors gracefully.
+ *
+ * @param req - Express request object containing the load ID as a route parameter.
+ * @param res - Express response object to send back results or errors.
+ */
+export async function deleteLoadHandler(req: Request, res: Response): Promise<void> {
   try {
-    const user = await LoadModel.findOneAndDelete({ _id: req.params.loadId });
+    const { loadId } = req.params;
 
-    if (!user) {
+    // Attempt to find and delete the load
+    const load = await LoadModel.findOneAndDelete({ _id: loadId });
+
+    if (!load) {
       send(res, 404, "Load not found or already deleted");
       return;
     }
 
     send(res, 200, "Load deleted successfully");
   } catch (error) {
-    logger.error("Unexpected error during user deletion:", error);
-    send(res, 500, "Server error");
+    logger.error("Unexpected error during load deletion:", error);
+    send(res, 500, "An unexpected server error occurred");
   }
 }
 
-// Refresh Age for Single or Multiple Loads
-export const refreshAgeForLoads = async (
+/**
+ * Refreshes the "age" timestamp for single or multiple loads.
+ * Updates the "age" field to the current date for the specified load IDs.
+ *
+ * @param req - Express request object containing an array of load IDs in the body.
+ * @param res - Express response object to send back results or errors.
+ */
+export const refreshLoadAgeHandler = async (
   req: Request,
   res: Response
 ): Promise<void> => {
   try {
-    const { ids } = req.body; // Array of Load IDs from request body
+    const { ids } = req.body;
 
+    // Validate input
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
       send(res, 400, "Invalid or missing load IDs");
       return;
     }
 
+    // Find loads matching the provided IDs
     const loads = await LoadModel.find({ _id: { $in: ids } });
 
-    if (!loads || loads.length === 0) {
+    if (loads.length === 0) {
       send(res, 404, "No loads found for the provided IDs");
       return;
     }
-    const now = new Date();
-    const updates = loads.map(async (load) => {
-      load.age = now;
 
+    const now = new Date();
+
+    // Update the "age" field for all found loads
+    const updates = loads.map((load) => {
+      load.age = now;
       return load.save();
     });
 
+    // Wait for all updates to complete
     await Promise.all(updates);
 
-    send(res, 200, `Age refreshed for ${loads.length} load(s)`, loads);
+    send(res, 200, `Age refreshed for ${loads.length} load(s)`, {
+      updatedLoads: loads,
+    });
   } catch (error) {
     logger.error("Error refreshing age for loads:", error);
-    send(res, 500, "Error refreshing age for loads");
+    send(
+      res,
+      500,
+      "An unexpected server error occurred while refreshing load age"
+    );
   }
 };
+
+/**
+ * Assign a carrier to a load and update its status to 'in_transit'.
+ * Only brokers (admin or user) are authorized to perform this action.
+ *
+ * @param req - Express request object containing load and carrier IDs.
+ * @param res - Express response object to send back results or errors.
+ */
+export async function assignLoadToCarrierHandler(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    const user = (req as Request & { user?: IUser })?.user;
+
+    // Ensure the user has a broker role
+    if (
+      user?.role !== UserRole.BROKER_ADMIN &&
+      user?.role !== UserRole.BROKER_USER
+    ) {
+      send(res, 403, "Only brokers can assign loads to carriers");
+      return;
+    }
+
+    const { loadId, carrierId } = req.body;
+
+    // Validate request payload
+    if (!loadId || !carrierId) {
+      send(res, 400, "Both load ID and carrier ID are required");
+      return;
+    }
+
+    // Fetch the load
+    const load = await LoadModel.findById(loadId);
+
+    if (!load) {
+      send(res, 404, "Load not found");
+      return;
+    }
+
+    // Ensure the load is in the correct status
+    if (load.status !== LoadStatus.Published) {
+      send(res, 400, "Only pending loads can be assigned to carriers");
+      return;
+    }
+
+    // Assign carrier and update load status
+    load.carrierId = carrierId;
+    load.status = LoadStatus.DealClosed;
+
+    await load.save();
+
+    // Respond with success and updated load details
+    send(res, 200, "Load assigned to carrier successfully", { load });
+  } catch (error) {
+    console.error("Error assigning load to carrier:", error);
+    send(res, 500, "An unexpected server error occurred.");
+  }
+}
+
+/**
+ * Retrieve the list of loads assigned to the carrier.
+ * Supports pagination with `page` and `limit` query parameters.
+ *
+ * @param req - Express request object containing load ID and pagination parameters.
+ * @param res - Express response object to send back results or errors.
+ */
+export async function getAssignedLoadsHandler(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    const user = (req as Request & { user?: IUser })?.user;
+
+    // Ensure the user is a carrier
+    if (user?.role !== UserRole.CARRIER) {
+      send(res, 403, "Only carriers can view their assigned loads");
+      return;
+    }
+
+    // Parse pagination parameters from the query
+    const page = parseInt(req.query.page as string, 10) || 1;
+    const limit = parseInt(req.query.limit as string, 10) || 10;
+
+    // Ensure valid pagination parameters
+    if (page < 1 || limit < 1) {
+      send(res, 400, "Invalid pagination parameters");
+      return;
+    }
+
+    const skip = (page - 1) * limit;
+
+    // Fetch assigned loads for the carrier with pagination
+    const loads = await LoadModel.find({ carrierId: user._id })
+      .skip(skip)
+      .limit(limit);
+
+    // Fetch total count of assigned loads for the carrier
+    const totalLoads = await LoadModel.countDocuments({ carrierId: user._id });
+
+    // Prepare pagination metadata
+    const totalPages = Math.ceil(totalLoads / limit);
+    const pagination = {
+      totalLoads,
+      totalPages,
+      currentPage: page,
+      pageSize: loads.length,
+    };
+
+    // Send response with assigned loads and pagination metadata
+    send(
+      res,
+      200,
+      "Assigned loads retrieved successfully",
+      { loads },
+      pagination
+    );
+  } catch (error) {
+    console.error("Error retrieving assigned loads:", error);
+    send(res, 500, "An unexpected server error occurred.");
+  }
+}

@@ -1,71 +1,85 @@
 import express from "express";
-import { 
-  assignLoadToCarrier, 
-  createLoad, 
-  deleteLoad, 
-  editLoad, 
-  getAssignedLoads, 
-  getLoads, 
-  notifyCarrierAboutLoads, 
-  notifyRateConfirmCustomer, 
-  refreshAgeForLoads, 
-  requestLoad, 
-  updateLoadStatus 
+import {
+  createLoadHandler,
+  updateLoadHandler,
+  deleteLoadHandler,
+  fetchLoadsHandler,
+  updateLoadStatusHandler,
+  requestLoadHandler,
+  assignLoadToCarrierHandler,
+  getAssignedLoadsHandler,
+  notifyCarrierAboutLoadHandler,
+  confirmRateWithCustomerHandler,
+  refreshLoadAgeHandler,
 } from "./controller";
 
 const loadRouter = express.Router();
 
-// Route to create a new load
-// This route is typically used by a broker or admin to create load details in the system
-loadRouter.post("/", createLoad);
+/**
+ * @route   POST /api/loads
+ * @desc    Create a new load (typically by a broker or admin)
+ */
+loadRouter.post("/", createLoadHandler);
+
+/**
+ * @route   POST /api/loads/create-alert
+ * @desc    Notify carrier about a new load alert
+ */
+loadRouter.post("/create-alert", notifyCarrierAboutLoadHandler);
+
+/**
+ * @route   PUT /api/loads/:loadId
+ * @desc    Edit an existing load
+ */
+loadRouter.put("/:loadId", updateLoadHandler);
 
 
-loadRouter.post("/create-alert", notifyCarrierAboutLoads);
+/**
+ * @route   GET /api/loads/:loadId
+ * @desc    Get details of list of all loads (potentially with filters) and specific load by ID
+ */
+loadRouter.get("/:loadId?", fetchLoadsHandler);
 
+/**
+ * @route   PUT /api/loads/:loadId/status
+ * @desc    Update the status of a specific load
+ */
+loadRouter.put("/:loadId/status", updateLoadStatusHandler);
 
-// Route to edit an existing load
-// This route allows authorized users to modify load information after creation
-loadRouter.put("/:loadId", editLoad);
-  
-// Route to retrieve all loads
-// Used to get a list of loads, potentially with filters for brokers, carriers, and customers
-loadRouter.get("/:loadId?", getLoads);
+/**
+ * @route   POST /api/loads/request/:loadId
+ * @desc    Carrier requests a load for transport
+ */
+loadRouter.post("/request/:loadId", requestLoadHandler);
 
-// Route to update the status of a load by ID
-// Allows status updates for a specific load (e.g., in-transit, delivered) based on loadId
-loadRouter.put("/:loadId/status", updateLoadStatus);
+/**
+ * @route   POST /api/loads/rateconfirm/:loadId
+ * @desc    Notify the customer about rate confirmation
+ */
+loadRouter.post("/rateconfirm/:loadId", confirmRateWithCustomerHandler);
 
-// Route for carriers to request a load
-// Carriers can indicate interest in transporting a load, awaiting broker approval or assignment
-loadRouter.post("/request/:loadId", requestLoad);
+/**
+ * @route   POST /api/loads/assign
+ * @desc    Assign a load to a specific carrier
+ */
+loadRouter.post("/assign", assignLoadToCarrierHandler);
 
+/**
+ * @route   GET /api/loads/assigned
+ * @desc    Get loads assigned to a carrier
+ */
+loadRouter.get("/assigned", getAssignedLoadsHandler);
 
-loadRouter.post("/rateconfirm/:loadId", notifyRateConfirmCustomer);
-
-
-// Route for brokers to assign a load to a specific carrier
-// Brokers can directly assign loads to carriers after they request or based on availability
-loadRouter.post("/assign", assignLoadToCarrier);
-
-// Route to get loads assigned to a carrier
-// Carriers can view the loads they’ve been assigned to handle
-loadRouter.get("/assigned", getAssignedLoads);
-
-// Route to update the load status by a carrier
-// Carriers can update their progress status on the assigned load (e.g., en-route, delivered)
-// loadRouter.get("/status", getLoadStatus);
-
-
-loadRouter.delete("/:loadId", deleteLoad);
-
+/**
+ * @route   DELETE /api/loads/:loadId
+ * @desc    Delete a specific load by ID
+ */
+loadRouter.delete("/:loadId", deleteLoadHandler);
 
 /**
  * @route   POST /api/loads/refresh-age
  * @desc    Refresh the age of single or multiple loads
- * @access  Protected
  */
-loadRouter.post("/refresh-age", refreshAgeForLoads);
-
-
+loadRouter.post("/refresh-age", refreshLoadAgeHandler);
 
 export default loadRouter;

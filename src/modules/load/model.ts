@@ -6,7 +6,6 @@ import { ILoad } from "../../types/Load";
 
 // Define Load interface extending Mongoose's Document
 
-
 const originStopSchema: Schema = new Schema({
   address: { type: String },
   earlyPickupDate: { type: Date },
@@ -35,16 +34,15 @@ const destinationSchema = new mongoose.Schema({
   lng: { type: Number, required: true }, // Longitude
 });
 
-
 const LoadSchema: Schema = new Schema<ILoad>(
   {
     customerId: { type: Schema.Types.ObjectId, ref: "User" },
     brokerId: { type: Schema.Types.ObjectId, ref: "User" },
     carrierId: { type: Schema.Types.ObjectId, ref: "User" },
-    
-    origin: { 
-      type: originSchema, 
-      required: true 
+
+    origin: {
+      type: originSchema,
+      required: true,
     },
     originEarlyPickupDate: { type: Date, required: true },
     originLatePickupDate: { type: Date },
@@ -52,9 +50,9 @@ const LoadSchema: Schema = new Schema<ILoad>(
     originLatePickupTime: { type: Date },
     originStops: [originStopSchema],
 
-    destination:{ 
-      type: destinationSchema, 
-      required: true 
+    destination: {
+      type: destinationSchema,
+      required: true,
     },
     destinationEarlyDropoffDate: { type: Date },
     destinationLateDropoffDate: { type: Date },
@@ -65,7 +63,7 @@ const LoadSchema: Schema = new Schema<ILoad>(
 
     equipment: { type: String, enum: Equipment, required: true },
     mode: { type: String, enum: Mode, required: true },
-    
+
     allInRate: { type: Number, min: 0 },
     customerRate: { type: Number, min: 0 },
     weight: { type: Number, min: 0 },
@@ -81,16 +79,16 @@ const LoadSchema: Schema = new Schema<ILoad>(
     loadNumber: { type: Number, unique: true },
 
     postedBy: { type: Schema.Types.ObjectId, ref: "User" },
-    status: { 
-      type: String, 
+    status: {
+      type: String,
       enum: [
-        'Draft', 
-        'Published', 
-        'Pending Response', 
-        'Deal Closed',
-        'Cancelled'
-      ], 
-      default: 'Draft' 
+        "Draft",
+        "Published",
+        "Pending Response",
+        "Deal Closed",
+        "Cancelled",
+      ],
+      default: "Draft",
     },
     age: { type: Date }, // Persistent Age Field
   },
@@ -135,8 +133,5 @@ LoadSchema.virtual<ILoad>("formattedAge").get(function () {
 
   return null;
 });
-
-
-
 
 export const LoadModel = mongoose.model<ILoad>("Load", LoadSchema);
