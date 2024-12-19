@@ -58,6 +58,8 @@ export interface ILoad extends Document {
   postedBy?: mongoose.Types.ObjectId;
   status: string;
   age?: Date;
+  dhoDistance?: number;
+  dhdDistance?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
