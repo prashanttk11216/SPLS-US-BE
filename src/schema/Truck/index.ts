@@ -6,7 +6,7 @@ export const createTruckSchema = z.object({
     lat: z.number(),
     lng: z.number(),
   }),
-  originEarlyPickupDate: z.string(),
+  availableDate: z.string(),
   destination: z.object({
     str: z.string(),
     lat: z.number(),
@@ -16,8 +16,7 @@ export const createTruckSchema = z.object({
   allInRate: z.number().min(0).optional(),
   weight: z.number().min(0).optional(),
   length: z.number().min(0).optional(),
-  miles: z.number().min(0).optional(),
-  specialInstructions: z.string().optional(),
+  comments: z.string().optional(),
   referenceNumber: z.number().optional(),
   brokerId: z.string().optional(),
   postedBy: z.string().optional(),

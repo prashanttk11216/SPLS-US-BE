@@ -153,9 +153,8 @@ export async function getTrucks(req: Request, res: Response): Promise<void> {
         "referenceNumber",
         "origin.str",
         "destination.str",
-        "originEarlyPickupDate",
+        "availableDate",
         "createdAt",
-        "miles",
         "allInRate",
       ];
 
@@ -288,17 +287,7 @@ export async function getMatchingTrucks(
       // Exact match for equipment type (mandatory)
       equipment: load.equipment,
 
-      // Date range matching: Check if truck's pickup window overlaps with load's
-      $or: [
-        {
-          originEarlyPickupDate: { $lte: load.originLatePickupDate },
-          originLatePickupDate: { $gte: load.originEarlyPickupDate },
-        },
-        {
-          originEarlyPickupDate: { $gte: load.originEarlyPickupDate },
-          originLatePickupDate: { $lte: load.originLatePickupDate },
-        },
-      ],
+      availableDate: { $eq: load.originLatePickupDate },
 
       // Ensure trucks can handle the load's weight and size
       weight: { $gte: load.weight },
@@ -306,7 +295,7 @@ export async function getMatchingTrucks(
 
       // Optional: Match special instructions (case-insensitive)
       ...(load.specialInstructions && {
-        specialInstructions: {
+        comments: {
           $regex: load.specialInstructions,
           $options: "i",
         },
@@ -316,7 +305,7 @@ export async function getMatchingTrucks(
       .sort({
         "origin.lat": 1,
         "destination.lat": 1,
-        originEarlyPickupDate: 1,
+        availableDate: 1,
       })
       // Limit the results to avoid overwhelming the response
       .skip(skip)
@@ -357,7 +346,7 @@ export async function getMatchingTrucks(
         .sort({
           "origin.lat": 1,
           "destination.lat": 1,
-          originEarlyPickupDate: 1,
+          availableDate: 1,
         })
         .skip(skip)
         .limit(limit);

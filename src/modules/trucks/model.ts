@@ -23,7 +23,7 @@ const TruckSchema: Schema = new Schema<ITruck>(
       type: originSchema,
       required: true,
     },
-    originEarlyPickupDate: { type: Date, required: true },
+    availableDate: { type: Date, required: true },
     destination: {
       type: destinationSchema,
       required: true,
@@ -35,7 +35,7 @@ const TruckSchema: Schema = new Schema<ITruck>(
     weight: { type: Number, min: 0 },
     length: { type: Number, min: 0 },
     miles: { type: Number, min: 0 },
-    specialInstructions: { type: String },
+    comments: { type: String },
     referenceNumber: { type: Number, unique: true },
 
     postedBy: { type: Schema.Types.ObjectId, ref: "User" },
