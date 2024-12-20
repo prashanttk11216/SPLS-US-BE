@@ -7,6 +7,8 @@ import { z } from "zod";
 import { SortOrder } from "mongoose";
 import { createTruckSchema, updateTruckSchema } from "../../schema/Truck";
 import { LoadModel } from "../load/model";
+import { calculateDistance } from "../../utils/globalHelper";
+import { ITruck } from "../../types/Truck";
 
 // Create Truck API
 export async function createTruck(req: Request, res: Response): Promise<void> {
@@ -250,116 +252,128 @@ export async function getMatchingTrucks(
     // Fetch the load details from the database
     const load = await LoadModel.findById(loadId);
     if (!load) {
+      // Send a 404 response if the load is not found
       send(res, 404, "Load not found");
       return;
     }
 
-    // Default pagination values
+    // Default pagination values (page 1 and limit 10)
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    // Define radius in degrees (~11 km; can be adjusted as needed)
-    const radiusInDegrees = 0.1;
+    // Filters based on the load's strict matching criteria
+    const filters: Record<string, any> = {
+      equipment: load.equipment, // Compulsory match on equipment type
+      availableDate: { $eq: load.originEarlyPickupDate }, // Match the exact pickup date
+    };
 
-    // Fetch matching trucks based on strict criteria
-    let trucks = await TruckModal.find({
-      // Match trucks near the load's origin within the specified radius
-      "origin.lat": {
-        $gte: load.origin.lat - radiusInDegrees,
-        $lte: load.origin.lat + radiusInDegrees,
-      },
-      "origin.lng": {
-        $gte: load.origin.lng - radiusInDegrees,
-        $lte: load.origin.lng + radiusInDegrees,
-      },
-
-      // Match trucks near the load's destination within the specified radius
-      "destination.lat": {
-        $gte: load.destination.lat - radiusInDegrees,
-        $lte: load.destination.lat + radiusInDegrees,
-      },
-      "destination.lng": {
-        $gte: load.destination.lng - radiusInDegrees,
-        $lte: load.destination.lng + radiusInDegrees,
-      },
-
-      // Exact match for equipment type (mandatory)
-      equipment: load.equipment,
-
-      availableDate: { $eq: load.originLatePickupDate },
-
-      // Ensure trucks can handle the load's weight and size
-      weight: { $gte: load.weight },
-      length: { $gte: load.length },
-
-      // Optional: Match special instructions (case-insensitive)
-      ...(load.specialInstructions && {
-        comments: {
-          $regex: load.specialInstructions,
-          $options: "i",
-        },
-      }),
-    })
-      // Sort by proximity and pickup date for better ranking
-      .sort({
-        "origin.lat": 1,
-        "destination.lat": 1,
-        availableDate: 1,
-      })
-      // Limit the results to avoid overwhelming the response
-      .skip(skip)
-      .limit(limit);
-
-    // Implement fallback search with relaxed criteria if no strict matches found
-    if (trucks.length === 0) {
-      trucks = await TruckModal.find({
-        // Maintain equipment compatibility (non-negotiable)
-        equipment: load.equipment,
-        weight: { $gte: load.weight },
-        length: { $gte: load.length },
-
-        // Relaxed origin or destination matching
-        $or: [
-          {
-            "origin.lat": {
-              $gte: load.origin.lat - 2 * radiusInDegrees,
-              $lte: load.origin.lat + 2 * radiusInDegrees,
-            },
-            "origin.lng": {
-              $gte: load.origin.lng - 2 * radiusInDegrees,
-              $lte: load.origin.lng + 2 * radiusInDegrees,
-            },
-          },
-          {
-            "destination.lat": {
-              $gte: load.destination.lat - 2 * radiusInDegrees,
-              $lte: load.destination.lat + 2 * radiusInDegrees,
-            },
-            "destination.lng": {
-              $gte: load.destination.lng - 2 * radiusInDegrees,
-              $lte: load.destination.lng + 2 * radiusInDegrees,
-            },
-          },
-        ],
-      })
-        .sort({
-          "origin.lat": 1,
-          "destination.lat": 1,
-          availableDate: 1,
-        })
-        .skip(skip)
-        .limit(limit);
+    // Add weight and length conditions to $or if provided
+    if (load.weight || load.length) {
+      filters.$or = [];
+      if (load.weight) {
+        filters.$or.push({ weight: { $gte: load.weight } });
+      }
+      if (load.length) {
+        filters.$or.push({ length: { $gte: load.length } });
+      }
     }
 
-    // Handle the scenario where no matches were found
+    console.log(filters);
+
+    // Handle sorting functionality
+    const sortQuery = req.query.sort as string | undefined;
+    let sortOptions: [string, SortOrder][] = []; // Sorting options as an array of tuples
+
+    if (sortQuery) {
+      const sortFields = sortQuery.split(","); // Support multiple sort fields (comma-separated)
+      const validFields = [
+        "age",
+        "referenceNumber",
+        "origin.str",
+        "destination.str",
+        "availableDate",
+        "createdAt",
+        "weight",
+        "length",
+        "allInRate",
+      ]; // Define valid fields for sorting
+
+      sortFields.forEach((field) => {
+        const [key, order] = field.split(":");
+        if (validFields.includes(key)) {
+          // Add valid sort fields and direction to sortOptions
+          sortOptions.push([key, order === "desc" ? -1 : 1]);
+        }
+      });
+    }
+
+    console.log(sortOptions);
+    
+
+    // Fetch matching trucks from the database based on filters
+    let trucks = await TruckModal.find(filters)
+      .sort(sortOptions)
+      .skip(skip) // Pagination: skip records
+      .limit(limit); // Pagination: limit number of results
+
+    // Handle the case where no matching trucks are found
     if (trucks.length === 0) {
       send(res, 404, "No matching trucks found");
       return;
     }
 
-    // Total count for pagination metadata
-    const totalCount = trucks.length;
+    const dhoRadius = 500; // Distance radius for origin (DHO)
+    const dhdRadius = 500; // Distance radius for destination (DHD)
+
+    // console.log(trucks);
+
+    // Process the trucks to calculate distances and filter based on proximity
+    const enhancedTrucks = trucks.reduce<ITruck[]>((result, truck) => {
+      // Calculate the DHO distance (from load origin to truck origin)
+      const dhoDistance =
+        load.origin.lat && load.origin.lng
+          ? calculateDistance(
+              load.origin.lat,
+              load.origin.lng,
+              truck.origin.lat,
+              truck.origin.lng
+            )
+          : undefined;
+
+      // Calculate the DHD distance (from load destination to truck destination)
+      const dhdDistance =
+        load.destination.lat && load.destination.lng && truck?.destination?.lat && truck?.destination?.lng
+          ? calculateDistance(
+              load.destination.lat,
+              load.destination.lng,
+              truck.destination.lat,
+              truck.destination.lng
+            )
+          : undefined;
+
+      // Check if truck is within DHO and DHD radius
+      const isWithinDHO = dhoDistance !== undefined ? dhoDistance <= dhoRadius : false;
+      const isWithinDHD = dhdDistance !== undefined ? dhdDistance <= dhdRadius : false;
+
+      console.log(dhoDistance, isWithinDHO, dhdDistance, isWithinDHD);
+
+      // Add the truck to the result array if it matches the proximity criteria
+      if (isWithinDHO) {
+        result.push({ ...truck.toObject(), dhoDistance, dhdDistance });
+      }
+
+      return result;
+    }, []);
+
+    // Map trucks to set a default destination as 'anywhere' if missing
+    const trucksWithDestination = enhancedTrucks.map((truck) => ({
+      ...truck, // Ensure Mongoose object is converted to a plain JavaScript object
+      destination: truck.destination ? truck.destination : "Anywhere", // Default destination as 'anywhere' if missing
+    }));
+
+    // Calculate total count for pagination metadata
+    const totalCount = trucksWithDestination.length;
     const totalPages = Math.ceil(totalCount / limit);
 
     const pagination = {
@@ -369,11 +383,12 @@ export async function getMatchingTrucks(
       totalCount,
     };
 
-    // Send the matched trucks as the response
-    send(res, 200, "Matching trucks found", trucks, pagination);
+    // Send the matched trucks as the response along with pagination metadata
+    send(res, 200, "Matching trucks found", trucksWithDestination, pagination);
   } catch (error) {
-    // Handle unexpected errors gracefully
+    // Handle any unexpected errors gracefully and log them
     console.error("Error fetching matching trucks:", error);
     send(res, 500, "Server error");
   }
 }
+

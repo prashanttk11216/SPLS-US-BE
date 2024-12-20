@@ -1,7 +1,7 @@
 import { ObjectId } from "mongoose";
 import { Equipment } from "../enums/Equipment";
 
-export interface ITruck {
+export interface ITruck extends Document {
   brokerId?: ObjectId; // Reference to the broker (optional)
   origin: {
     str: string; // String representation of the origin
@@ -10,7 +10,7 @@ export interface ITruck {
   };
   availableDate: Date; // Early pickup date for the origin
 
-  destination: {
+  destination?: {
     str: string; // String representation of the destination
     lat: number; // Latitude of the destination
     lng: number; // Longitude of the destination
@@ -30,4 +30,7 @@ export interface ITruck {
 
   // Virtual properties
   formattedAge?: string; // Human-readable age (e.g., "2d", "3h", etc.)
+
+  dhoDistance?: number;
+  dhdDistance?: number;
 }

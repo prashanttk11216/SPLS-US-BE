@@ -11,9 +11,9 @@ const originSchema = new mongoose.Schema({
 });
 
 const destinationSchema = new mongoose.Schema({
-  str: { type: String, required: true }, // String representation
-  lat: { type: Number, required: true }, // Latitude
-  lng: { type: Number, required: true }, // Longitude
+  str: { type: String, required: false }, // String representation
+  lat: { type: Number, required: false }, // Latitude
+  lng: { type: Number, required: false }, // Longitude
 });
 
 const TruckSchema: Schema = new Schema<ITruck>(
@@ -26,7 +26,7 @@ const TruckSchema: Schema = new Schema<ITruck>(
     availableDate: { type: Date, required: true },
     destination: {
       type: destinationSchema,
-      required: true,
+      required: false,
     },
 
     equipment: { type: String, enum: Equipment, required: true },
