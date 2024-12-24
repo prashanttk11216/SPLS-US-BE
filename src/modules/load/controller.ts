@@ -652,9 +652,9 @@ export async function notifyCarrierAboutLoadHandler(
     
       if (load.equipment) formattedLoad.equipment = load.equipment;
       if (load.mode) formattedLoad.mode = load.mode;
-      if (load.allInRate) formattedLoad.allInRate = load.allInRate;
-      if (load.weight) formattedLoad.weight = load.weight;
-      if (load.length) formattedLoad.length = load.length;
+      if (load.allInRate) formattedLoad.allInRate = "$"+load.allInRate;
+      if (load.weight) formattedLoad.weight = (load.weight + "lbs");
+      if (load.length) formattedLoad.length = (load.length + "ft");
       if (load.width) formattedLoad.width = load.width;
       if (load.height) formattedLoad.height = load.height;
       if (load.pieces) formattedLoad.pieces = load.pieces;
