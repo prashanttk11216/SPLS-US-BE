@@ -4,12 +4,29 @@ import { Mode } from "../../enums/Mode";
 import { Commodity } from "../../enums/Commodity";
 
 // Common schema for Stop objects
-const StopSchema = z.object({
-  address: z.string().optional(),
+const OriginStopSchema = z.object({
+  address: z.object({
+    str: z.string().min(1, { message: "address is required" }), // String representation
+    lat: z.number().min(-90).max(90).optional().refine((val) => val !== undefined, { message: "Latitude is required" }), // Latitude
+    lng: z.number().min(-180).max(180).optional().refine((val) => val !== undefined, { message: "Longitude is required" }), // Longitude
+  }).optional(),
   earlyPickupDate: z.string().optional(),
   latePickupDate: z.string().optional(),
+  earlyPickupTime: z.string().optional(),
+  latePickupTime: z.string().optional(),
+});
+
+
+const DestinationStopSchema = z.object({
+  address: z.object({
+    str: z.string().min(1, { message: "address is required" }), // String representation
+    lat: z.number().min(-90).max(90).optional().refine((val) => val !== undefined, { message: "Latitude is required" }), // Latitude
+    lng: z.number().min(-180).max(180).optional().refine((val) => val !== undefined, { message: "Longitude is required" }), // Longitude
+  }).optional(),
   earlyDropoffDate: z.string().optional(),
   lateDropoffDate: z.string().optional(),
+  earlyDropoffTime: z.string().optional(),
+  lateDropoffTime: z.string().optional(),
 });
 
 const originSchema = z.object({
@@ -35,14 +52,14 @@ const baseLoadSchema = z.object({
   originLatePickupDate: z.string().optional(),
   originEarlyPickupTime: z.string().optional(),
   originLatePickupTime: z.string().optional(),
-  originStops: z.array(StopSchema).optional(),
+  originStops: z.array(OriginStopSchema).optional(),
 
   destination: destinationSchema,
   destinationEarlyDropoffDate: z.string().optional(),
   destinationLateDropoffDate: z.string().optional(),
   destinationEarlyDropoffTime: z.string().optional(),
   destinationLateDropoffTime: z.string().optional(),
-  destinationStops: z.array(StopSchema).optional(),
+  destinationStops: z.array(DestinationStopSchema).optional(),
 
   equipment: z.nativeEnum(Equipment, { required_error: "Equipment is required" }),
   mode: z.nativeEnum(Mode, { required_error: "Mode is required" }),

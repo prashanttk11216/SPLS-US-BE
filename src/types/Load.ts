@@ -18,7 +18,11 @@ export interface ILoad extends Document {
   originEarlyPickupTime?: Date;
   originLatePickupTime?: Date;
   originStops?: {
-    address: string;
+    address: {
+      str: string; // String representation of the address
+      lat: number; // Latitude
+      lng: number; // Longitude
+    };
     earlyPickupDate?: Date;
     latePickupDate?: Date;
     earlyPickupTime?: Date;
@@ -34,7 +38,11 @@ export interface ILoad extends Document {
   destinationEarlyDropoffTime?: Date;
   destinationLateDropoffTime?: Date;
   destinationStops?: {
-    address: string;
+    address: {
+      str: string; // String representation of the address
+      lat: number; // Latitude
+      lng: number; // Longitude
+    };
     earlyDropoffDate?: Date;
     lateDropoffDate?: Date;
     earlyDropoffTime?: Date;

@@ -15,9 +15,15 @@ const registerPartials = async (): Promise<void> => {
   }
 };
 
+// Register custom Handlebars helpers
+const registerHelpers = (): void => {
+  handlebars.registerHelper('increment', (value: number) => value + 1);
+};
+
 // Compile and render templates with a layout
 export const compileTemplateWithLayout = async (layoutName: string, templateName: string, data: Record<string, any>): Promise<string> => {
   await registerPartials();
+  registerHelpers();
 
   const layoutPath = path.join(__dirname, '../templates/layouts', `${layoutName}.hbs`);
   const layoutSource = await readFile(layoutPath, 'utf-8');

@@ -7,7 +7,11 @@ import { ILoad } from "../../types/Load";
 // Define Load interface extending Mongoose's Document
 
 const originStopSchema: Schema = new Schema({
-  address: { type: String },
+  address: {
+    str: { type: String }, // String representation
+    lat: { type: Number }, // Latitude
+    lng: { type: Number }, // Longitude
+  },
   earlyPickupDate: { type: Date },
   latePickupDate: { type: Date },
   earlyPickupTime: { type: Date },
@@ -15,7 +19,11 @@ const originStopSchema: Schema = new Schema({
 });
 
 const destinationStopSchema: Schema = new Schema({
-  address: { type: String },
+  address: {
+    str: { type: String }, // String representation
+    lat: { type: Number }, // Latitude
+    lng: { type: Number }, // Longitude
+  },  
   earlyDropoffDate: { type: Date },
   lateDropoffDate: { type: Date },
   earlyDropoffTime: { type: Date },

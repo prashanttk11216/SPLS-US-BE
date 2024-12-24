@@ -623,7 +623,7 @@ export async function notifyCarrierAboutLoadHandler(
       if (load.originStops && load.originStops.length > 0) {
         formattedLoad.originStops = load.originStops.map((stop) => {
           const stopDetails: any = {};
-          if (stop.address) stopDetails.address = stop.address;
+          if (stop.address && stop.address.str) stopDetails.address = stop.address.str;
           if (stop.earlyPickupDate) stopDetails.earlyPickupDate = formatDate(stop.earlyPickupDate, "MM/dd/yyyy");
           if (stop.latePickupDate) stopDetails.latePickupDate = formatDate(stop.latePickupDate, "MM/dd/yyyy");
           if (stop.earlyPickupTime) stopDetails.earlyPickupTime = formatDate(stop.earlyPickupTime, "h:mm aa");
@@ -641,7 +641,7 @@ export async function notifyCarrierAboutLoadHandler(
       if (load.destinationStops && load.destinationStops.length > 0) {
         formattedLoad.destinationStops = load.destinationStops.map((stop) => {
           const stopDetails: any = {};
-          if (stop.address) stopDetails.address = stop.address;
+          if (stop.address && stop.address.str) stopDetails.address = stop.address.str;
           if (stop.earlyDropoffDate) stopDetails.earlyDropoffDate = formatDate(stop.earlyDropoffDate, "MM/dd/yyyy");
           if (stop.lateDropoffDate) stopDetails.lateDropoffDate = formatDate(stop.lateDropoffDate, "MM/dd/yyyy");
           if (stop.earlyDropoffTime) stopDetails.earlyDropoffTime = formatDate(stop.earlyDropoffTime, "h:mm aa");
@@ -665,8 +665,7 @@ export async function notifyCarrierAboutLoadHandler(
       if (load.specialInstructions) formattedLoad.specialInstructions = load.specialInstructions;
     
       return formattedLoad;
-    });
-    
+    });    
     
     
     // Configure email options with combined load details
