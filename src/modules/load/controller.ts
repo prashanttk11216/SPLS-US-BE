@@ -6,7 +6,6 @@ import { createLoadSchema, updateLoadSchema } from "../../schema/Load/Load";
 import { IUser } from "../../types/User";
 import { UserModel } from "../user/model";
 import { UserRole } from "../../enums/UserRole";
-import { sendEmail } from "../../utils/emailHelper";
 import { LoadModel } from "./model";
 import logger from "../../utils/logger";
 import { LoadStatus } from "../../enums/LoadStatus";
@@ -17,7 +16,6 @@ import {
 import { SortOrder } from "mongoose";
 import { calculateDistance } from "../../utils/globalHelper";
 import { formatDate } from "../../utils/dateFormat";
-import { ILoad } from "../../types/Load";
 
 const validTransitions: Record<LoadStatus, LoadStatus[]> = {
   [LoadStatus.Draft]: [LoadStatus.Published],
@@ -425,7 +423,8 @@ export async function requestLoadHandler(
     // Fetch the load by its ID
     const load = await LoadModel.findById(req.params.loadId).populate<{
       brokerId: IUser;
-    }>("brokerId", "email");
+    }>("brokerId", "email").populate<{ postedBy: IUser }>("postedBy", "email");
+    ;
 
     // Check if the load exists
     if (!load) {
@@ -439,9 +438,15 @@ export async function requestLoadHandler(
       return;
     }
 
+    let emails: string[] = [];
+    if(load.brokerId.email !== load.postedBy.email){
+      emails.push(load.postedBy.email);
+    }
+    emails.push(load.brokerId.email);
+
     // Set up the email notification options
     const emailOptions: SendEmailOptions = {
-      to: "avipatel4love6@gmail.com", // Send the notification to the broker's email
+      to: emails, // Send the notification to the broker's email
       subject: "Carrier Interested in Load",
       templateName: "carrierInterestedInLoad",
       templateData: {
@@ -467,6 +472,24 @@ export async function requestLoadHandler(
           name: user.firstName + " " +user.lastName,
           email: user.email,
           primaryNumber: user.primaryNumber,
+          mailingAddress: {
+            address: user.address?.str,
+            addressLine2: user.addressLine2,
+            addressLine3: user.addressLine3,
+            state: user.state,
+            city: user.city,
+            zip: user.zip,
+            country: user.country,
+          },
+          billingAddress: {
+            billingAddress: user.billingAddress?.str,
+            billingAddressLine2: user.billingAddressLine2,
+            billingAddressLine3: user.billingAddressLine3,
+            billingState: user.billingState,
+            billingCity: user.billingCity,
+            billingZip: user.billingZip,
+            billingCountry: user.billingCountry,
+          },
         }
       },
     };
@@ -523,17 +546,68 @@ export async function confirmRateWithCustomerHandler(
       return;
     }
 
+
+      const formattedLoad: any = {};
+    
+      // Check for each field and add it only if it has a value
+      if (load.loadNumber) formattedLoad.loadNumber = load.loadNumber;
+      if (load.formattedAge) formattedLoad.formattedAge = load.formattedAge; // Virtual getter for age
+      if (load.origin && load.origin.str) formattedLoad.origin = load.origin.str;
+      if (load.originEarlyPickupDate) formattedLoad.originEarlyPickupDate = formatDate(load.originEarlyPickupDate, "MM/dd/yyyy");
+      if (load.originEarlyPickupTime) formattedLoad.originEarlyPickupTime = formatDate(load.originEarlyPickupTime, "h:mm aa");
+      if (load.originLatePickupDate) formattedLoad.originLatePickupDate = formatDate(load.originLatePickupDate, "MM/dd/yyyy");
+      if (load.originLatePickupTime) formattedLoad.originLatePickupTime = formatDate(load.originLatePickupTime, "h:mm aa");
+    
+      if (load.originStops && load.originStops.length > 0) {
+        formattedLoad.originStops = load.originStops.map((stop) => {
+          const stopDetails: any = {};
+          if (stop.address && stop.address.str) stopDetails.address = stop.address.str;
+          if (stop.earlyPickupDate) stopDetails.earlyPickupDate = formatDate(stop.earlyPickupDate, "MM/dd/yyyy");
+          if (stop.latePickupDate) stopDetails.latePickupDate = formatDate(stop.latePickupDate, "MM/dd/yyyy");
+          if (stop.earlyPickupTime) stopDetails.earlyPickupTime = formatDate(stop.earlyPickupTime, "h:mm aa");
+          if (stop.latePickupTime) stopDetails.latePickupTime = formatDate(stop.latePickupTime, "h:mm aa");
+          return stopDetails;
+        });
+      }
+    
+      if (load.destination && load.destination.str) formattedLoad.destination = load.destination.str;
+      if (load.destinationEarlyDropoffDate) formattedLoad.destinationEarlyDropoffDate = formatDate(load.destinationEarlyDropoffDate, "MM/dd/yyyy");
+      if (load.destinationEarlyDropoffTime) formattedLoad.destinationEarlyDropoffTime = formatDate(load.destinationEarlyDropoffTime, "h:mm aa");
+      if (load.destinationLateDropoffDate) formattedLoad.destinationLateDropoffDate = formatDate(load.destinationLateDropoffDate, "MM/dd/yyyy");
+      if (load.destinationLateDropoffTime) formattedLoad.destinationLateDropoffTime = formatDate(load.destinationLateDropoffTime, "h:mm aa");
+    
+      if (load.destinationStops && load.destinationStops.length > 0) {
+        formattedLoad.destinationStops = load.destinationStops.map((stop) => {
+          const stopDetails: any = {};
+          if (stop.address && stop.address.str) stopDetails.address = stop.address.str;
+          if (stop.earlyDropoffDate) stopDetails.earlyDropoffDate = formatDate(stop.earlyDropoffDate, "MM/dd/yyyy");
+          if (stop.lateDropoffDate) stopDetails.lateDropoffDate = formatDate(stop.lateDropoffDate, "MM/dd/yyyy");
+          if (stop.earlyDropoffTime) stopDetails.earlyDropoffTime = formatDate(stop.earlyDropoffTime, "h:mm aa");
+          if (stop.lateDropoffTime) stopDetails.lateDropoffTime = formatDate(stop.lateDropoffTime, "h:mm aa");
+          return stopDetails;
+        });
+      }
+    
+      if (load.equipment) formattedLoad.equipment = load.equipment;
+      if (load.mode) formattedLoad.mode = load.mode;
+      if (load.customerRate) formattedLoad.customerRate = "$"+load.customerRate;
+      if (load.weight) formattedLoad.weight = (load.weight + "lbs");
+      if (load.length) formattedLoad.length = (load.length + "ft");
+      if (load.width) formattedLoad.width = load.width;
+      if (load.height) formattedLoad.height = load.height;
+      if (load.pieces) formattedLoad.pieces = load.pieces;
+      if (load.pallets) formattedLoad.pallets = load.pallets;
+      if (load.miles) formattedLoad.miles = load.miles;
+      if (load.commodity) formattedLoad.commodity = load.commodity;
+      if (load.postedBy) formattedLoad.postedBy = load.postedBy;
+      if (load.specialInstructions) formattedLoad.specialInstructions = load.specialInstructions;
+          
     // Prepare dynamic email content for the customer
     const emailOptions: SendEmailOptions = {
       to: emails[0], // Sending to the first email in the list (can be extended to multiple)
       subject: "Load Rate Confirmation",
       templateName: "loadRateConfirmation",
-      templateData: {
-        loadNumber: load.loadNumber || "N/A", // Load number or default if not available
-        origin: load.origin || "Unknown Origin", // Load origin or default
-        destination: load.destination || "Unknown Destination", // Load destination or default
-        rate: load.allInRate || "N/A", // Confirmed rate or default
-      },
+      templateData: formattedLoad
     };
 
     // Send the email notification

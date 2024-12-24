@@ -1,8 +1,8 @@
 <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
-    <p style="margin: 0 0 10px; font-size: 16px; color: #333;">Here are the details of the load:</p>
+    <p style="margin: 0 0 10px; font-size: 16px; color: #333; padding: 8px 0;">A carrier has expressed interest in the following load. Please find the details below:</p>
     <div style="margin-bottom: 20px;">
-        <div style="font-weight: bold; padding: 8px 0; font-size: 18px; text-decoration: underline;">
-            CARRIER DETAILS
+        <div style="padding: 5px 10px; font-size: 18px; font-weight: bold; color: #fff; background-color: #2a4459;">
+             CARRIER DETAILS
         </div>
         <div style="display: flex; padding: 8px 0;">
             <div style="width: 50%;">
@@ -33,9 +33,110 @@
                 {{/if}}
             </div>
         </div>
+        <div style="display: flex; padding: 8px 0;">
+            <div style="width: 50%;">
+                <div style="font-weight: bold; padding: 8px 0; font-size: 18px; text-decoration: underline;">
+                    MAILING ADDRESS
+                </div>
+
+                {{#if carrierDetails.mailingAddress.address}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Address: </span>
+                    <span style="color: #333; margin-left: 4px;">{{carrierDetails.mailingAddress.address}}</span>
+                </div>
+                {{/if}}
+
+                {{#if carrierDetails.mailingAddress.addressLine2}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Address Line 2: </span>
+                    <span style="color: #333; margin-left: 4px;">{{carrierDetails.mailingAddress.addressLine2}}</span>
+                </div>
+                {{/if}}
+
+                {{#if carrierDetails.mailingAddress.addressLine3}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Address Line 3: </span>
+                    <span style="color: #333; margin-left: 4px;">{{carrierDetails.mailingAddress.addressLine3}}</span>
+                </div>
+                {{/if}}
+
+                <!-- Mailing Address City, State, and Zip -->
+                {{#if carrierDetails.mailingAddress.zip}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Zip: </span>
+                    <span style="color: #333; margin-left: 4px;">{{carrierDetails.mailingAddress.zip}}</span>
+                </div>
+                {{/if}} {{#if carrierDetails.mailingAddress.city}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">City: </span>
+                    <span style="color: #333; margin-left: 4px;">{{carrierDetails.mailingAddress.city}}</span>
+                </div>
+                {{/if}} {{#if carrierDetails.mailingAddress.state}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">State: </span>
+                    <span style="color: #333; margin-left: 4px;">{{carrierDetails.mailingAddress.state}}</span>
+                </div>
+                {{/if}}  {{#if carrierDetails.mailingAddress.country}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Country: </span>
+                    <span style="color: #333; margin-left: 4px;">{{carrierDetails.mailingAddress.country}}</span>
+                </div>
+                {{/if}}     
+            </div>
+            <div style="width: 50%;">
+                <div style="font-weight: bold; padding: 8px 0; font-size: 18px; text-decoration: underline;">
+                    BILLING ADDRESS
+                </div>
+                
+                {{#if carrierDetails.billingAddress.billingAddress}} 
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Address: </span>
+                    <span style="color: #333; margin-left: 4px;">{{carrierDetails.billingAddress.billingAddress}}</span>
+                </div>
+                {{/if}} 
+                
+                 {{#if carrierDetails.billingAddress.billingAddressLine2}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Address Line 2: </span>
+                    <span style="color: #333; margin-left: 4px;">{{carrierDetails.billingAddress.billingAddressLine2}}</span>
+                </div>
+                {{/if}}
+
+                {{#if carrierDetails.billingAddress.billingAddressLine3}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Address Line 3: </span>
+                    <span style="color: #333; margin-left: 4px;">{{carrierDetails.billingAddress.billingAddressLine3}}</span>
+                </div>
+                {{/if}}
+                
+                
+                 {{#if carrierDetails.billingAddress.billingZip}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Zip: </span>
+                    <span style="color: #333; margin-left: 4px;">{{carrierDetails.billingAddress.billingZip}}</span>
+                </div>
+                {{/if}} {{#if carrierDetails.billingAddress.billingCity}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">City: </span>
+                    <span style="color: #333; margin-left: 4px;">{{carrierDetails.billingAddress.billingCity}}</span>
+                </div>
+                {{/if}} {{#if carrierDetails.billingAddress.billingState}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">State: </span>
+                    <span style="color: #333; margin-left: 4px;">{{carrierDetails.billingAddress.billingState}}</span>
+                </div>
+                {{/if}} {{#if carrierDetails.billingAddress.billingCountry}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Country: </span>
+                    <span style="color: #333; margin-left: 4px;">{{carrierDetails.billingAddress.billingCountry}}</span>
+                </div>
+                {{/if}}
+            </div>
+        </div>
+        
         <!-- Load Title -->
         <div style="padding: 5px 10px; font-size: 18px; font-weight: bold; color: #fff; background-color: #2a4459;">
-            Load Number: {{" "}} {{loadDetails.loadNumber}}
+            LOAD NUMBER: {{" "}} {{loadDetails.loadNumber}}
         </div>
 
         <div style="display: flex;">
@@ -45,21 +146,21 @@
                 </div>
 
                 {{#if loadDetails.origin}}
-                <div style="display: flex; justify-content: space-between; font-weight: bold; color: #555;">
-                    <span>Origin: </span>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Origin: </span>
                     <span style="color: #333; margin-left: 4px;">{{loadDetails.origin}}</span>
                 </div>
                 {{/if}}
 
                 <!-- Origin Pickup Date and Time -->
                 {{#if loadDetails.originEarlyPickupDate}}
-                <div style="display: flex; justify-content: space-between; font-weight: bold; color: #555;">
-                    <span>Origin Early Pickup: </span>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Early Pickup: </span>
                     <span style="color: #333; margin-left: 4px;">{{loadDetails.originEarlyPickupDate}} {{loadDetails.originEarlyPickupTime}}</span>
                 </div>
                 {{/if}} {{#if loadDetails.originLatePickupDate}}
-                <div style="display: flex; justify-content: space-between; font-weight: bold; color: #555;">
-                    <span>Origin Late Pickup: </span>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Late Pickup: </span>
                     <span style="color: #333; margin-left: 4px;">{{loadDetails.originLatePickupDate}} {{loadDetails.originLatePickupTime}}</span>
                 </div>
                 {{/if}}
@@ -70,21 +171,21 @@
                 </div>
 
                 {{#if loadDetails.destination}}
-                <div style="display: flex; justify-content: space-between; font-weight: bold; color: #555;">
-                    <span>Destination: </span>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Destination: </span>
                     <span style="color: #333; margin-left: 4px;">{{loadDetails.destination}}</span>
                 </div>
                 {{/if}}
 
                 <!-- Destination Dropoff Date and Time -->
                 {{#if loadDetails.destinationEarlyDropoffDate}}
-                <div style="display: flex; justify-content: space-between; font-weight: bold; color: #555;">
-                    <span>Destination Early Dropoff: </span>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Early Dropoff: </span>
                     <span style="color: #333; margin-left: 4px;">{{loadDetails.destinationEarlyDropoffDate}} {{loadDetails.destinationEarlyDropoffTime}}</span>
                 </div>
                 {{/if}} {{#if loadDetails.destinationLateDropoffDate}}
-                <div style="display: flex; justify-content: space-between; font-weight: bold; color: #555;">
-                    <span>Destination Late Dropoff: </span>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Late Dropoff: </span>
                     <span style="color: #333; margin-left: 4px;">{{loadDetails.destinationLateDropoffDate}} {{loadDetails.destinationLateDropoffTime}}</span>
                 </div>
                 {{/if}}

@@ -1,35 +1,169 @@
-<div
-  style="background: #fff; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);"
->
-  <div
-    style="background: #28a745; color: white; text-align: center; padding: 20px;"
-  >
-    <h1 style="margin: 0; font-size: 24px;">Load Rate Confirmation</h1>
-  </div>
-  <div style="padding: 20px;">
-    <p style="margin: 0 0 15px; font-size: 16px; line-height: 1.6;">
-      Dear
-      {{customerName}},
-    </p>
-    <p style="margin: 0 0 15px; font-size: 16px; line-height: 1.6;">
-      We are pleased to confirm the rate for the following load:
-    </p>
-    <ul style="margin: 0 0 15px; padding-left: 20px; font-size: 16px;">
-      <li><strong>Load Number:</strong> {{loadNumber}}</li>
-      <li><strong>Origin:</strong> {{origin}}</li>
-      <li><strong>Destination:</strong> {{destination}}</li>
-      <li><strong>Rate:</strong> ${{rate}}</li>
-    </ul>
-    <p style="margin: 0 0 15px; font-size: 16px; line-height: 1.6;">
-      Please feel free to reach out if you have any questions or need further
-      assistance.
-    </p>
-  </div>
-  <div
-    style="background: #f8f9fa; text-align: center; padding: 15px; border-top: 1px solid #ddd;"
-  >
-    <p style="margin: 0; font-size: 14px; color: #6c757d;">
-      Thank you for choosing our services!
-    </p>
-  </div>
+<div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+    <p style="margin: 0 0 10px; font-size: 16px; color: #333; padding: 8px 0;">We are pleased to confirm the rate for the following load:</p>
+    <div style="margin-bottom: 20px;">
+        <!-- Load Title -->
+        <div style="padding: 5px 10px; font-size: 18px; font-weight: bold; color: #fff; background-color: #2a4459;">
+            LOAD NUMBER: {{" "}} {{loadNumber}}
+        </div>
+
+        <div style="display: flex;">
+            <div style="width: 50%;">
+                <div style="font-weight: bold; padding: 8px 0; font-size: 18px; text-decoration: underline;">
+                    ORIGIN DETAILS
+                </div>
+
+                {{#if origin}}
+                <div style="display: flex; justify-content: space-between; font-weight: bold; color: #555;">
+                    <span>Origin: </span>
+                    <span style="color: #333; margin-left: 4px;">{{origin}}</span>
+                </div>
+                {{/if}}
+
+                <!-- Origin Pickup Date and Time -->
+                {{#if originEarlyPickupDate}}
+                <div style="display: flex; justify-content: space-between; font-weight: bold; color: #555;">
+                    <span>Early Pickup: </span>
+                    <span style="color: #333; margin-left: 4px;">{{originEarlyPickupDate}} {{originEarlyPickupTime}}</span>
+                </div>
+                {{/if}} {{#if originLatePickupDate}}
+                <div style="display: flex; justify-content: space-between; font-weight: bold; color: #555;">
+                    <span>Late Pickup: </span>
+                    <span style="color: #333; margin-left: 4px;">{{originLatePickupDate}} {{originLatePickupTime}}</span>
+                </div>
+                {{/if}}
+
+                <!-- Origin Stops -->
+                {{#if originStops.length}}
+                <div style="font-weight: bold; padding: 8px 0; text-decoration: underline;">
+                    ORIGIN STOPS
+                </div>
+                {{#each originStops}}
+                <div style="font-weight: bold; color: #555;" style="padding-bottom: 8px;">Stop {{increment @index}}</div>
+                <div style="padding-bottom: 10px;">
+                    {{#if address}}
+                    <span style="font-weight: bold; color: #555;">Address: </span> {{address}}<br />
+                    {{/if}} {{#if earlyPickupDate}}
+                    <span style="font-weight: bold; color: #555;">Early Pickup: </span> {{earlyPickupDate}} {{earlyPickupTime}}<br />
+                    {{/if}} {{#if latePickupDate}}
+                    <span style="font-weight: bold; color: #555;">Late Pickup: </span> {{latePickupDate}} {{latePickupTime}}<br />
+                    {{/if}}
+                </div>
+                <hr style="border: none; border-top: 1px solid #ddd;" />
+                {{/each}} {{/if}}
+            </div>
+            <div style="width: 50%;">
+                <div style="font-weight: bold; padding: 8px 0; font-size: 18px; text-decoration: underline;">
+                    DESTINATION DETAILS
+                </div>
+
+                {{#if destination}}
+                <div style="display: flex; justify-content: space-between; font-weight: bold; color: #555;">
+                    <span>Destination: </span>
+                    <span style="color: #333; margin-left: 4px;">{{destination}}</span>
+                </div>
+                {{/if}}
+
+                <!-- Destination Dropoff Date and Time -->
+                {{#if destinationEarlyDropoffDate}}
+                <div style="display: flex; justify-content: space-between; font-weight: bold; color: #555;">
+                    <span>Early Dropoff: </span>
+                    <span style="color: #333; margin-left: 4px;">{{destinationEarlyDropoffDate}} {{destinationEarlyDropoffTime}}</span>
+                </div>
+                {{/if}} {{#if destinationLateDropoffDate}}
+                <div style="display: flex; justify-content: space-between; font-weight: bold; color: #555;">
+                    <span>Late Dropoff: </span>
+                    <span style="color: #333; margin-left: 4px;">{{destinationLateDropoffDate}} {{destinationLateDropoffTime}}</span>
+                </div>
+                {{/if}}
+
+                <!-- Destination Stops -->
+                {{#if destinationStops.length}}
+                <div style="font-weight: bold; padding: 8px 0; text-decoration: underline;">
+                    DESTINATION STOPS
+                </div>
+                {{#each destinationStops}}
+                <div style="font-weight: bold; color: #555;" style="padding-bottom: 8px;">Stop {{increment @index}}</div>
+                <div style="padding-bottom: 10px;">
+                    {{#if address}}
+                    <span style="font-weight: bold; color: #555;">Address: </span> {{address}}<br />
+                    {{/if}} {{#if earlyDropoffDate}}
+                    <span style="font-weight: bold; color: #555;">Early Dropoff: </span> {{earlyDropoffDate}} {{earlyDropoffTime}}<br />
+                    {{/if}} {{#if lateDropoffDate}}
+                    <span style="font-weight: bold; color: #555;">Late Dropoff: </span> {{lateDropoffDate}} {{lateDropoffTime}}<br />
+                    {{/if}}
+                </div>
+                <hr style="border: none; border-top: 1px solid #ddd;" />
+                {{/each}} {{/if}}
+            </div>
+        </div>
+        <div style="font-weight: bold; padding: 8px 0; font-size: 18px; text-decoration: underline;">
+            OTHER DETAILS
+        </div>
+        <div style="display: flex;">
+            <div style="width: 50%;">
+                {{#if customerRate}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">All-in Rate: </span>
+                    <span style="color: #333; margin-left: 4px;">{{customerRate}}</span>
+                </div>
+                {{/if}}
+                <!-- Equipment, Mode, and Commodity -->
+                {{#if equipment}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Equipment: </span>
+                    <span style="color: #333; margin-left: 4px;">{{equipment}}</span>
+                </div>
+                {{/if}} {{#if mode}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Mode: </span>
+                    <span style="color: #333; margin-left: 4px;">{{mode}}</span>
+                </div>
+                {{/if}} {{#if commodity}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Commodity: </span>
+                    <span style="color: #333; margin-left: 4px;">{{commodity}}</span>
+                </div>
+                {{/if}} {{#if height}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Height: </span>
+                    <span style="color: #333; margin-left: 4px;">{{height}}</span>
+                </div>
+                {{/if}} {{#if pieces}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Pieces: </span>
+                    <span style="color: #333; margin-left: 4px;">{{pieces}}</span>
+                </div>
+                {{/if}}
+            </div>
+            <div style="width: 50%;">
+                <!-- Load Dimensions and Weight -->
+                {{#if weight}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Weight: </span>
+                    <span style="color: #333; margin-left: 4px;">{{weight}}</span>
+                </div>
+                {{/if}} {{#if length}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Length: </span>
+                    <span style="color: #333; margin-left: 4px;">{{length}}</span>
+                </div>
+                {{/if}} {{#if width}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Width: </span>
+                    <span style="color: #333; margin-left: 4px;">{{width}}</span>
+                </div>
+                {{/if}} {{#if pallets}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Pallets: </span>
+                    <span style="color: #333; margin-left: 4px;">{{pallets}}</span>
+                </div>
+                {{/if}}
+            </div>
+        </div>
+
+        <div style="padding: 10px 0px;">
+            Please feel free to reach out if you have any questions or need further assistance.
+        </div>
+    </div>
 </div>
+
