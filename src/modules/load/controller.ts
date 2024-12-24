@@ -441,19 +441,38 @@ export async function requestLoadHandler(
 
     // Set up the email notification options
     const emailOptions: SendEmailOptions = {
-      to: load.brokerId.email, // Send the notification to the broker's email
+      to: "avipatel4love6@gmail.com", // Send the notification to the broker's email
       subject: "Carrier Interested in Load",
       templateName: "carrierInterestedInLoad",
       templateData: {
-        company: user.company, // Assuming the carrier has a 'company' property
-        loadNumber: load.loadNumber,
-        origin: load.origin.str,
-        destination: load.destination.str,
+        loadDetails: {
+          loadNumber: load.loadNumber,
+          origin: load.origin.str,
+          destination: load.destination.str,
+          originEarlyPickupDate: formatDate(load.originEarlyPickupDate, "MM/dd/yyyy"),
+          originEarlyPickupTime: formatDate(load.originEarlyPickupTime!, "h:mm aa"),
+          originLatePickupDate: formatDate(load.originLatePickupDate!, "MM/dd/yyyy"),
+          originLatePickupTime: formatDate(load.originLatePickupTime!, "h:mm aa"),
+          destionationEarlyDropoffDate: formatDate(load.destinationEarlyDropoffDate!, "MM/dd/yyyy"),
+          destionationEarlyDropoffTime: formatDate(load.destinationEarlyDropoffTime!, "h:mm aa"),
+          destionationLateDropoffDate: formatDate(load.destinationLateDropoffDate!, "MM/dd/yyyy"),
+          destionationLateDropoffTime: formatDate(load.destinationLateDropoffTime!, "h:mm aa"),
+          equipment: load.equipment,
+          mode: load.mode,
+          allInRate: load.allInRate,
+          miles: load.miles,
+        },
+        carrierDetails: {
+          company: user.company,
+          name: user.firstName + " " +user.lastName,
+          email: user.email,
+          primaryNumber: user.primaryNumber,
+        }
       },
     };
 
     // Send email notification to the broker (uncomment this when email functionality is ready)
-    // await sendNotificationEmail(emailOptions);
+    await sendNotificationEmail(emailOptions);
 
     // Respond back to the carrier confirming their interest in the load
     send(

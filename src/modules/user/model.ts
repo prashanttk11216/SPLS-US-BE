@@ -20,7 +20,11 @@ const UserSchema: Schema = new Schema(
     role: { type: String, enum: Object.values(UserRole), required: true }, // Role of the user
 
 
-    address: { type: String}, // Customer's primary address
+    address: {
+      str: { type: String }, // String representation
+      lat: { type: Number }, // Latitude
+      lng: { type: Number }, // Longitude
+    }, // Customer's primary address
     addressLine2: { type: String }, // Optional address line 2
     addressLine3: { type: String }, // Optional address line 3
     country: { type: String}, // Country of the customer
@@ -29,7 +33,11 @@ const UserSchema: Schema = new Schema(
     zip: { type: String}, // Zip code of the customer's address
 
     // Billing-specific fields for Customer and Carrier
-    billingAddress: { type: String}, // Primary billing address
+    billingAddress: {
+      str: { type: String }, // String representation
+      lat: { type: Number }, // Latitude
+      lng: { type: Number }, // Longitude
+    }, // Primary billing address
     billingAddressLine2: { type: String }, // Optional billing address line 2
     billingAddressLine3: { type: String }, // Optional billing address line 3
     billingCountry: { type: String}, // Billing country

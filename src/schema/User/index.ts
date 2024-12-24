@@ -29,7 +29,11 @@ export const createUserSchema = z
     employeeId: z.string().optional(), // Optional, required only for specific roles
 
     // Customer-specific fields
-    address: z.string(),
+    address: z.object({
+        str: z.string().min(1, { message: "address is required" }), // String representation
+        lat: z.number().min(-90).max(90).optional().refine((val) => val !== undefined, { message: "Latitude is required" }), // Latitude
+        lng: z.number().min(-180).max(180).optional().refine((val) => val !== undefined, { message: "Longitude is required" }), // Longitude
+      }).optional(),
     addressLine2: z.string().optional(),
     addressLine3: z.string().optional(),
     country: z.string(),
@@ -38,7 +42,11 @@ export const createUserSchema = z
     zip: z.string(),
 
     // Billing-specific fields
-    billingAddress: z.string().optional(),
+    billingAddress: z.object({
+        str: z.string().min(1, { message: "address is required" }), // String representation
+        lat: z.number().min(-90).max(90).optional().refine((val) => val !== undefined, { message: "Latitude is required" }), // Latitude
+        lng: z.number().min(-180).max(180).optional().refine((val) => val !== undefined, { message: "Longitude is required" }), // Longitude
+      }).optional(),
     billingAddressLine2: z.string().optional(),
     billingAddressLine3: z.string().optional(),
     billingCountry: z.string().optional(),
@@ -95,7 +103,11 @@ export const editUserSchema = z.object({
   primaryNumber: z.string().optional(),
   company: z.string().optional(),
   avatarUrl: z.string().optional(),
-  address: z.string().optional(),
+  address: z.object({
+    str: z.string().min(1, { message: "address is required" }), // String representation
+    lat: z.number().min(-90).max(90).optional().refine((val) => val !== undefined, { message: "Latitude is required" }), // Latitude
+    lng: z.number().min(-180).max(180).optional().refine((val) => val !== undefined, { message: "Longitude is required" }), // Longitude
+  }).optional(),
   addressLine2: z.string().optional(),
   addressLine3: z.string().optional(),
   country: z.string().optional(),
@@ -103,6 +115,8 @@ export const editUserSchema = z.object({
   city: z.string().optional(),
   zip: z.string().optional(),
 });
+
+
 
 /**
  * Schema for login.

@@ -1,22 +1,128 @@
-<div style="background: #fff; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
-    <div style="background: #007bff; color: white; text-align: center; padding: 20px;">
-      <h1 style="margin: 0; font-size: 24px;">Carrier Interested in Load</h1>
-    </div>
-    <div style="padding: 20px;">
-      <p style="margin: 0 0 10px; font-size: 16px;">
-        <strong>Company:</strong> {{company}}
-      </p>
-      <p style="margin: 0 0 10px; font-size: 16px;">
-        <strong>Load Number:</strong> {{loadNumber}}
-      </p>
-      <p style="margin: 0 0 10px; font-size: 16px;">
-        <strong>Origin:</strong> {{origin}}
-      </p>
-      <p style="margin: 0 0 10px; font-size: 16px;">
-        <strong>Destination:</strong> {{destination}}
-      </p>
-    </div>
-    <div style="background: #f8f9fa; text-align: center; padding: 15px; border-top: 1px solid #ddd;">
-      <p style="margin: 0; font-size: 14px; color: #6c757d;">Thank you for your interest!</p>
+<div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+    <p style="margin: 0 0 10px; font-size: 16px; color: #333;">Here are the details of the load:</p>
+    <div style="margin-bottom: 20px;">
+        <div style="font-weight: bold; padding: 8px 0; font-size: 18px; text-decoration: underline;">
+            CARRIER DETAILS
+        </div>
+        <div style="display: flex; padding: 8px 0;">
+            <div style="width: 50%;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Name: </span>
+                    <span style="color: #333; margin-left: 4px;">{{carrierDetails.name}}</span>
+                </div>
+                {{#if carrierDetails.email}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Email: </span>
+                    <span style="color: #333; margin-left: 4px;">{{carrierDetails.email}}</span>
+                </div>
+                {{/if}}
+                
+            </div>
+            <div style="width: 50%;">
+                {{#if carrierDetails.primaryNumber}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Primary Number: </span>
+                    <span style="color: #333; margin-left: 4px;">{{carrierDetails.primaryNumber}}</span>
+                </div>
+                {{/if}}
+                {{#if carrierDetails.company}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Company: </span>
+                    <span style="color: #333; margin-left: 4px;">{{carrierDetails.company}}</span>
+                </div>
+                {{/if}}
+            </div>
+        </div>
+        <!-- Load Title -->
+        <div style="padding: 5px 10px; font-size: 18px; font-weight: bold; color: #fff; background-color: #2a4459;">
+            Load Number: {{" "}} {{loadDetails.loadNumber}}
+        </div>
+
+        <div style="display: flex;">
+            <div style="width: 50%;">
+                <div style="font-weight: bold; padding: 8px 0; font-size: 18px; text-decoration: underline;">
+                    ORIGIN DETAILS
+                </div>
+
+                {{#if loadDetails.origin}}
+                <div style="display: flex; justify-content: space-between; font-weight: bold; color: #555;">
+                    <span>Origin: </span>
+                    <span style="color: #333; margin-left: 4px;">{{loadDetails.origin}}</span>
+                </div>
+                {{/if}}
+
+                <!-- Origin Pickup Date and Time -->
+                {{#if loadDetails.originEarlyPickupDate}}
+                <div style="display: flex; justify-content: space-between; font-weight: bold; color: #555;">
+                    <span>Origin Early Pickup: </span>
+                    <span style="color: #333; margin-left: 4px;">{{loadDetails.originEarlyPickupDate}} {{loadDetails.originEarlyPickupTime}}</span>
+                </div>
+                {{/if}} {{#if loadDetails.originLatePickupDate}}
+                <div style="display: flex; justify-content: space-between; font-weight: bold; color: #555;">
+                    <span>Origin Late Pickup: </span>
+                    <span style="color: #333; margin-left: 4px;">{{loadDetails.originLatePickupDate}} {{loadDetails.originLatePickupTime}}</span>
+                </div>
+                {{/if}}
+            </div>
+            <div style="width: 50%;">
+                <div style="font-weight: bold; padding: 8px 0; font-size: 18px; text-decoration: underline;">
+                    DESTINATION DETAILS
+                </div>
+
+                {{#if loadDetails.destination}}
+                <div style="display: flex; justify-content: space-between; font-weight: bold; color: #555;">
+                    <span>Destination: </span>
+                    <span style="color: #333; margin-left: 4px;">{{loadDetails.destination}}</span>
+                </div>
+                {{/if}}
+
+                <!-- Destination Dropoff Date and Time -->
+                {{#if loadDetails.destinationEarlyDropoffDate}}
+                <div style="display: flex; justify-content: space-between; font-weight: bold; color: #555;">
+                    <span>Destination Early Dropoff: </span>
+                    <span style="color: #333; margin-left: 4px;">{{loadDetails.destinationEarlyDropoffDate}} {{loadDetails.destinationEarlyDropoffTime}}</span>
+                </div>
+                {{/if}} {{#if loadDetails.destinationLateDropoffDate}}
+                <div style="display: flex; justify-content: space-between; font-weight: bold; color: #555;">
+                    <span>Destination Late Dropoff: </span>
+                    <span style="color: #333; margin-left: 4px;">{{loadDetails.destinationLateDropoffDate}} {{loadDetails.destinationLateDropoffTime}}</span>
+                </div>
+                {{/if}}
+            </div>
+        </div>
+        <div style="font-weight: bold; padding: 8px 0; font-size: 18px; text-decoration: underline;">
+            OTHER DETAILS
+        </div>
+        <div style="display: flex;">
+            <div style="width: 50%;">
+                {{#if loadDetails.allInRate}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">All-in Rate: </span>
+                    <span style="color: #333; margin-left: 4px;">{{loadDetails.allInRate}}</span>
+                </div>
+                {{/if}}
+                <!-- Equipment, Mode, and Commodity -->
+                {{#if loadDetails.equipment}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Equipment: </span>
+                    <span style="color: #333; margin-left: 4px;">{{loadDetails.equipment}}</span>
+                </div>
+                {{/if}}
+            </div>
+            <div style="width: 50%;">
+                <!-- Load Dimensions and Weight -->
+                {{#if loadDetails.mode}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Mode: </span>
+                    <span style="color: #333; margin-left: 4px;">{{loadDetails.mode}}</span>
+                </div>
+                {{/if}} {{#if loadDetails.miles}}
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold; color: #555;">Miles: </span>
+                    <span style="color: #333; margin-left: 4px;">{{loadDetails.miles}}</span>
+                </div>
+                {{/if}} 
+            </div>
+        </div>
     </div>
 </div>

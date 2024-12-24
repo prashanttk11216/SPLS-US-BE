@@ -15,7 +15,11 @@ export interface IUser extends Document {
 
   role: UserRole; // Role of the user
   
-  address?: string; // Primary address (optional for non-customers)
+  address?: {
+    str: string; // String representation of the address
+    lat: number; // Latitude
+    lng: number; // Longitude
+  }; // Primary address (optional for non-customers)
   addressLine2?: string;
   addressLine3?: string;
   country?: string;
@@ -24,7 +28,11 @@ export interface IUser extends Document {
   zip?: string;
 
   // Billing-specific fields (only for customers)
-  billingAddress?: string;
+  billingAddress?: {
+    str: string; // String representation of the address
+    lat: number; // Latitude
+    lng: number; // Longitude
+  };
   billingAddressLine2?: string;
   billingAddressLine3?: string;
   billingCountry?: string;
