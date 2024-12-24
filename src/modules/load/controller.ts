@@ -16,6 +16,8 @@ import {
 } from "../../services/emailService";
 import { SortOrder } from "mongoose";
 import { calculateDistance } from "../../utils/globalHelper";
+import { formatDate } from "../../utils/dateFormat";
+import { ILoad } from "../../types/Load";
 
 const validTransitions: Record<LoadStatus, LoadStatus[]> = {
   [LoadStatus.Draft]: [LoadStatus.Published],
@@ -606,13 +608,67 @@ export async function notifyCarrierAboutLoadHandler(
     }
 
     // Prepare load details for the email template
-    const loadDetails = loads.map((load) => ({
-      loadNumber: load.loadNumber || "N/A",
-      origin: load.origin || "Unknown Origin",
-      destination: load.destination || "Unknown Destination",
-      rate: load.allInRate || "N/A",
-    }));
-
+    const loadDetails = loads.map((load) => {
+      const formattedLoad: any = {};
+    
+      // Check for each field and add it only if it has a value
+      if (load.loadNumber) formattedLoad.loadNumber = load.loadNumber;
+      if (load.formattedAge) formattedLoad.formattedAge = load.formattedAge; // Virtual getter for age
+      if (load.origin && load.origin.str) formattedLoad.origin = load.origin.str;
+      if (load.originEarlyPickupDate) formattedLoad.originEarlyPickupDate = formatDate(load.originEarlyPickupDate, "MM/dd/yyyy");
+      if (load.originEarlyPickupTime) formattedLoad.originEarlyPickupTime = formatDate(load.originEarlyPickupTime, "h:mm aa");
+      if (load.originLatePickupDate) formattedLoad.originLatePickupDate = formatDate(load.originLatePickupDate, "MM/dd/yyyy");
+      if (load.originLatePickupTime) formattedLoad.originLatePickupTime = formatDate(load.originLatePickupTime, "h:mm aa");
+    
+      if (load.originStops && load.originStops.length > 0) {
+        formattedLoad.originStops = load.originStops.map((stop) => {
+          const stopDetails: any = {};
+          if (stop.address) stopDetails.address = stop.address;
+          if (stop.earlyPickupDate) stopDetails.earlyPickupDate = formatDate(stop.earlyPickupDate, "MM/dd/yyyy");
+          if (stop.latePickupDate) stopDetails.latePickupDate = formatDate(stop.latePickupDate, "MM/dd/yyyy");
+          if (stop.earlyPickupTime) stopDetails.earlyPickupTime = formatDate(stop.earlyPickupTime, "h:mm aa");
+          if (stop.latePickupTime) stopDetails.latePickupTime = formatDate(stop.latePickupTime, "h:mm aa");
+          return stopDetails;
+        });
+      }
+    
+      if (load.destination && load.destination.str) formattedLoad.destination = load.destination.str;
+      if (load.destinationEarlyDropoffDate) formattedLoad.destinationEarlyDropoffDate = formatDate(load.destinationEarlyDropoffDate, "MM/dd/yyyy");
+      if (load.destinationEarlyDropoffTime) formattedLoad.destinationEarlyDropoffTime = formatDate(load.destinationEarlyDropoffTime, "h:mm aa");
+      if (load.destinationLateDropoffDate) formattedLoad.destinationLateDropoffDate = formatDate(load.destinationLateDropoffDate, "MM/dd/yyyy");
+      if (load.destinationLateDropoffTime) formattedLoad.destinationLateDropoffTime = formatDate(load.destinationLateDropoffTime, "h:mm aa");
+    
+      if (load.destinationStops && load.destinationStops.length > 0) {
+        formattedLoad.destinationStops = load.destinationStops.map((stop) => {
+          const stopDetails: any = {};
+          if (stop.address) stopDetails.address = stop.address;
+          if (stop.earlyDropoffDate) stopDetails.earlyDropoffDate = formatDate(stop.earlyDropoffDate, "MM/dd/yyyy");
+          if (stop.lateDropoffDate) stopDetails.lateDropoffDate = formatDate(stop.lateDropoffDate, "MM/dd/yyyy");
+          if (stop.earlyDropoffTime) stopDetails.earlyDropoffTime = formatDate(stop.earlyDropoffTime, "h:mm aa");
+          if (stop.lateDropoffTime) stopDetails.lateDropoffTime = formatDate(stop.lateDropoffTime, "h:mm aa");
+          return stopDetails;
+        });
+      }
+    
+      if (load.equipment) formattedLoad.equipment = load.equipment;
+      if (load.mode) formattedLoad.mode = load.mode;
+      if (load.allInRate) formattedLoad.allInRate = load.allInRate;
+      if (load.weight) formattedLoad.weight = load.weight;
+      if (load.length) formattedLoad.length = load.length;
+      if (load.width) formattedLoad.width = load.width;
+      if (load.height) formattedLoad.height = load.height;
+      if (load.pieces) formattedLoad.pieces = load.pieces;
+      if (load.pallets) formattedLoad.pallets = load.pallets;
+      if (load.miles) formattedLoad.miles = load.miles;
+      if (load.commodity) formattedLoad.commodity = load.commodity;
+      if (load.postedBy) formattedLoad.postedBy = load.postedBy;
+      if (load.specialInstructions) formattedLoad.specialInstructions = load.specialInstructions;
+    
+      return formattedLoad;
+    });
+    
+    
+    
     // Configure email options with combined load details
     const emailOptions: SendEmailOptions = {
       to: carrierEmails,

@@ -1,17 +1,21 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{title}}</title>
   <style>
     /* General reset */
-    body, html {
+    body,
+    html {
       margin: 0;
       padding: 0;
       width: 100%;
-      overflow-x: hidden; /* Prevent horizontal scroll */
+      overflow-x: hidden;
+      /* Prevent horizontal scroll */
     }
+
     .container {
       width: 100%;
       max-width: 600px;
@@ -20,47 +24,88 @@
       background-color: #ffffff;
       border: 1px solid #ddd;
       border-radius: 5px;
-      box-sizing: border-box; /* Ensures padding is included in width calculation */
+      box-sizing: border-box;
+      /* Ensures padding is included in width calculation */
     }
+
     .header {
-      background-color: #007bff;
-      color: white;
-      padding: 15px;
+      background-color: #004080;
+      color: #ffffff;
+      padding: 20px;
       text-align: center;
-      border-top-left-radius: 5px;
-      border-top-right-radius: 5px;
-      box-sizing: border-box;
     }
-    .footer {
-      margin-top: 15px;
-      padding: 15px;
-      background-color: #f8f9fa;
-      border-bottom-left-radius: 5px;
-      border-bottom-right-radius: 5px;
+
+    .header-title {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .header-subtitle {
+      margin: 10px 0 0;
+      font-size: 16px;
+    }
+
+    .footer-wrapper {
+      background-color: #f1f1f1;
+      padding: 20px;
+      border-top: 1px solid #ddd;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .footer-contact,
+    .footer-locations,
+    .footer-website,
+    .footer-copyright {
       text-align: center;
-      box-sizing: border-box;
+      margin-bottom: 15px;
     }
+
+    .footer-link {
+      color: #004080;
+      text-decoration: none;
+    }
+
+    .footer-link:hover {
+      text-decoration: underline;
+    }
+
+    .footer-email,
+    .footer-phone,
+    .footer-location {
+      margin: 5px 0;
+    }
+
+    .footer-copyright {
+      color: #666;
+    }
+
     .content {
       box-sizing: border-box;
     }
+
     /* Responsive adjustments */
     @media (max-width: 600px) {
       .container {
         padding: 10px;
       }
-      .header, .footer {
+
+      .header,
+      .footer {
         padding: 10px;
       }
     }
   </style>
 </head>
+
 <body>
   <div class="container">
-    {{!-- {{> header }} <!-- This includes the header partial --> --}}
+    {{> header }} <!-- This includes the header partial -->
     <div class="content">
       {{{body}}} <!-- This is where the content of the child template will be injected -->
     </div>
-    {{!-- {{> footer }} <!-- This includes the footer partial --> --}}
+    {{> footer }} <!-- This includes the footer partial -->
   </div>
 </body>
+
 </html>

@@ -1,12 +1,195 @@
-<h1>New Load Notifications</h1>
-<p>Below are the details of the new loads:</p>
-<ul>
+<div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+  <p style="margin: 0 0 10px; font-size: 16px; color: #333;">Here are the details of the load: </p>
+
   {{#each loads}}
-    <li>
-      <strong>Load Number:</strong> {{this.loadNumber}}<br />
-      <strong>Origin:</strong> {{this.origin}}<br />
-      <strong>Destination:</strong> {{this.destination}}<br />
-      <strong>Rate:</strong> {{this.rate}}
-    </li>
+  <div style="margin-bottom: 20px;">
+    <!-- Load Title -->
+    {{#if origin}}
+    <div style="padding: 5px 10px; font-size: 18px; font-weight: bold; color: #fff; background-color: #2a4459;">
+      Load Number: {{" "}} {{loadNumber}}
+    </div>
+    {{/if}}
+
+    <div style="display:flex">
+      <div style="width: 50%;">
+        <div style="font-weight: bold; padding: 8px 0; text-decoration: underline;">
+          Origin Details
+        </div>
+
+        {{#if origin}}
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; font-weight: bold; color: #555;">
+          <span>Origin: </span>
+          <span style="color: #333; margin-left: 4px;">{{origin}}</span>
+        </div>
+        {{/if}}
+
+        <!-- Origin Pickup Date and Time -->
+        {{#if originEarlyPickupDate}}
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; font-weight: bold; color: #555;">
+          <span>Origin Early Pickup: </span>
+          <span style="color: #333; margin-left: 4px;">{{originEarlyPickupDate}} {{originEarlyPickupTime}}</span>
+        </div>
+        {{/if}}
+
+        {{#if originLatePickupDate}}
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; font-weight: bold; color: #555;">
+          <span>Origin Late Pickup: </span>
+          <span style="color: #333; margin-left: 4px;">{{originLatePickupDate}} {{originLatePickupTime}}</span>
+        </div>
+        {{/if}}
+
+        <!-- Origin Stops -->
+        {{#if originStops.length}}
+        <div style="padding: 8px 0; font-weight: bold; color: #555;">
+          Origin Stops:
+        </div>
+        {{#each originStops}}
+        <div style="padding-bottom: 10px;">
+          {{#if address}}
+          <strong>Address: </strong> {{address}}<br />
+          {{/if}}
+          {{#if earlyPickupDate}}
+          <strong>Early Pickup: </strong> {{earlyPickupDate}} {{earlyPickupTime}}<br />
+          {{/if}}
+          {{#if latePickupDate}}
+          <strong>Late Pickup: </strong> {{latePickupDate}} {{latePickupTime}}<br />
+          {{/if}}
+        </div>
+        <hr style="border: none; border-top: 1px solid #ddd;" />
+        {{/each}}
+        {{/if}}
+      </div>
+      <div style="width: 50%;">
+
+        <div style="font-weight: bold; padding: 8px 0; text-decoration: underline;">
+          Destination Details
+        </div>
+
+        {{#if destination}}
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; font-weight: bold; color: #555;">
+          <span>Destination: </span>
+          <span style="color: #333; margin-left: 4px;">{{destination}}</span>
+        </div>
+        {{/if}}
+
+        <!-- Destination Dropoff Date and Time -->
+        {{#if destinationEarlyDropoffDate}}
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; font-weight: bold; color: #555;">
+          <span>Destination Early Dropoff: </span>
+          <span style="color: #333; margin-left: 4px;">{{destinationEarlyDropoffDate}}
+            {{destinationEarlyDropoffTime}}</span>
+        </div>
+        {{/if}}
+
+        {{#if destinationLateDropoffDate}}
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; font-weight: bold; color: #555;">
+          <span>Destination Late Dropoff: </span>
+          <span style="color: #333; margin-left: 4px;">{{destinationLateDropoffDate}}
+            {{destinationLateDropoffTime}}</span>
+        </div>
+        {{/if}}
+
+        <!-- Destination Stops -->
+        {{#if destinationStops.length}}
+        <div style="padding: 8px 0; font-weight: bold; color: #555;">
+          Destination Stops:
+        </div>
+        {{#each destinationStops}}
+        <div style="padding-bottom: 10px;">
+          {{#if address}}
+          <strong>Address: </strong> {{address}}<br />
+          {{/if}}
+          {{#if earlyDropoffDate}}
+          <strong>Early Dropoff: </strong> {{earlyDropoffDate}} {{earlyDropoffTime}}<br />
+          {{/if}}
+          {{#if lateDropoffDate}}
+          <strong>Late Dropoff: </strong> {{lateDropoffDate}} {{lateDropoffTime}}<br />
+          {{/if}}
+        </div>
+        <hr style="border: none; border-top: 1px solid #ddd;" />
+        {{/each}}
+        {{/if}}
+
+      </div>
+    </div>
+
+
+    <div style="font-weight: bold; padding: 8px 0; text-decoration: underline;">
+      Other Details
+    </div>
+
+      <!-- Equipment, Mode, and Commodity -->
+      {{#if equipment}}
+      <div style="width: 50%; padding: 8px 0; font-weight: bold; color: #555;">
+        <span>Equipment: </span>
+        <span style="color: #333; margin-left: 4px;">{{equipment}}</span>
+      </div>
+      {{/if}}
+
+      {{#if mode}}
+      <div style="width: 50%; padding: 8px 0; font-weight: bold; color: #555;">
+        <span>Mode: </span>
+        <span style="color: #333; margin-left: 4px;">{{mode}}</span>
+      </div>
+      {{/if}}
+
+      {{#if commodity}}
+      <div style="width: 50%; padding: 8px 0; font-weight: bold; color: #555;">
+        <span>Commodity: </span>
+        <span style="color: #333; margin-left: 4px;">{{commodity}}</span>
+      </div>
+      {{/if}}
+
+      <!-- Load Dimensions and Weight -->
+      {{#if weight}}
+      <div style="width: 50%; padding: 8px 0; font-weight: bold; color: #555;">
+        <span>Weight: </span>
+        <span style="color: #333; margin-left: 4px;">{{weight}}</span>
+      </div>
+      {{/if}}
+
+      {{#if length}}
+      <div style="width: 50%; padding: 8px 0; font-weight: bold; color: #555;">
+        <span>Length: </span>
+        <span style="color: #333; margin-left: 4px;">{{length}}</span>
+      </div>
+      {{/if}}
+
+      {{#if width}}
+      <div style="width: 50%; padding: 8px 0; font-weight: bold; color: #555;">
+        <span>Width: </span>
+        <span style="color: #333; margin-left: 4px;">{{width}}</span>
+      </div>
+      {{/if}}
+
+      {{#if height}}
+      <div style="width: 50%; padding: 8px 0; font-weight: bold; color: #555;">
+        <span>Height: </span>
+        <span style="color: #333; margin-left: 4px;">{{height}}</span>
+      </div>
+      {{/if}}
+
+      {{#if pieces}}
+      <div style="width: 50%; padding: 8px 0; font-weight: bold; color: #555;">
+        <span>Pieces: </span>
+        <span style="color: #333; margin-left: 4px;">{{pieces}}</span>
+      </div>
+      {{/if}}
+
+      {{#if pallets}}
+      <div style="width: 50%; padding: 8px 0; font-weight: bold; color: #555;">
+        <span>Pallets: </span>
+        <span style="color: #333; margin-left: 4px;">{{pallets}}</span>
+      </div>
+      {{/if}}
+
+    <!-- Special Instructions -->
+    {{#if specialInstructions}}
+    <div style="display: flex; justify-content: space-between; padding: 8px 0; font-weight: bold; color: #555;">
+      <span>Special Instructions: </span>
+      <span style="color: #333; margin-left: 4px;">{{specialInstructions}}</span>
+    </div>
+    {{/if}}
+  </div>
   {{/each}}
-</ul>
+</div>

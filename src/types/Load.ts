@@ -33,7 +33,7 @@ export interface ILoad extends Document {
   destinationLateDropoffDate?: Date;
   destinationEarlyDropoffTime?: Date;
   destinationLateDropoffTime?: Date;
-  destinationStops: {
+  destinationStops?: {
     address: string;
     earlyDropoffDate?: Date;
     lateDropoffDate?: Date;
@@ -58,6 +58,7 @@ export interface ILoad extends Document {
   postedBy?: mongoose.Types.ObjectId;
   status: string;
   age?: Date;
+  formattedAge?: string;
   dhoDistance?: number;
   dhdDistance?: number;
   createdAt?: Date;
