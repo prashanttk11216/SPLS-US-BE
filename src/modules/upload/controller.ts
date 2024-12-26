@@ -10,7 +10,7 @@ export const handleSingleFileUpload = async (req: Request, res: Response): Promi
     }
 
     // Construct the public URL
-    const fileUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+    const fileUrl = `uploads/${req.file.filename}`;
 
     logger.info(`File uploaded: ${req.file.filename}`);
     send(res, 200, "File uploaded successfully", {
@@ -33,7 +33,7 @@ export const handleMultipleFileUpload = async (req: Request, res: Response): Pro
     // Generate public URLs for all uploaded files
     const uploadedFiles = (req.files as Express.Multer.File[]).map((file) => ({
       ...file,
-      path: `${req.protocol}://${req.get("host")}/uploads/${file.filename}`,
+      path: `uploads/${file.filename}`,
     }));
 
     logger.info(`Files uploaded: ${uploadedFiles.map((file) => file.filename).join(", ")}`);
