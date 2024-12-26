@@ -403,6 +403,7 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
     if (search) {
       const escapedSearch = escapeAndNormalizeSearch(search);
       filters.$or = [
+        { employeeId: { $regex: escapedSearch, $options: "i" } },
         { company: { $regex: escapedSearch, $options: "i" } },
         { email: { $regex: escapedSearch, $options: "i" } },
         { firstName: { $regex: escapedSearch, $options: "i" } },
