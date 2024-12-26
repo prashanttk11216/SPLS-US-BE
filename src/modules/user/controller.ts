@@ -304,19 +304,7 @@ export async function profile(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    send(res, 200, "Profile data retrieved successfully", {
-      user: {
-        _id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        primaryNumber: user.primaryNumber,
-        role: user.role,
-        isActive: user.isActive,
-        company: user.company,
-        avatarUrl: user.avatarUrl,
-      },
-    });
+    send(res, 200, "Profile data retrieved successfully", user);
   } catch (error) {
     logger.error("Unexpected error during profile retrieval:", error);
     send(res, 500, "Server error");
