@@ -90,8 +90,8 @@ export async function getTrucks(req: Request, res: Response): Promise<void> {
     if (truckId) {
       // Fetch a single truck by its ID
       const truck = await TruckModal.findOne({ _id: truckId })
-        .populate("brokerId", "company")
-        .populate("postedBy", "firstName lastName email");
+      .populate("brokerId", "-password")
+      .populate("postedBy", "-password")
 
       if (!truck) {
         send(res, 404, "Truck not found");
@@ -170,8 +170,8 @@ export async function getTrucks(req: Request, res: Response): Promise<void> {
 
     // Execute the query with pagination, sorting, and populating relevant fields
     const trucks = await TruckModal.find(filters)
-      .populate("brokerId", "company")
-      .populate("postedBy", "firstName lastName company email primaryNumber")
+      .populate("brokerId", "-password")
+      .populate("postedBy", "-password")
       .skip(skip)
       .limit(limit)
       .sort(sortOptions);
@@ -313,6 +313,8 @@ export async function getMatchingTrucks(
 
     // Fetch matching trucks from the database based on filters
     let trucks = await TruckModal.find(filters)
+      .populate("brokerId", "-password")
+      .populate("postedBy", "-password")
       .sort(sortOptions)
       .skip(skip) // Pagination: skip records
       .limit(limit); // Pagination: limit number of results

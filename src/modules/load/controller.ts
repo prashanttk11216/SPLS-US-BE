@@ -187,8 +187,8 @@ export async function fetchLoadsHandler(
     if (loadId) {
       // Fetch a single load by its ID
       const load = await LoadModel.findOne({ _id: loadId })
-        .populate("brokerId", "company")
-        .populate("postedBy");
+      .populate("brokerId", "-password")
+      .populate("postedBy", "-password")
 
       if (!load) {
         send(res, 404, "Load not found");
@@ -295,14 +295,8 @@ export async function fetchLoadsHandler(
     // Fetch all loads matching base filters
     if ((originLat && originLng) || (destinationLat && destinationLng)) {
       const allLoads = await LoadModel.find(filters)
-        .populate("brokerId", "company")
-        .populate("postedBy", {
-          firstName: 1,
-          lastName: 1,
-          company: 1,
-          email: 1,
-          primaryNumber: 1,
-        })
+      .populate("brokerId", "-password")
+      .populate("postedBy", "-password")
         .skip(skip)
         .limit(limit)
         .sort(sortOptions);
@@ -366,14 +360,8 @@ export async function fetchLoadsHandler(
 
     // Execute the query with pagination, sorting, and populating relevant fields
     const loads = await LoadModel.find(filters)
-      .populate("brokerId", "company")
-      .populate("postedBy", {
-        firstName: 1,
-        lastName: 1,
-        company: 1,
-        email: 1,
-        primaryNumber: 1,
-      })
+    .populate("brokerId", "-password")
+    .populate("postedBy", "-password")
       .skip(skip)
       .limit(limit)
       .sort(sortOptions);
@@ -423,8 +411,8 @@ export async function requestLoadHandler(
     // Fetch the load by its ID
     const load = await LoadModel.findById(req.params.loadId).populate<{
       brokerId: IUser;
-    }>("brokerId", "email").populate<{ postedBy: IUser }>("postedBy", "email");
-    ;
+    }>("brokerId", "-password").populate<{ postedBy: IUser }>("postedBy", "-password");
+    
 
     // Check if the load exists
     if (!load) {
@@ -522,9 +510,8 @@ export async function confirmRateWithCustomerHandler(
 ): Promise<void> {
   try {
     // Fetch load details and populate broker's email
-    const load = await LoadModel.findById(req.params.loadId).populate<{
-      brokerId: IUser;
-    }>("brokerId", "email");
+    const load = await LoadModel.findById(req.params.loadId).populate("brokerId", "-password")
+    .populate("postedBy", "-password")
 
     // Check if the load exists
     if (!load) {
@@ -660,9 +647,8 @@ export async function notifyCarrierAboutLoadHandler(
     }
 
     // Fetch load details for the provided load IDs
-    const loads = await LoadModel.find({ _id: { $in: loadIds } }).populate<{
-      brokerId: IUser;
-    }>("brokerId", "email");
+    const loads = await LoadModel.find({ _id: { $in: loadIds } }).populate("brokerId", "-password")
+    .populate("postedBy", "-password")
 
     if (!loads.length) {
       send(res, 404, "No loads found for the provided IDs.");
@@ -808,8 +794,8 @@ export async function updateLoadStatusHandler(
 
     // Fetch the load details and populate related broker and customer info
     const load = await LoadModel.findById(req.params.loadId)
-      .populate<{ brokerId: IUser }>("brokerId", "email")
-      .populate<{ customerId: IUser }>("customerId", "email");
+    .populate("brokerId", "-password")
+    .populate("postedBy", "-password")
 
     if (!load) {
       send(res, 404, "Load not found");
