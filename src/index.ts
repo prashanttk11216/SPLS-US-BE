@@ -13,22 +13,24 @@ import connectDB from "./db/connection";
 import errorHandler from "./middleware/errorHandler";
 import logger from "./utils/logger";
 import path from "path";
-import sgMail from '@sendgrid/mail'
+import sgMail from '@sendgrid/mail';
 
 const app: Express = express();
 const PORT: number = env.PORT || 5000;
 const HOSTNAME = env.HOST || "localhost";
 
 // Validate required environment variables
-if (!env.MONGO_URI || !env.PORT) {
-  logger.error("Required environment variables are missing");
+const requiredEnvs = ["MONGO_URI", "PORT"];
+const missingEnvs = requiredEnvs.filter(envVar => !env[envVar]);
+if (missingEnvs.length) {
+  logger.error(`Required environment variables are missing: ${missingEnvs.join(", ")}`);
   process.exit(1);
 }
 
 sgMail.setApiKey(env.SEND_GRID_EMAIL_API);
 
 // Middleware configuration
-app.use(cors({ origin: env.CORS_ORIGIN,credentials: false }));
+app.use(cors({ origin: env.CORS_ORIGIN, credentials: false }));
 app.use(helmet()); // Secure headers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -42,11 +44,7 @@ app.use((req, res, next) => {
 });
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-
-
-
-
-// Connect to the database
+// Database connection (async/await for clarity)
 const startDatabase = async () => {
   try {
     await connectDB();
@@ -59,7 +57,7 @@ const startDatabase = async () => {
 
 let server: Server;
 
-// Start server function
+// Start server function (async/await for clarity)
 const startApp = async () => {
   await startDatabase();
 
@@ -74,7 +72,7 @@ const startApp = async () => {
   });
 };
 
-// Handle graceful shutdown
+// Graceful shutdown with better logging
 const shutdown = () => {
   server?.close(() => {
     logger.info("Server closed");

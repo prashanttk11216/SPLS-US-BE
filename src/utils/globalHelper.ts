@@ -25,3 +25,12 @@ export function calculateDistance(
 
   return Math.round(distance); // Return rounded distance
 }
+
+export async function streamToBuffer(stream: any): Promise<Buffer> { 
+  const chunks: Uint8Array[] = [];
+  return new Promise((resolve, reject) => {
+      stream.on('data', (chunk: any) => chunks.push(chunk));
+      stream.on('end', () => resolve(Buffer.concat(chunks)));
+      stream.on('error', reject);
+  });
+}

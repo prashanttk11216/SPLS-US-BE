@@ -12,59 +12,33 @@ import truckRouter from "./modules/trucks";
 
 const router = Router();
 
-const handlers: Record<string, { path: Router; IsPrivateModule?: boolean }> = {
-  user: {
-    path: userRouter,
-    IsPrivateModule: false,
-  },
-  otp: {
-    path: otpRouter,
-    IsPrivateModule: false,
-  },
-  load: {
-    path: loadRouter,
-    IsPrivateModule: true,
-  },
-  role: {
-    path: roleRouter,
-    IsPrivateModule: true,
-  },
-  shipper: {
-    path: shipperRouter,
-    IsPrivateModule: true,
-  },
-  consignee: {
-    path: consigneeRouter,
-    IsPrivateModule: true,
-  },
-  truck: {
-    path: truckRouter,
-    IsPrivateModule: true,
-  },
-  upload: {
-    path: uploadRouter,
-    IsPrivateModule: true,
-  },
-};
-
-for (const [moduleName, handler] of Object.entries(handlers)) {
-  const path = `/${moduleName}`; // Consistent prefixing
-
-  if (handler.IsPrivateModule) {
-    router.use(path, auth, handler.path); // Use the auth middleware for private modules
-  } else {
-    router.use(path, handler.path); // Public modules
-  }
+// Define module routes with optional IsPrivate flag
+interface ModuleRoute {
+  path: Router;
+  IsPrivate?: boolean;
 }
 
-// Add a catch-all handler for unmatched routes
-router.use("*", (req: Request, res: Response): void => {
-  // Use the req parameter for logging or any other purpose if needed
-  console.warn(`Unmatched route: ${req.method} ${req.originalUrl}`);
+const moduleRoutes: Record<string, ModuleRoute> = {
+  user: { path: userRouter, IsPrivate: false },
+  otp: { path: otpRouter, IsPrivate: false },
+  load: { path: loadRouter, IsPrivate: true },
+  role: { path: roleRouter, IsPrivate: true },
+  shipper: { path: shipperRouter, IsPrivate: true },
+  consignee: { path: consigneeRouter, IsPrivate: true },
+  truck: { path: truckRouter, IsPrivate: true },
+  upload: { path: uploadRouter, IsPrivate: true },
+};
 
-  // Send a 404 response
-  send(res, 404, "API Not Found"); // Send response without return
+// Dynamically mount routes with optional authentication
+for (const [moduleName, { path, IsPrivate }] of Object.entries(moduleRoutes)) {
+  const modulePath = `/${moduleName}`; 
+  router.use(modulePath, IsPrivate ? auth : (req, res, next) => next(), path); 
+}
+
+// 404 Not Found handler
+router.use("*", (req: Request, res: Response) => {
+  console.warn(`Unmatched route: ${req.method} ${req.originalUrl}`);
+  send(res, 404, "API Not Found"); 
 });
 
-// Ensure to export the router
 export default router;
