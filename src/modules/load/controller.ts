@@ -9,13 +9,10 @@ import { UserRole } from "../../enums/UserRole";
 import { LoadModel } from "./model";
 import logger from "../../utils/logger";
 import { LoadStatus } from "../../enums/LoadStatus";
-import {
-  SendEmailOptions,
-  sendNotificationEmail,
-} from "../../services/emailService";
 import { SortOrder } from "mongoose";
 import { calculateDistance } from "../../utils/globalHelper";
 import { formatDate } from "../../utils/dateFormat";
+import EmailService, { SendEmailOptions } from "../../services/EmailService";
 
 const validTransitions: Record<LoadStatus, LoadStatus[]> = {
   [LoadStatus.Draft]: [LoadStatus.Published],
@@ -483,7 +480,7 @@ export async function requestLoadHandler(
     };
 
     // Send email notification to the broker (uncomment this when email functionality is ready)
-    await sendNotificationEmail(emailOptions);
+    await EmailService.sendNotificationEmail(emailOptions);
 
     // Respond back to the carrier confirming their interest in the load
     send(
@@ -598,7 +595,7 @@ export async function confirmRateWithCustomerHandler(
     };
 
     // Send the email notification
-    await sendNotificationEmail(emailOptions);
+    await EmailService.sendNotificationEmail(emailOptions);
 
     // Respond with success
     send(
@@ -758,7 +755,7 @@ export async function notifyCarrierAboutLoadHandler(
     };
 
     // Send the email to carriers
-    await sendNotificationEmail(emailOptions);
+    await EmailService.sendNotificationEmail(emailOptions);
 
     // Respond with success
     send(

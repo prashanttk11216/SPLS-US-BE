@@ -16,19 +16,23 @@ export interface SendEmailOptions {
   templateData: EmailData;
 }
 
-export const sendNotificationEmail = async (options: SendEmailOptions): Promise<void> => {
-  const { to, subject, templateName, templateData } = options;
+export class EmailService {
+  async sendNotificationEmail(options: SendEmailOptions): Promise<void> {
+    const { to, subject, templateName, templateData } = options;
 
-  // Compile the email template with the provided data
-  const emailContent = await compileTemplateWithLayout('main', templateName, templateData);
+    // Compile the email template with the provided data
+    const emailContent = await compileTemplateWithLayout('main', templateName, templateData);
 
-  const mailOptions = {
-    from: env.EMAIL_USER,
-    to,
-    subject,
-    html: emailContent,
+    const mailOptions = {
+      from: env.EMAIL_USER,
+      to,
+      subject,
+      html: emailContent,
+    }
+    await sgMail.send(mailOptions)
+    // Send the email
+    // await transporter.sendMail(mailOptions);
   }
-  await sgMail.send(mailOptions)
-  // Send the email
-  // await transporter.sendMail(mailOptions);
-};
+}
+
+export default new EmailService();
