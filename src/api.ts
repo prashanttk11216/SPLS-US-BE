@@ -9,6 +9,7 @@ import uploadRouter from "./modules/upload";
 import shipperRouter from "./modules/shipper";
 import consigneeRouter from "./modules/consignee";
 import truckRouter from "./modules/trucks";
+import dispatchRouter from "./modules/dispatch";
 
 const router = Router();
 
@@ -22,6 +23,7 @@ const moduleRoutes: Record<string, ModuleRoute> = {
   user: { path: userRouter, IsPrivate: false },
   otp: { path: otpRouter, IsPrivate: false },
   load: { path: loadRouter, IsPrivate: true },
+  dispatch: { path: dispatchRouter, IsPrivate: true },
   role: { path: roleRouter, IsPrivate: true },
   shipper: { path: shipperRouter, IsPrivate: true },
   consignee: { path: consigneeRouter, IsPrivate: true },

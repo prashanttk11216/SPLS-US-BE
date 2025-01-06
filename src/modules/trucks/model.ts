@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 import { Equipment } from "../../enums/Equipment";
 import { ITruck } from "../../types/Truck";
+import { formatTimeDifference } from "../../utils/globalHelper";
 
 // Define Load interface extending Mongoose's Document
 
@@ -57,30 +58,7 @@ TruckSchema.virtual<ITruck>("formattedAge").get(function () {
   // Difference in time (in milliseconds)
   const differenceInTime = now.getTime() - ageDate.getTime();
 
-  // Calculate time in different units
-  const ageInSeconds = Math.floor(differenceInTime / 1000); // Seconds
-  const ageInMinutes = Math.floor(ageInSeconds / 60); // Minutes
-  const ageInHours = Math.floor(ageInMinutes / 60); // Hours
-  const ageInDays = Math.floor(ageInHours / 24); // Days
-  const ageInMonths = Math.floor(ageInDays / 30.44); // Approximate months
-  const ageInYears = Math.floor(ageInDays / 365.25); // Approximate years
-
-  // Create a formatted string with abbreviations
-  if (ageInYears > 0) {
-    return `${ageInYears}y`; // Years
-  } else if (ageInMonths > 0) {
-    return `${ageInMonths}m`; // Months
-  } else if (ageInDays > 0) {
-    return `${ageInDays}d`; // Days
-  } else if (ageInHours > 0) {
-    return `${ageInHours}h`; // Hours
-  } else if (ageInMinutes > 0) {
-    return `${ageInMinutes}m`; // Minutes
-  } else if (ageInSeconds > 0) {
-    return `${ageInSeconds}s`; // Seconds
-  }
-
-  return null;
+  return formatTimeDifference(differenceInTime);
 });
 
 export const TruckModal = mongoose.model<ITruck>("Truck", TruckSchema);

@@ -34,3 +34,36 @@ export async function streamToBuffer(stream: any): Promise<Buffer> {
       stream.on('error', reject);
   });
 }
+
+
+/**
+ * Calculate the time difference between two dates and return it in a formatted string.
+ *
+ * @param {Date | number} startDate - The start date/time (or timestamp in milliseconds).
+ * @param {Date | number} endDate - The end date/time (or timestamp in milliseconds).
+ * @returns {string} - The formatted time difference (e.g., "2y", "3m", "5d", "4h", "10m", "20s").
+ */
+export function formatTimeDifference(differenceInTime: number): string {
+  const ageInSeconds = Math.floor(differenceInTime / 1000); // Seconds
+  const ageInMinutes = Math.floor(ageInSeconds / 60); // Minutes
+  const ageInHours = Math.floor(ageInMinutes / 60); // Hours
+  const ageInDays = Math.floor(ageInHours / 24); // Days
+  const ageInMonths = Math.floor(ageInDays / 30.44); // Approximate months
+  const ageInYears = Math.floor(ageInDays / 365.25); // Approximate years
+
+  if (ageInYears > 0) {
+    return `${ageInYears}y`;
+  } else if (ageInMonths > 0) {
+    return `${ageInMonths}m`;
+  } else if (ageInDays > 0) {
+    return `${ageInDays}d`;
+  } else if (ageInHours > 0) {
+    return `${ageInHours}h`;
+  } else if (ageInMinutes > 0) {
+    return `${ageInMinutes}m`;
+  } else if (ageInSeconds > 0) {
+    return `${ageInSeconds}s`;
+  } else {
+    return "0s"; // Default to 0 seconds if no difference
+  }
+}

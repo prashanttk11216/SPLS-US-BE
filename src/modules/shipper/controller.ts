@@ -6,6 +6,8 @@ import logger from "../../utils/logger";
 import { z } from "zod";
 import { SortOrder } from "mongoose";
 import { escapeAndNormalizeSearch } from "../../utils/regexHelper";
+import { IUser } from "../../types/User";
+import { UserRole } from "../../enums/UserRole";
 
 
 /**
@@ -16,6 +18,7 @@ export const createShipper = async (
   res: Response
 ): Promise<void> => {
   try {
+    const user = (req as Request & { user?: IUser })?.user;
     // Validate request body
     const validatedData = createShipperSchema.parse(req.body);
 
@@ -27,6 +30,13 @@ export const createShipper = async (
       send(res, 409, "Shipper with this Email is already registered.");
       return;
     }
+    if(user?.role === UserRole.BROKER_ADMIN) {
+      validatedData.brokerId = validatedData.postedBy = user?._id!;
+    }else{
+      validatedData.postedBy = user?._id!;
+      validatedData.brokerId = user?.brokerId!;
+    }
+    
 
     // Create new Shipper
     const newShipper = await ShipperModel.create(validatedData);

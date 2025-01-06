@@ -9,6 +9,8 @@ import logger from "../../utils/logger";
 import { z } from "zod";
 import { SortOrder } from "mongoose";
 import { escapeAndNormalizeSearch } from "../../utils/regexHelper";
+import { IUser } from "../../types/User";
+import { UserRole } from "../../enums/UserRole";
 
 /**
  * Get all Consignees with optional filters, pagination, and sorting.
@@ -47,7 +49,7 @@ export async function getConsignee(req: Request, res: Response): Promise<void> {
 
     // Add all other query parameters dynamically into filters
     for (const [key, value] of Object.entries(req.query)) {
-      if (!['page', 'limit', 'brokerId', 'sort', 'search'].includes(key)) {
+      if (!["page", "limit", "brokerId", "sort", "search"].includes(key)) {
         filters[key] = value;
       }
     }
@@ -75,7 +77,7 @@ export async function getConsignee(req: Request, res: Response): Promise<void> {
         "isActive",
         "name",
         "shippingHours",
-        "createdAt"
+        "createdAt",
       ]; // Define valid fields
 
       sortFields.forEach((field) => {
@@ -116,6 +118,7 @@ export const createConsignee = async (
   res: Response
 ): Promise<void> => {
   try {
+    const user = (req as Request & { user?: IUser })?.user;
     // Validate request body
     const validatedData = createConsigneeSchema.parse(req.body);
 
@@ -126,6 +129,13 @@ export const createConsignee = async (
     if (existingConsignee) {
       send(res, 409, "Consignee with this Email is already registered.");
       return;
+    }
+    
+    if (user?.role === UserRole.BROKER_ADMIN) {
+      validatedData.brokerId = validatedData.postedBy = user?._id!;
+    } else {
+      validatedData.postedBy = user?._id!;
+      validatedData.brokerId = user?.brokerId!;
     }
 
     // Create new Consignee

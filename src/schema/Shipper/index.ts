@@ -12,7 +12,7 @@ export const createShipperSchema = z.object({
       str: z.string().min(1, { message: "address is required" }), // String representation
       lat: z.number().min(-90).max(90).optional().refine((val) => val !== undefined, { message: "Latitude is required" }), // Latitude
       lng: z.number().min(-180).max(180).optional().refine((val) => val !== undefined, { message: "Longitude is required" }), // Longitude
-    }).optional(),
+    }),
   addressLine2: z.string().optional(),
   addressLine3: z.string().optional(),
   country: z.string(),
@@ -21,6 +21,7 @@ export const createShipperSchema = z.object({
   zip: z.string(),
   shippingHours: z.string().optional(),
   brokerId: z.string(),
+  postedBy: z.string(),
   isAppointments: z.boolean().optional(),
   isActive: z.boolean().optional(),
 });

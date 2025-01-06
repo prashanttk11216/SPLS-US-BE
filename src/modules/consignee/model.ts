@@ -12,7 +12,11 @@ const ConsigneeSchema: Schema = new Schema({
       primaryNumber: { type: String, required: true, trim: true },
   
       // Address details
-      address: { type: String, trim: true },
+      address: {
+        str: { type: String }, // String representation
+        lat: { type: Number }, // Latitude
+        lng: { type: Number }, // Longitude
+      },
       addressLine2: { type: String, trim: true },
       addressLine3: { type: String, trim: true },
       country: { type: String, trim: true },
@@ -27,6 +31,7 @@ const ConsigneeSchema: Schema = new Schema({
         ref: "User",
         required: true,
       },
+      postedBy: { type: Schema.Types.ObjectId, ref: "User" },
   
       // Status flags
       isDeleted: { type: Boolean, default: false },

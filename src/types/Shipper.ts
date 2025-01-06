@@ -8,7 +8,11 @@ export interface IShipper extends Document {
     lastName: string;
     email: string;
     primaryNumber: string;
-    address?: string;
+    address: {
+      str: string; // String representation of the address
+      lat: number; // Latitude
+      lng: number; // Longitude
+    };
     addressLine2?: string;
     addressLine3?: string;
     country?: string;
@@ -17,6 +21,7 @@ export interface IShipper extends Document {
     zip?: string;
     shippingHours?: string;
     brokerId: mongoose.Types.ObjectId;
+    postedBy?: mongoose.Types.ObjectId;
     isDeleted: boolean;
     isAppointments: boolean;
     isActive: boolean;
