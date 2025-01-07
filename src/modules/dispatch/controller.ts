@@ -226,6 +226,12 @@ export async function fetchLoadsHandler(
       const sortFields = sortQuery.split(","); // Support multiple sort fields (comma-separated)
       const validFields = [
         "age",
+        "WONumber",
+        "equipment",
+        "shipper.address",
+        "shipper.date",
+        "consignee.address",
+        "consignee.date",
         "loadNumber",
         "createdAt",
         "miles",
