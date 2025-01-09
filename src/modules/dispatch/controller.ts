@@ -9,13 +9,14 @@ import { DispatchModel } from "./model";
 import logger from "../../utils/logger";
 import { LoadStatus } from "../../enums/LoadStatus";
 import { SortOrder } from "mongoose";
+import { DispatchLoadStatus } from "../../enums/DispatchLoadStatus";
 
-const validTransitions: Record<LoadStatus, LoadStatus[]> = {
-  [LoadStatus.Draft]: [LoadStatus.Published],
-  [LoadStatus.Published]: [LoadStatus.PendingResponse, LoadStatus.Cancelled],
-  [LoadStatus.PendingResponse]: [LoadStatus.DealClosed, LoadStatus.Cancelled],
-  [LoadStatus.DealClosed]: [],
-  [LoadStatus.Cancelled]: [],
+const validTransitions: Record<DispatchLoadStatus, DispatchLoadStatus[]> = {
+  [DispatchLoadStatus.Draft]: [DispatchLoadStatus.Published],
+  [DispatchLoadStatus.Published]: [DispatchLoadStatus.InTransit, DispatchLoadStatus.Cancelled],
+  [DispatchLoadStatus.InTransit]: [DispatchLoadStatus.Completed, DispatchLoadStatus.Cancelled],
+  [DispatchLoadStatus.Completed]: [], // No transitions possible after completion
+  [DispatchLoadStatus.Cancelled]: [], // No transitions possible after cancellation
 };
 
 /**
@@ -309,8 +310,8 @@ export async function updateLoadStatusHandler(
 
     // Validate the status transition
     if (
-      !validTransitions[currentStatus as LoadStatus]?.includes(
-        status as LoadStatus
+      !validTransitions[currentStatus as DispatchLoadStatus]?.includes(
+        status as DispatchLoadStatus
       )
     ) {
       send(

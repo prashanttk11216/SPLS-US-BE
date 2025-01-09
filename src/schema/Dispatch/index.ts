@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { Equipment } from "../../enums/Equipment";
+import { DispatchLoadType } from "../../enums/DispatchLoadType";
 
 // Address Schema
 const addressSchema = z.object({
@@ -38,6 +39,31 @@ const shipperSchema = z.object({
   PO: z.number().optional(),
 });
 
+
+// Fuel Service Charge Schema
+const FscSchema = z.object({
+  isPercentage: z.boolean().optional(),
+  value: z.number().min(0, { message: "Value must be 0 or greater" }),
+});
+
+// Other Charges Schema
+const OtherChargeSchema = z.object({
+  description: z.string({ required_error: "Description is required" }),
+  amount: z.number().min(0, { message: "Amount must be 0 or greater" }),
+  isAdvance: z.boolean().optional(),
+  date: z.date().optional(),
+});
+
+const CarrierFeeBreakdownSchema = z.object({
+  type: z.string({ required_error: "Agreed rate type is required" }), // Example: "Flat Rate", "Per Mile"
+  units: z.number().min(0).optional(),
+  rate: z.number().min(0, { message: "Rate must be 0 or greater" }),
+  PDs: z.number().min(0).default(0),
+  fuelServiceCharge: FscSchema,
+  totalRate: z.number().min(0).optional(),
+  OtherChargeSchema: z.array(OtherChargeSchema).optional(),
+});
+
 // Dispatch Schema
 const baseDispatchSchema = z.object({
   brokerId: z.string(),
@@ -45,12 +71,25 @@ const baseDispatchSchema = z.object({
   WONumber: z.number().int().optional(),
   customerId: z.string(),
   carrierId: z.string(),
+  salesRep: z.string(),
+  type: z.nativeEnum(DispatchLoadType, { required_error: "Type is required" }),
+  units: z.number().min(0).optional(),
+  PDs: z.number().min(0).optional(),
+  fuelServiceCharge: FscSchema.optional(),
+  otherCharges: z.object({
+    totalAmount: z.number().min(0, { message: "Direct amount must be 0 or greater" }).optional(),
+    breakdown: z.array(OtherChargeSchema).optional(),
+  }).optional(),
+  carrierFee: z.object({
+    totalAmount: z.number().min(0, { message: "Total amount must be 0 or greater" }),
+    breakdown: CarrierFeeBreakdownSchema.optional(),
+  }).optional(),  
   equipment: z.nativeEnum(Equipment, { required_error: "Equipment is required" }),
   allInRate: z.number().min(0).optional(),
   customerRate: z.number().min(0).optional(),
   carrierRate: z.number().min(0).optional(),
-  consignee: consigneeSchema,
-  shipper: shipperSchema,
+  consignee: consigneeSchema.optional(),
+  shipper: shipperSchema.optional(),
   postedBy: z.string().optional(),
   status: z.enum(["Draft", "Published", "Pending Response", "Deal Closed", "Cancelled"]).optional(),
   age: z.string().optional(),

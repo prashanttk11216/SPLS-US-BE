@@ -1,5 +1,7 @@
 import { Document, Types } from "mongoose";
 import { Equipment } from "../enums/Equipment";
+import { DispatchLoadType } from "../enums/DispatchLoadType";
+import { DispatchLoadStatus } from "../enums/DispatchLoadStatus";
 
 export interface IAddress {
   str: string; // String representation
@@ -35,12 +37,52 @@ export interface IShipper {
   PO?: number;
 }
 
+export interface IFsc {
+  isPercentage: boolean,
+  value: number
+}
+
+export interface IOtherChargeBreakdown {
+  description: string;
+  amount: number;
+  isAdvance: boolean;
+  date: Date
+}
+
+export interface IOtherCharge {
+  totalAmount: number;
+  breakdown: IOtherChargeBreakdown[];
+}
+
+export interface ICarrierFeeBreakdown {
+  type: DispatchLoadType,
+  units: number;
+  rate: number,
+  PDs: number,
+  fuelServiceCharge: IFsc,
+  totalRate: number;
+  OtherChargeSchema: IOtherChargeBreakdown[]
+}
+
+
+export interface ICarrierFee {
+  totalAmount: number;
+  breakdown: ICarrierFeeBreakdown;
+}
+
 export interface IDispatch extends Document {
   brokerId?: Types.ObjectId;
   loadNumber: number;
   WONumber: number;
   customerId?: Types.ObjectId;
   carrierId?: Types.ObjectId;
+  salesRep: Types.ObjectId;
+  type: DispatchLoadType;
+  units: number;
+  PDs: number;
+  fuelServiceCharge: IFsc;
+  otherCharges: IOtherCharge;
+  carrierFee: ICarrierFee;
   equipment: Equipment;
   allInRate?: number;
   customerRate?: number;
@@ -48,7 +90,7 @@ export interface IDispatch extends Document {
   consignee: IConsignee;
   shipper: IShipper;
   postedBy?: Types.ObjectId;
-  status: "Draft" | "Published" | "Pending Response" | "Deal Closed" | "Cancelled";
+  status: DispatchLoadStatus;
   age?: Date;
   formattedAge?: string; // Virtual field
   createdAt?: Date;

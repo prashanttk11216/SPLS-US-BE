@@ -2,6 +2,8 @@ import mongoose, { Schema, Document } from "mongoose";
 import { Equipment } from "../../enums/Equipment";
 import { formatTimeDifference } from "../../utils/globalHelper";
 import { IDispatch } from "../../types/Dispatch";
+import { DispatchLoadType } from "../../enums/DispatchLoadType";
+import { DispatchLoadStatus } from "../../enums/DispatchLoadStatus";
 
 // Define Load interface extending Mongoose's Document
 const addressSchema = new mongoose.Schema({
@@ -44,16 +46,60 @@ const shipperSchema = new Schema({
   PO: { type: Number },
 });
 
+const FscSchema: Schema = new Schema({
+  type: {
+    type: Boolean,
+    required: true,
+  },
+  value : {
+    type: Number,
+    min: 0,
+    required: true,
+  },
+});
+
+const OtherChargeSchema: Schema = new Schema({
+  description: { type: String, required: true }, // Description of the charge
+  amount: { type: Number, min: 0, required: true }, // Amount of the charge
+  isAdvance: { type: Boolean, default: false }, // Flag to indicate if it's an advance charge
+  date: { type: Date }, // Optional: Used only for advance charges
+});
+
+
+const CarrierFeeBreakdownSchema: Schema = new Schema({
+  type: { type: String, enum: DispatchLoadType},
+  units: { type: Number, min: 0},
+  rate: { type: Number, min: 0, required: true }, // Agreed base rate
+  PDs: { type: Number, min: 0, default: 0 }, // Number of picks/drops
+  fuelServiceCharge: FscSchema,
+  totalRate: { type: Number, min: 0, required: true }, // Total rate after all calculations
+  OtherChargeSchema: [OtherChargeSchema]
+});
+
+
 const DispatchSchema: Schema = new Schema<IDispatch>(
   {
     brokerId: { type: Schema.Types.ObjectId, ref: "User" },
     loadNumber: { type: Number, unique: true },
-    WONumber: { type: Number, unique: true },
     customerId: { type: Schema.Types.ObjectId, ref: "User" },
+    salesRep: { type: Schema.Types.ObjectId, ref: "User" },
+    WONumber: { type: Number, unique: true },
+    type: { type: String, enum: DispatchLoadType},
+    units: { type: Number, min: 0},
+    customerRate: { type: Number, min: 0 },
+    PDs: { type: Number, min: 0 },
+    fuelServiceCharge: { type: FscSchema },
+    otherCharges: {
+      totalAmount: { type: Number, min: 0 }, // Direct amount for other charges
+      breakdown: [OtherChargeSchema], // List of other charges and advance charges
+    },
+    carrierFee: {
+      totalAmount: { type: Number, min: 0 }, // Direct amount for carrier fee
+      breakdown: CarrierFeeBreakdownSchema, // Detailed breakdown structure
+    },
     carrierId: { type: Schema.Types.ObjectId, ref: "User" },
     equipment: { type: String, enum: Equipment, required: true },
     allInRate: { type: Number, min: 0 },
-    customerRate: { type: Number, min: 0 },
     carrierRate: { type: Number, min: 0 },
 
     consignee: {
@@ -65,18 +111,11 @@ const DispatchSchema: Schema = new Schema<IDispatch>(
       type: shipperSchema,
       required: true,
     },
-
     postedBy: { type: Schema.Types.ObjectId, ref: "User" },
     status: {
       type: String,
-      enum: [
-        "Draft",
-        "Published",
-        "In Transit",
-        "Completed",
-        "Cancelled",
-      ],
-      default: "Draft",
+      enum: DispatchLoadStatus,
+      default: DispatchLoadStatus.Draft,
     },
     age: { type: Date }, // Persistent Age Field
   },
