@@ -93,6 +93,8 @@ export async function createLoadHandler(
 
     send(res, 201, "Load created successfully", load); // Send a success response with the created load
   } catch (error) {
+    console.log(error);
+    
     // Handle validation errors from Zod
     if (error instanceof z.ZodError) {
       send(res, 400, "Invalid input data", { errors: error.errors });

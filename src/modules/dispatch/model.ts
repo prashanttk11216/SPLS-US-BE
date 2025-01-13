@@ -47,9 +47,9 @@ const shipperSchema = new Schema({
 });
 
 const FscSchema: Schema = new Schema({
-  type: {
+  isPercentage: {
     type: Boolean,
-    required: true,
+    required: false,
   },
   value : {
     type: Number,
@@ -100,7 +100,6 @@ const DispatchSchema: Schema = new Schema<IDispatch>(
     carrierId: { type: Schema.Types.ObjectId, ref: "User" },
     equipment: { type: String, enum: Equipment, required: true },
     allInRate: { type: Number, min: 0 },
-    carrierRate: { type: Number, min: 0 },
 
     consignee: {
       type: consigneeSchema,

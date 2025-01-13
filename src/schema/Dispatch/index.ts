@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { Equipment } from "../../enums/Equipment";
 import { DispatchLoadType } from "../../enums/DispatchLoadType";
+import { DispatchLoadStatus } from "../../enums/DispatchLoadStatus";
 
 // Address Schema
 const addressSchema = z.object({
@@ -51,7 +52,7 @@ const OtherChargeSchema = z.object({
   description: z.string({ required_error: "Description is required" }),
   amount: z.number().min(0, { message: "Amount must be 0 or greater" }),
   isAdvance: z.boolean().optional(),
-  date: z.date().optional(),
+  date: z.string().optional(),
 });
 
 const CarrierFeeBreakdownSchema = z.object({
@@ -87,11 +88,10 @@ const baseDispatchSchema = z.object({
   equipment: z.nativeEnum(Equipment, { required_error: "Equipment is required" }),
   allInRate: z.number().min(0).optional(),
   customerRate: z.number().min(0).optional(),
-  carrierRate: z.number().min(0).optional(),
   consignee: consigneeSchema.optional(),
   shipper: shipperSchema.optional(),
   postedBy: z.string().optional(),
-  status: z.enum(["Draft", "Published", "Pending Response", "Deal Closed", "Cancelled"]).optional(),
+  status: z.nativeEnum(DispatchLoadStatus).optional(),
   age: z.string().optional(),
 });
 
