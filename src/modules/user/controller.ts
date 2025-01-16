@@ -387,21 +387,24 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
 
     // Search functionality
     const search = req.query.search as string;
-    if (search) {
+    const searchField = req.query.searchField as string; // Get the specific field to search
+
+    if (search && searchField) {
       const escapedSearch = escapeAndNormalizeSearch(search);
-      filters.$or = [
-        { employeeId: { $regex: escapedSearch, $options: "i" } },
-        { company: { $regex: escapedSearch, $options: "i" } },
-        { email: { $regex: escapedSearch, $options: "i" } },
-        { firstName: { $regex: escapedSearch, $options: "i" } },
-        { lastName: { $regex: escapedSearch, $options: "i" } },
-      ];
+      if(searchField == "name"){
+        filters.$or = [
+          { firstName: { $regex: escapedSearch, $options: "i" } },
+          { lastName: { $regex: escapedSearch, $options: "i" } },
+        ];
+      }else{
+        filters[searchField] = { $regex: escapedSearch, $options: "i" };
+      }
     }
 
 
     // Add all other query parameters dynamically into filters
     for (const [key, value] of Object.entries(req.query)) {
-      if (!['page', 'limit', 'role', 'brokerId', 'sort', 'search'].includes(key)) {
+      if (!['page', 'limit', 'role', 'brokerId', 'sort', 'search', 'searchField'].includes(key)) {
         filters[key] = value;
       }
     }

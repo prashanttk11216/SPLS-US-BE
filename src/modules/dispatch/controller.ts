@@ -10,6 +10,7 @@ import logger from "../../utils/logger";
 import { LoadStatus } from "../../enums/LoadStatus";
 import { SortOrder } from "mongoose";
 import { DispatchLoadStatus } from "../../enums/DispatchLoadStatus";
+import { escapeAndNormalizeSearch } from "../../utils/regexHelper";
 
 const validTransitions: Record<DispatchLoadStatus, DispatchLoadStatus[]> = {
   [DispatchLoadStatus.Draft]: [DispatchLoadStatus.Published],
@@ -244,6 +245,16 @@ export async function fetchLoadsHandler(
         filters.createdAt.$lte = toDate; // Filter records on or before toDate
       }
     }
+
+    // Search functionality
+    const search = req.query.search as string;
+    const searchField = req.query.searchField as string; // Get the specific field to search
+
+    if (search && searchField) {
+      const escapedSearch = escapeAndNormalizeSearch(search);
+      filters[searchField] = { $regex: escapedSearch, $options: "i" };
+    }
+    
     // Add all other query parameters dynamically into filters
     for (const [key, value] of Object.entries(req.query)) {
       if (
@@ -253,6 +264,8 @@ export async function fetchLoadsHandler(
           "sort",
           "fromDate",
           "toDate",
+          "search",
+          "searchField"
         ].includes(key)
       ) {
         filters[key] = value; // Add non-pagination, non-special filters

@@ -13,6 +13,7 @@ import { SortOrder } from "mongoose";
 import { calculateDistance } from "../../utils/globalHelper";
 import { formatDate } from "../../utils/dateFormat";
 import EmailService, { SendEmailOptions } from "../../services/EmailService";
+import { escapeAndNormalizeSearch } from "../../utils/regexHelper";
 
 const validTransitions: Record<LoadStatus, LoadStatus[]> = {
   [LoadStatus.Draft]: [LoadStatus.Published],
@@ -234,6 +235,16 @@ export async function fetchLoadsHandler(
         filters.createdAt.$lte = toDate; // Filter records on or before toDate
       }
     }
+
+    // Search functionality
+    const search = req.query.search as string;
+    const searchField = req.query.searchField as string; // Get the specific field to search
+
+    if (search && searchField) {
+      const escapedSearch = escapeAndNormalizeSearch(search);
+      filters[searchField] = { $regex: escapedSearch, $options: "i" };
+    }
+
     // Add all other query parameters dynamically into filters
     for (const [key, value] of Object.entries(req.query)) {
       if (
@@ -249,6 +260,8 @@ export async function fetchLoadsHandler(
           "destinationLng",
           "fromDate",
           "toDate",
+          "search",
+          "searchField"
         ].includes(key)
       ) {
         filters[key] = value; // Add non-pagination, non-special filters

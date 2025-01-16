@@ -9,6 +9,7 @@ import { createTruckSchema, updateTruckSchema } from "../../schema/Truck";
 import { LoadModel } from "../load/model";
 import { calculateDistance } from "../../utils/globalHelper";
 import { ITruck } from "../../types/Truck";
+import { escapeAndNormalizeSearch } from "../../utils/regexHelper";
 
 // Create Truck API
 export async function createTruck(req: Request, res: Response): Promise<void> {
@@ -136,6 +137,15 @@ export async function getTrucks(req: Request, res: Response): Promise<void> {
         filters.createdAt.$lte = toDate; // Records on or before toDate
       }
     }
+
+    // Search functionality
+      const search = req.query.search as string;
+      const searchField = req.query.searchField as string; // Get the specific field to search
+  
+      if (search && searchField) {
+        const escapedSearch = escapeAndNormalizeSearch(search);
+        filters[searchField] = { $regex: escapedSearch, $options: "i" };
+      }
 
     // Additional query parameters
     const excludedFields = ["page", "limit", "sort", "fromDate", "toDate"];

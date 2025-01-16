@@ -49,20 +49,25 @@ export async function getConsignee(req: Request, res: Response): Promise<void> {
 
     // Add all other query parameters dynamically into filters
     for (const [key, value] of Object.entries(req.query)) {
-      if (!["page", "limit", "brokerId", "sort", "search"].includes(key)) {
+      if (!["page", "limit", "brokerId", "sort", "search", "searchField"].includes(key)) {
         filters[key] = value;
       }
     }
 
     // Search functionality
     const search = req.query.search as string;
-    if (search) {
+    const searchField = req.query.searchField as string; // Get the specific field to search
+
+    if (search && searchField) {
       const escapedSearch = escapeAndNormalizeSearch(search);
-      filters.$or = [
-        { firstName: { $regex: escapedSearch, $options: "i" } },
-        { lastName: { $regex: escapedSearch, $options: "i" } },
-        { email: { $regex: escapedSearch, $options: "i" } },
-      ];
+      if(searchField == "name"){
+        filters.$or = [
+          { firstName: { $regex: escapedSearch, $options: "i" } },
+          { lastName: { $regex: escapedSearch, $options: "i" } },
+        ];
+      }else{
+        filters[searchField] = { $regex: escapedSearch, $options: "i" };
+      }
     }
 
     // Sort functionality
