@@ -7,9 +7,9 @@ import { DispatchLoadStatus } from "../../enums/DispatchLoadStatus";
 
 // Define Load interface extending Mongoose's Document
 const addressSchema = new mongoose.Schema({
-  str: { type: String, required: true }, // String representation
-  lat: { type: Number, required: true }, // Latitude
-  lng: { type: Number, required: true }, // Longitude
+  str: { type: String }, // String representation
+  lat: { type: Number }, // Latitude
+  lng: { type: Number }, // Longitude
 });
 
 // Consignee Schema
@@ -17,10 +17,9 @@ const consigneeSchema = new Schema({
   consigneeId: {
     type: Schema.Types.ObjectId,
     ref: "Consignee",
-    required: true,
   },
-  address: { type: addressSchema, required: true },
-  date: { type: Date, required: true },
+  address: { type: addressSchema },
+  date: { type: Date },
   time: { type: Date },
   description: { type: String },
   type: { type: String },
@@ -33,9 +32,9 @@ const consigneeSchema = new Schema({
 
 // Shipper Schema
 const shipperSchema = new Schema({
-  shipperId: { type: Schema.Types.ObjectId, ref: "Shipper", required: true },
-  address: { type: addressSchema, required: true },
-  date: { type: Date, required: true },
+  shipperId: { type: Schema.Types.ObjectId, ref: "Shipper" },
+  address: { type: addressSchema },
+  date: { type: Date },
   time: { type: Date },
   description: { type: String },
   type: { type: String },
@@ -49,33 +48,29 @@ const shipperSchema = new Schema({
 const FscSchema: Schema = new Schema({
   isPercentage: {
     type: Boolean,
-    required: false,
   },
-  value : {
+  value: {
     type: Number,
     min: 0,
-    required: true,
   },
 });
 
 const OtherChargeSchema: Schema = new Schema({
-  description: { type: String, required: true }, // Description of the charge
-  amount: { type: Number, min: 0, required: true }, // Amount of the charge
+  description: { type: String }, // Description of the charge
+  amount: { type: Number, min: 0 }, // Amount of the charge
   isAdvance: { type: Boolean, default: false }, // Flag to indicate if it's an advance charge
   date: { type: Date }, // Optional: Used only for advance charges
 });
 
-
 const CarrierFeeBreakdownSchema: Schema = new Schema({
-  type: { type: String, enum: DispatchLoadType},
-  units: { type: Number, min: 0},
-  rate: { type: Number, min: 0, required: true }, // Agreed base rate
+  type: { type: String, enum: DispatchLoadType },
+  units: { type: Number, min: 0 },
+  rate: { type: Number, min: 0 }, // Agreed base rate
   PDs: { type: Number, min: 0, default: 0 }, // Number of picks/drops
   fuelServiceCharge: FscSchema,
-  totalRate: { type: Number, min: 0, required: true }, // Total rate after all calculations
-  OtherChargeSchema: [OtherChargeSchema]
+  totalRate: { type: Number, min: 0 }, // Total rate after all calculations
+  OtherChargeSchema: [OtherChargeSchema],
 });
-
 
 const DispatchSchema: Schema = new Schema<IDispatch>(
   {
@@ -84,8 +79,8 @@ const DispatchSchema: Schema = new Schema<IDispatch>(
     customerId: { type: Schema.Types.ObjectId, ref: "User" },
     salesRep: { type: Schema.Types.ObjectId, ref: "User" },
     WONumber: { type: Number, unique: true },
-    type: { type: String, enum: DispatchLoadType},
-    units: { type: Number, min: 0},
+    type: { type: String, enum: DispatchLoadType },
+    units: { type: Number, min: 0 },
     customerRate: { type: Number, min: 0 },
     PDs: { type: Number, min: 0 },
     fuelServiceCharge: { type: FscSchema },
@@ -98,17 +93,15 @@ const DispatchSchema: Schema = new Schema<IDispatch>(
       breakdown: CarrierFeeBreakdownSchema, // Detailed breakdown structure
     },
     carrierId: { type: Schema.Types.ObjectId, ref: "User" },
-    equipment: { type: String, enum: Equipment, required: true },
+    equipment: { type: String, enum: Equipment },
     allInRate: { type: Number, min: 0 },
 
     consignee: {
       type: consigneeSchema,
-      required: true,
     },
 
     shipper: {
       type: shipperSchema,
-      required: true,
     },
     postedBy: { type: Schema.Types.ObjectId, ref: "User" },
     status: {

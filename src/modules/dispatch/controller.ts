@@ -2,7 +2,7 @@
 import { Request, Response } from "express";
 import send from "../../utils/apiResponse";
 import { z } from "zod";
-import { createDispatchSchema, updateDispatchSchema } from "../../schema/Dispatch/index";
+import {  transformedCreateDispatchSchema, updateDispatchSchema } from "../../schema/Dispatch/index";
 import { IUser } from "../../types/User";
 import { UserRole } from "../../enums/UserRole";
 import { DispatchModel } from "./model";
@@ -33,7 +33,7 @@ export async function createLoadHandler(
 ): Promise<void> {
   try {
     // Validate incoming request data using Zod schema
-    const validatedData = createDispatchSchema.parse(req.body);
+    const validatedData = transformedCreateDispatchSchema.parse(req.body);
     const user = (req as Request & { user?: IUser })?.user; // Extract user data from request
 
     // Ensure that broker/admin assigns a 'postedBy' field if missing
@@ -51,6 +51,7 @@ export async function createLoadHandler(
     } else if (user?.role === UserRole.BROKER_USER) {
       validatedData.brokerId = user.brokerId;
     }
+
 
     // Handle load number logic
     if (validatedData.loadNumber) {
@@ -75,14 +76,16 @@ export async function createLoadHandler(
         return;
       }
     } else {
-      // Auto-generate load number if not provided
-      const lastLoad = await DispatchModel.findOne({
-        loadNumber: { $exists: true, $ne: null },
-      })
-        .sort({ loadNumber: -1 })
-        .select("loadNumber");
+      if(validatedData.status !== DispatchLoadStatus.Draft){
+        // Auto-generate load number if not provided
+        const lastLoad = await DispatchModel.findOne({
+          loadNumber: { $exists: true, $ne: null },
+        })
+          .sort({ loadNumber: -1 })
+          .select("loadNumber");
 
-      validatedData.loadNumber = lastLoad ? lastLoad.loadNumber! + 1 : 1; // Start from 1 if no loads exist
+        validatedData.loadNumber = lastLoad ? lastLoad.loadNumber! + 1 : 1; // Start from 1 if no loads exist
+      }
     }
 
     // Create and save the new load entry
@@ -120,6 +123,41 @@ export async function updateLoadHandler(
   try {
     // Step 1: Validate incoming data using Zod schema
     const validatedData = updateDispatchSchema.parse(req.body); // Ensure the incoming data matches the expected format
+
+    // Handle load number logic
+    if (validatedData.loadNumber) {
+      // Validate if the provided loadNumber already exists in the database
+      const existingLoad = await DispatchModel.findOne({
+        loadNumber: validatedData.loadNumber,
+      });
+      if (existingLoad) {
+        // If the loadNumber exists, suggest the next available number
+        const lastLoad = await DispatchModel.findOne({
+          loadNumber: { $exists: true, $ne: null },
+        })
+          .sort({ loadNumber: -1 })
+          .select("loadNumber");
+        const nextLoadNumber = lastLoad ? lastLoad.loadNumber! + 1 : 1;
+
+        send(
+          res,
+          400,
+          `The provided loadNumber is already in use. Suggested loadNumber: ${nextLoadNumber}`
+        );
+        return;
+      }
+    } else {
+      if(validatedData.status !== DispatchLoadStatus.Draft){
+        // Auto-generate load number if not provided
+        const lastLoad = await DispatchModel.findOne({
+          loadNumber: { $exists: true, $ne: null },
+        })
+          .sort({ loadNumber: -1 })
+          .select("loadNumber");
+
+        validatedData.loadNumber = lastLoad ? lastLoad.loadNumber! + 1 : 1; // Start from 1 if no loads exist
+      }
+    }
 
     // Step 2: Find and update the load by its ID
     const updatedLoad = await DispatchModel.findByIdAndUpdate(

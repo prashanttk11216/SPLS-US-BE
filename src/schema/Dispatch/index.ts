@@ -1,20 +1,18 @@
 import { z } from "zod";
-import { Equipment } from "../../enums/Equipment";
-import { DispatchLoadType } from "../../enums/DispatchLoadType";
 import { DispatchLoadStatus } from "../../enums/DispatchLoadStatus";
 
 // Address Schema
 const addressSchema = z.object({
-  str: z.string().min(1, { message: "Address is required" }), // String representation
-  lat: z.number().min(-90).max(90).optional().refine((val) => val !== undefined, { message: "Latitude is required" }), // Latitude
-  lng: z.number().min(-180).max(180).optional().refine((val) => val !== undefined, { message: "Longitude is required" }), // Longitude
+  str: z.string().min(1, { message: "Address is required" }).optional(), // String representation
+  lat: z.number().min(-90).max(90).optional().refine((val) => val !== undefined, { message: "Latitude is required" }).optional(), // Latitude
+  lng: z.number().min(-180).max(180).optional().refine((val) => val !== undefined, { message: "Longitude is required" }).optional(), // Longitude
 });
 
 // Consignee Schema
 const consigneeSchema = z.object({
-  consigneeId: z.string(),
-  address: addressSchema,
-  date: z.string(),
+  consigneeId: z.string().optional(),
+  address: addressSchema.optional(),
+  date: z.string().optional(),
   time: z.string().optional(),
   description: z.string().optional(),
   type: z.string().optional(),
@@ -27,9 +25,9 @@ const consigneeSchema = z.object({
 
 // Shipper Schema
 const shipperSchema = z.object({
-  shipperId: z.string(),
-  address: addressSchema,
-  date: z.string(),
+  shipperId: z.string().optional(),
+  address: addressSchema.optional(),
+  date: z.string().optional(),
   time: z.string().optional(),
   description: z.string().optional(),
   type: z.string().optional(),
@@ -44,36 +42,36 @@ const shipperSchema = z.object({
 // Fuel Service Charge Schema
 const FscSchema = z.object({
   isPercentage: z.boolean().optional(),
-  value: z.number().min(0, { message: "Value must be 0 or greater" }),
+  value: z.number().min(0, { message: "Value must be 0 or greater" }).optional(),
 });
 
 // Other Charges Schema
 const OtherChargeSchema = z.object({
-  description: z.string({ required_error: "Description is required" }),
-  amount: z.number().min(0, { message: "Amount must be 0 or greater" }),
+  description: z.string({ required_error: "Description is required" }).optional(),
+  amount: z.number().min(0, { message: "Amount must be 0 or greater" }).optional(),
   isAdvance: z.boolean().optional(),
   date: z.string().optional(),
 });
 
 const CarrierFeeBreakdownSchema = z.object({
-  type: z.string({ required_error: "Agreed rate type is required" }), // Example: "Flat Rate", "Per Mile"
+  type: z.string({ required_error: "Agreed rate type is required" }).optional(), // Example: "Flat Rate", "Per Mile"
   units: z.number().min(0).optional(),
-  rate: z.number().min(0, { message: "Rate must be 0 or greater" }),
+  rate: z.number().min(0, { message: "Rate must be 0 or greater" }).optional(),
   PDs: z.number().min(0).default(0),
-  fuelServiceCharge: FscSchema,
+  fuelServiceCharge: FscSchema.optional(),
   totalRate: z.number().min(0).optional(),
   OtherChargeSchema: z.array(OtherChargeSchema).optional(),
 });
 
 // Dispatch Schema
 const baseDispatchSchema = z.object({
-  brokerId: z.string(),
+  brokerId: z.string().optional(),
   loadNumber: z.number().int().optional(),
   WONumber: z.number().int().optional(),
-  customerId: z.string(),
-  carrierId: z.string(),
-  salesRep: z.string(),
-  type: z.nativeEnum(DispatchLoadType, { required_error: "Type is required" }),
+  customerId: z.string().optional(),
+  carrierId: z.string().optional(),
+  salesRep: z.string().optional(),
+  type: z.string().optional(),
   units: z.number().min(0).optional(),
   PDs: z.number().min(0).optional(),
   fuelServiceCharge: FscSchema.optional(),
@@ -82,16 +80,16 @@ const baseDispatchSchema = z.object({
     breakdown: z.array(OtherChargeSchema).optional(),
   }).optional(),
   carrierFee: z.object({
-    totalAmount: z.number().min(0, { message: "Total amount must be 0 or greater" }),
+    totalAmount: z.number().min(0, { message: "Total amount must be 0 or greater" }).optional(),
     breakdown: CarrierFeeBreakdownSchema.optional(),
   }).optional(),  
-  equipment: z.nativeEnum(Equipment, { required_error: "Equipment is required" }),
+  equipment: z.string().optional(),
   allInRate: z.number().min(0).optional(),
   customerRate: z.number().min(0).optional(),
   consignee: consigneeSchema.optional(),
   shipper: shipperSchema.optional(),
   postedBy: z.string().optional(),
-  status: z.nativeEnum(DispatchLoadStatus).optional(),
+  status: z.string().optional(),
   age: z.string().optional(),
 });
 
@@ -102,10 +100,63 @@ function cleanData<T extends Record<string, unknown>>(data: T): Partial<T> {
   ) as Partial<T>;
 }
 
+
+export const createDispatchSchema = baseDispatchSchema.superRefine((data, ctx) => {
+  if (data.status === DispatchLoadStatus.Published) {
+    if (!data.customerId) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["customerId"],
+        message: "Customer ID is required for loads",
+      });
+    }
+    if (!data.carrierId) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["carrierId"],
+        message: "Carrier ID is required for published loads",
+      });
+    }
+    if (!data.equipment) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["equipment"],
+        message: "equipment is required for loads",
+      });
+    }
+  }
+});
+
+
 // Validation for create operation
-export const createDispatchSchema = baseDispatchSchema.transform((data) => cleanData(data));
+export const transformedCreateDispatchSchema = createDispatchSchema.transform((data) => cleanData(data));
 
 // Validation for update operation (all fields optional)
 export const updateDispatchSchema = baseDispatchSchema
   .partial()
+  .superRefine((data, ctx) => {
+    if (data.status === DispatchLoadStatus.Published) {
+      if (!data.customerId) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["customerId"],
+          message: "Customer ID is required for loads",
+        });
+      }
+      if (!data.carrierId) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["carrierId"],
+          message: "Carrier ID is required for published loads",
+        });
+      }
+      if (!data.equipment) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["equipment"],
+          message: "equipment is required for loads",
+        });
+      }
+    }
+  })
   .transform((data) => cleanData(data));
