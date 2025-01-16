@@ -118,37 +118,47 @@ export async function getTrucks(req: Request, res: Response): Promise<void> {
       filters.brokerId = user._id;
     }
 
-    // Date range filters
-    if (req.query.fromDate || req.query.toDate) {
-      const fromDate = req.query.fromDate
-        ? new Date(req.query.fromDate as string)
-        : undefined;
-      const toDate = req.query.toDate
-        ? new Date(req.query.toDate as string)
-        : undefined;
-
-      filters.createdAt = {};
-
+    // Apply date range filter if provided
+    const dateField = req.query.dateField as string; // Get the specific field to search
+    const fromDate = req.query.fromDate ? new Date(req.query.fromDate as string) : undefined;
+    const toDate = req.query.toDate ? new Date(req.query.toDate as string) : undefined;    
+    if (dateField && (fromDate || toDate)) {
+      filters[dateField] = {};
       if (fromDate) {
-        filters.createdAt.$gte = fromDate; // Records on or after fromDate
+        filters[dateField].$gte = fromDate; // Filter records on or after fromDate
       }
-
       if (toDate) {
-        filters.createdAt.$lte = toDate; // Records on or before toDate
+        filters[dateField].$lte = toDate; // Filter records on or before toDate
       }
     }
 
     // Search functionality
-      const search = req.query.search as string;
-      const searchField = req.query.searchField as string; // Get the specific field to search
-  
-      if (search && searchField) {
-        const escapedSearch = escapeAndNormalizeSearch(search);
+    const search = req.query.search as string;
+    const searchField = req.query.searchField as string;
+
+    // Define numeric fields
+    const numberFields = ["allInRate"];
+
+    if (search && searchField) {
+      const escapedSearch = escapeAndNormalizeSearch(search);
+
+      // Validate and apply filters based on the field type
+      if (numberFields.includes(searchField)) {
+        // Ensure the search value is a valid number
+        const parsedNumber = Number(escapedSearch);
+        if (!isNaN(parsedNumber)) {
+          filters[searchField] = parsedNumber;
+        } else {
+          throw new Error(`Invalid number provided for field ${searchField}`);
+        }
+      } else {
+        // Apply regex for string fields
         filters[searchField] = { $regex: escapedSearch, $options: "i" };
       }
+    }
 
     // Additional query parameters
-    const excludedFields = ["page", "limit", "sort", "fromDate", "toDate"];
+    const excludedFields = ["page", "limit", "sort", "fromDate", "toDate", "dateField", "search", "searchField"];
     for (const [key, value] of Object.entries(req.query)) {
       if (!excludedFields.includes(key)) {
         filters[key] = value;

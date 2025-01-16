@@ -217,32 +217,43 @@ export async function fetchLoadsHandler(
       filters.status = LoadStatus.Published; // Only published loads for carriers
     }
 
+    const dateField = req.query.dateField as string; // Get the specific field to search
+    const fromDate = req.query.fromDate ? new Date(req.query.fromDate as string) : undefined;
+    const toDate = req.query.toDate ? new Date(req.query.toDate as string) : undefined;    
     // Apply date range filter if provided
-    if (req.query.fromDate || req.query.toDate) {
-      const fromDate = req.query.fromDate
-        ? new Date(req.query.fromDate as string)
-        : undefined;
-      const toDate = req.query.toDate
-        ? new Date(req.query.toDate as string)
-        : undefined;
-      filters.createdAt = {};
-
+    if (dateField && (fromDate || toDate)) {
+      filters[dateField] = {};
       if (fromDate) {
-        filters.createdAt.$gte = fromDate; // Filter records on or after fromDate
+        filters[dateField].$gte = fromDate; // Filter records on or after fromDate
       }
-
       if (toDate) {
-        filters.createdAt.$lte = toDate; // Filter records on or before toDate
+        filters[dateField].$lte = toDate; // Filter records on or before toDate
       }
     }
 
     // Search functionality
     const search = req.query.search as string;
-    const searchField = req.query.searchField as string; // Get the specific field to search
+    const searchField = req.query.searchField as string;
+
+    // Define numeric fields
+    const numberFields = ["loadNumber"];
 
     if (search && searchField) {
       const escapedSearch = escapeAndNormalizeSearch(search);
-      filters[searchField] = { $regex: escapedSearch, $options: "i" };
+
+      // Validate and apply filters based on the field type
+      if (numberFields.includes(searchField)) {
+        // Ensure the search value is a valid number
+        const parsedNumber = Number(escapedSearch);
+        if (!isNaN(parsedNumber)) {
+          filters[searchField] = parsedNumber;
+        } else {
+          throw new Error(`Invalid number provided for field ${searchField}`);
+        }
+      } else {
+        // Apply regex for string fields
+        filters[searchField] = { $regex: escapedSearch, $options: "i" };
+      }
     }
 
     // Add all other query parameters dynamically into filters
@@ -261,7 +272,8 @@ export async function fetchLoadsHandler(
           "fromDate",
           "toDate",
           "search",
-          "searchField"
+          "searchField",
+          "dateField"
         ].includes(key)
       ) {
         filters[key] = value; // Add non-pagination, non-special filters

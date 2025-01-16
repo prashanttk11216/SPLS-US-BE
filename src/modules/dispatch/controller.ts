@@ -228,32 +228,44 @@ export async function fetchLoadsHandler(
     }
 
     // Apply date range filter if provided
-    if (req.query.fromDate || req.query.toDate) {
-      const fromDate = req.query.fromDate
-        ? new Date(req.query.fromDate as string)
-        : undefined;
-      const toDate = req.query.toDate
-        ? new Date(req.query.toDate as string)
-        : undefined;
-      filters.createdAt = {};
-
+    const dateField = req.query.dateField as string; // Get the specific field to search
+    const fromDate = req.query.fromDate ? new Date(req.query.fromDate as string) : undefined;
+    const toDate = req.query.toDate ? new Date(req.query.toDate as string) : undefined;    
+    if (dateField && (fromDate || toDate)) {
+      filters[dateField] = {};
       if (fromDate) {
-        filters.createdAt.$gte = fromDate; // Filter records on or after fromDate
+        filters[dateField].$gte = fromDate; // Filter records on or after fromDate
       }
-
       if (toDate) {
-        filters.createdAt.$lte = toDate; // Filter records on or before toDate
+        filters[dateField].$lte = toDate; // Filter records on or before toDate
       }
     }
 
     // Search functionality
     const search = req.query.search as string;
-    const searchField = req.query.searchField as string; // Get the specific field to search
+    const searchField = req.query.searchField as string;
+
+    // Define numeric fields
+    const numberFields = ["loadNumber", "WONumber"];
 
     if (search && searchField) {
       const escapedSearch = escapeAndNormalizeSearch(search);
-      filters[searchField] = { $regex: escapedSearch, $options: "i" };
+
+      // Validate and apply filters based on the field type
+      if (numberFields.includes(searchField)) {
+        // Ensure the search value is a valid number
+        const parsedNumber = Number(escapedSearch);
+        if (!isNaN(parsedNumber)) {
+          filters[searchField] = parsedNumber;
+        } else {
+          throw new Error(`Invalid number provided for field ${searchField}`);
+        }
+      } else {
+        // Apply regex for string fields
+        filters[searchField] = { $regex: escapedSearch, $options: "i" };
+      }
     }
+
     
     // Add all other query parameters dynamically into filters
     for (const [key, value] of Object.entries(req.query)) {
@@ -265,7 +277,8 @@ export async function fetchLoadsHandler(
           "fromDate",
           "toDate",
           "search",
-          "searchField"
+          "searchField",
+          "dateField"
         ].includes(key)
       ) {
         filters[key] = value; // Add non-pagination, non-special filters
@@ -322,6 +335,8 @@ export async function fetchLoadsHandler(
 
     send(res, 200, "Loads retrieved successfully", loads, pagination);
   } catch (error) {
+    console.log(error);
+    
     // Handle errors gracefully
     if (error instanceof z.ZodError) {
       send(res, 400, "Invalid filter parameters", { errors: error.errors });

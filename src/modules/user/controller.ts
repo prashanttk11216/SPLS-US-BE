@@ -399,6 +399,8 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
       }else{
         filters[searchField] = { $regex: escapedSearch, $options: "i" };
       }
+      console.log(filters);
+      
     }
 
 
