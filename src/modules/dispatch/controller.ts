@@ -246,7 +246,11 @@ export async function fetchLoadsHandler(
     const searchField = req.query.searchField as string;
 
     // Define numeric fields
-    const numberFields = ["loadNumber", "WONumber"];
+    const numberFields = [  "loadNumber",
+      "WONumber",
+      "shipper.weight",
+      "consignee.weight",
+      "allInRate"];
 
     if (search && searchField) {
       const escapedSearch = escapeAndNormalizeSearch(search);

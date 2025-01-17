@@ -64,7 +64,7 @@ export async function create(req: Request, res: Response): Promise<void> {
     if (req.query.isAdmin && (validatedData.role == UserRole.CUSTOMER || validatedData.role == UserRole.CARRIER)) {
       isVerified = true;
       logger.info(`User account created for ${validatedData.email}`);
-      
+
       // Set up the email notification options
       const emailOptions: SendEmailOptions = {
         to: validatedData.email, // Send the notification to the broker's email
@@ -75,7 +75,7 @@ export async function create(req: Request, res: Response): Promise<void> {
           password: validatedData.password
         },
       };
-  
+
       // Send email notification to the broker (uncomment this when email functionality is ready)
       await EmailService.sendNotificationEmail(emailOptions);
     } else {
@@ -83,7 +83,7 @@ export async function create(req: Request, res: Response): Promise<void> {
       logger.info(
         `Generated OTP: ${verificationCode} for ${validatedData.email}`
       );
-      
+
       // Set up the email notification options
       const emailOptions: SendEmailOptions = {
         to: validatedData.email, // Send the notification to the broker's email
@@ -94,7 +94,7 @@ export async function create(req: Request, res: Response): Promise<void> {
           verificationCode: verificationCode
         },
       };
-  
+
       // Send email notification to the broker (uncomment this when email functionality is ready)
       await EmailService.sendNotificationEmail(emailOptions);
     }
@@ -202,16 +202,16 @@ export async function login(req: Request, res: Response): Promise<void> {
 
     if (validatedData.employeeId) {
       let mainAdmin = await UserModel.findOne({ role: UserRole.BROKER_ADMIN });
-  
+
       // Get the current login time
       const loginTime = new Date().toISOString();
-  
+
       // Get IP address from request
       const ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-  
+
       // Get PC name (hostname)
       const pcName = os.hostname();
-  
+
       const emailOptions: SendEmailOptions = {
         to: mainAdmin?.email,
         subject: 'User Login Notification',
@@ -226,7 +226,7 @@ export async function login(req: Request, res: Response): Promise<void> {
           pcName,
         },
       };
-  
+
       await EmailService.sendNotificationEmail(emailOptions);
     }
 
@@ -438,16 +438,16 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
 
     if (search && searchField) {
       const escapedSearch = escapeAndNormalizeSearch(search);
-      if(searchField == "name"){
+      if (searchField == "name") {
         filters.$or = [
           { firstName: { $regex: escapedSearch, $options: "i" } },
           { lastName: { $regex: escapedSearch, $options: "i" } },
         ];
-      }else{
+      } else {
         filters[searchField] = { $regex: escapedSearch, $options: "i" };
       }
       console.log(filters);
-      
+
     }
 
 
@@ -488,7 +488,7 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
     // Total count and user retrieval with pagination and sorting
     const totalItems = await UserModel.countDocuments(filters);
 
-    const users = await UserModel.find({...filters, })
+    const users = await UserModel.find({ ...filters, })
       .select("-password")
       .skip(skip)
       .limit(limit)
@@ -508,8 +508,6 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
   }
 }
 
-
-
 /**
  * Soft delete a user by setting the `isDeleted` flag to true.
  * If the user is not found or already deleted, it returns an error.
@@ -519,7 +517,7 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
 export async function deleteUser(req: Request, res: Response): Promise<void> {
   try {
     const userId = req.params._id;
-    const user = await UserModel.findOneAndDelete({ _id: userId});
+    const user = await UserModel.findOneAndDelete({ _id: userId });
 
     if (!user) {
       send(res, 404, "User not found or already deleted");

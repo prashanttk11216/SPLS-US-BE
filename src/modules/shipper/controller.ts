@@ -98,15 +98,31 @@ export async function getShipper(req: Request, res: Response): Promise<void> {
     const search = req.query.search as string;
     const searchField = req.query.searchField as string; // Get the specific field to search
 
+    // Define numeric fields
+    const numberFields = ["shipper.weight", "primaryNumber"];
+
     if (search && searchField) {
       const escapedSearch = escapeAndNormalizeSearch(search);
-      if(searchField == "name"){
-        filters.$or = [
-          { firstName: { $regex: escapedSearch, $options: "i" } },
-          { lastName: { $regex: escapedSearch, $options: "i" } },
-        ];
-      }else{
-        filters[searchField] = { $regex: escapedSearch, $options: "i" };
+
+      // Validate and apply filters based on the field type
+      if (numberFields.includes(searchField)) {
+        // Ensure the search value is a valid number
+        const parsedNumber = Number(escapedSearch);
+        if (!isNaN(parsedNumber)) {
+          filters[searchField] = parsedNumber;
+        } else {
+          throw new Error(`Invalid number provided for field ${searchField}`);
+        }
+      } else {
+        // Apply regex for string fields
+        if(searchField == "name"){
+          filters.$or = [
+            { firstName: { $regex: escapedSearch, $options: "i" } },
+            { lastName: { $regex: escapedSearch, $options: "i" } },
+          ];
+        }else{
+          filters[searchField] = { $regex: escapedSearch, $options: "i" };
+        }
       }
     }
 

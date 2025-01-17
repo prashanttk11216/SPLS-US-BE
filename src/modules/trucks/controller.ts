@@ -137,7 +137,7 @@ export async function getTrucks(req: Request, res: Response): Promise<void> {
     const searchField = req.query.searchField as string;
 
     // Define numeric fields
-    const numberFields = ["allInRate"];
+    const numberFields = ["allInRate", "referenceNumber", "weight", "length"];
 
     if (search && searchField) {
       const escapedSearch = escapeAndNormalizeSearch(search);
