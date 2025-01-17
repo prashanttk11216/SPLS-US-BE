@@ -132,7 +132,7 @@ export const editUserSchema = baseUserSchema.partial();
  * Ensures that either `email` or `employeeId` is provided based on the role.
  */
 export const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: z.string().email("Invalid email address").optional(),
   employeeId: z
     .string()
     .min(1, "Employee ID is required for broker users")
