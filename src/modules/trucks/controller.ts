@@ -10,6 +10,7 @@ import { LoadModel } from "../load/model";
 import { calculateDistance } from "../../utils/globalHelper";
 import { ITruck } from "../../types/Truck";
 import { escapeAndNormalizeSearch } from "../../utils/regexHelper";
+import { getPaginationParams } from "../../utils/paginationUtils";
 
 // Create Truck API
 export async function createTruck(req: Request, res: Response): Promise<void> {
@@ -106,10 +107,7 @@ export async function getTrucks(req: Request, res: Response): Promise<void> {
     const user = (req as Request & { user?: IUser }).user;
     const filters: any = {};
 
-    // Default pagination values
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = getPaginationParams(req.query);
 
     // Role-based query conditions
     if (user?.role === UserRole.CARRIER) {

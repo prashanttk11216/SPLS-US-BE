@@ -14,6 +14,7 @@ import { calculateDistance } from "../../utils/globalHelper";
 import { formatDate } from "../../utils/dateFormat";
 import EmailService, { SendEmailOptions } from "../../services/EmailService";
 import { escapeAndNormalizeSearch } from "../../utils/regexHelper";
+import { getPaginationParams } from "../../utils/paginationUtils";
 
 const validTransitions: Record<LoadStatus, LoadStatus[]> = {
   [LoadStatus.Draft]: [LoadStatus.Published],
@@ -200,10 +201,7 @@ export async function fetchLoadsHandler(
     const user = (req as Request & { user?: IUser })?.user;
     const filters: any = {}; // Parse and validate query parameters
 
-    // Default pagination values
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = getPaginationParams(req.query);
 
     // Role-based query conditions
     if (user?.role === UserRole.BROKER_USER) {

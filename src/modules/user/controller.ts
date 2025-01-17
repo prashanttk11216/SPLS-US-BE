@@ -21,6 +21,7 @@ import logger from "../../utils/logger"; // Ensure you have a logger utility
 import { SortOrder } from "mongoose";
 import { escapeAndNormalizeSearch } from "../../utils/regexHelper";
 import EmailService, { SendEmailOptions } from "../../services/EmailService";
+import { getPaginationParams } from "../../utils/paginationUtils";
 
 /**
  * Create a new user account, validate the input, hash the password, and handle the user verification process.
@@ -162,6 +163,12 @@ export async function login(req: Request, res: Response): Promise<void> {
       return;
     }
 
+    // Ensure the user email (or account) is verified
+    if (!user.isVerified) {
+      send(res, 403, "User email is not verified. Please verify to log in.");
+      return;
+    }
+
     // Verify password for the user
     const passwordMatch = await comparePasswords(
       validatedData.password,
@@ -169,12 +176,6 @@ export async function login(req: Request, res: Response): Promise<void> {
     );
     if (!passwordMatch) {
       send(res, 401, "Incorrect password");
-      return;
-    }
-
-    // Ensure the user email (or account) is verified
-    if (!user.isVerified) {
-      send(res, 403, "User email is not verified. Please verify to log in.");
       return;
     }
 
@@ -415,50 +416,52 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Pagination parameters
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = getPaginationParams(req.query);
+
+
+    const filters: any = { isDeleted: false };
 
     // Role filter
     const role = req.query.role as UserRole;
-    const filters: any = { isDeleted: false };
     if (role && Object.values(UserRole).includes(role)) {
       filters.role = role;
     }
 
-    const brokerId = req.query.brokerId;
-    if (brokerId) {
-      filters.brokerId = brokerId;
+    if (req.query.brokerId) {
+      filters.brokerId = req.query.brokerId;
     }
 
     // Search functionality
     const search = req.query.search as string;
     const searchField = req.query.searchField as string; // Get the specific field to search
 
+    // Define numeric fields
+    const numberFields = ["primaryNumber"];
+
     if (search && searchField) {
       const escapedSearch = escapeAndNormalizeSearch(search);
-      if (searchField == "name") {
-        filters.$or = [
-          { firstName: { $regex: escapedSearch, $options: "i" } },
-          { lastName: { $regex: escapedSearch, $options: "i" } },
-        ];
+
+      // Validate and apply filters based on the field type
+      if (numberFields.includes(searchField)) {
+        // Ensure the search value is a valid number
+        const parsedNumber = Number(escapedSearch);
+        if (!isNaN(parsedNumber)) {
+          filters[searchField] = parsedNumber;
+        } else {
+          throw new Error(`Invalid number provided for field ${searchField}`);
+        }
       } else {
-        filters[searchField] = { $regex: escapedSearch, $options: "i" };
-      }
-      console.log(filters);
-
-    }
-
-
-    // Add all other query parameters dynamically into filters
-    for (const [key, value] of Object.entries(req.query)) {
-      if (!['page', 'limit', 'role', 'brokerId', 'sort', 'search', 'searchField'].includes(key)) {
-        filters[key] = value;
+        // Apply regex for string fields
+        if (searchField == "name") {
+          filters.$or = [
+            { firstName: { $regex: escapedSearch, $options: "i" } },
+            { lastName: { $regex: escapedSearch, $options: "i" } },
+          ];
+        } else {
+          filters[searchField] = { $regex: escapedSearch, $options: "i" };
+        }
       }
     }
-
-
 
     // Sort functionality
     const sortQuery = req.query.sort as string | undefined;
@@ -483,6 +486,13 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
           sortOptions.push([key, order === "desc" ? -1 : 1]);
         }
       });
+    }
+
+    // Add all other query parameters dynamically into filters
+    for (const [key, value] of Object.entries(req.query)) {
+      if (!['page', 'limit', 'role', 'brokerId', 'sort', 'search', 'searchField'].includes(key)) {
+        filters[key] = value;
+      }
     }
 
     // Total count and user retrieval with pagination and sorting

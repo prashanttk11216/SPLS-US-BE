@@ -8,6 +8,7 @@ import { SortOrder } from "mongoose";
 import { escapeAndNormalizeSearch } from "../../utils/regexHelper";
 import { IUser } from "../../types/User";
 import { UserRole } from "../../enums/UserRole";
+import { getPaginationParams } from "../../utils/paginationUtils";
 
 
 /**
@@ -74,10 +75,7 @@ export async function getShipper(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Pagination parameters
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = getPaginationParams(req.query);
 
     // Role filter
     const filters: any = { isDeleted: false };

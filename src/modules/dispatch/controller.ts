@@ -11,6 +11,7 @@ import { SortOrder } from "mongoose";
 import { DispatchLoadStatus } from "../../enums/DispatchLoadStatus";
 import { escapeAndNormalizeSearch } from "../../utils/regexHelper";
 import EmailService, { SendEmailOptions } from "../../services/EmailService";
+import { getPaginationParams } from "../../utils/paginationUtils";
 
 const validTransitions: Record<DispatchLoadStatus, DispatchLoadStatus[]> = {
   [DispatchLoadStatus.Draft]: [DispatchLoadStatus.Published],
@@ -215,10 +216,7 @@ export async function fetchLoadsHandler(
     const user = (req as Request & { user?: IUser })?.user;
     const filters: any = {}; // Parse and validate query parameters
 
-    // Default pagination values
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = getPaginationParams(req.query);
 
     // Role-based query conditions
     if (user?.role === UserRole.BROKER_USER) {
