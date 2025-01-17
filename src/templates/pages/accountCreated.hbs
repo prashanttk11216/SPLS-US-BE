@@ -1,0 +1,19 @@
+<div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border: 1px solid #ddd; border-radius: 8px; font-family: Arial, sans-serif;">
+  <h2 style="font-size: 20px; color: #333; text-align: center; margin-bottom: 20px;">Welcome to Our Platform!</h2>
+  <p style="margin: 0 0 10px; font-size: 16px; color: #555; line-height: 1.5;">
+    We are excited to have you on board. Below are your account details:
+  </p>
+  <ul style="margin: 10px 0; padding: 0 0 0 20px; font-size: 16px; color: #333; line-height: 1.6;">
+    {{#if employeeId}}
+    <li><strong>Employee ID:</strong> {{employeeId}}</li>
+    {{/if}}
+    <li><strong>Email:</strong> {{email}}</li>
+    <li><strong>Password:</strong> {{password}}</li>
+  </ul>
+  <p style="margin: 20px 0 10px; font-size: 16px; color: #555; line-height: 1.5;">
+    Please use the above credentials to log in to your account. We recommend changing your password after your first login for security purposes.
+  </p>
+  <p style="font-size: 14px; color: #999; text-align: center; margin-top: 20px; line-height: 1.4;">
+    If you have any questions or need assistance, feel free to reach out to our support team.
+  </p>
+</div>

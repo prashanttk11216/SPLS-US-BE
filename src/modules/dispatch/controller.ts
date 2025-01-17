@@ -7,10 +7,10 @@ import { IUser } from "../../types/User";
 import { UserRole } from "../../enums/UserRole";
 import { DispatchModel } from "./model";
 import logger from "../../utils/logger";
-import { LoadStatus } from "../../enums/LoadStatus";
 import { SortOrder } from "mongoose";
 import { DispatchLoadStatus } from "../../enums/DispatchLoadStatus";
 import { escapeAndNormalizeSearch } from "../../utils/regexHelper";
+import EmailService, { SendEmailOptions } from "../../services/EmailService";
 
 const validTransitions: Record<DispatchLoadStatus, DispatchLoadStatus[]> = {
   [DispatchLoadStatus.Draft]: [DispatchLoadStatus.Published],
@@ -392,11 +392,7 @@ export async function updateLoadStatusHandler(
 
     // Ensure the user has the correct role for status updates
     if (
-      [
-        LoadStatus.DealClosed,
-        LoadStatus.Published,
-        LoadStatus.PendingResponse,
-      ]?.includes(status) &&
+      [DispatchLoadStatus.Published, DispatchLoadStatus.InTransit, DispatchLoadStatus.Completed,]?.includes(status) &&
       ![UserRole.BROKER_USER, UserRole.BROKER_ADMIN]?.includes(currentUserRole!)
     ) {
       send(res, 403, "You do not have permission to perform this action.");
@@ -407,19 +403,26 @@ export async function updateLoadStatusHandler(
     load.status = status;
     await load.save();
 
-    // Notify broker and customer about the status update
-    // await Promise.all([
-    //   sendEmail({
-    //     to: load.brokerId.email,
-    //     subject: "Load Status Update",
-    //     text: `The status of Load with Reference Number ${load.loadNumber} has been updated to ${status} by carrier ${user.company}.`,
-    //   }),
-    //   sendEmail({
-    //     to: load.customerId.email,
-    //     subject: "Load Status Update",
-    //     text: `The status of your Load with Reference Number ${load.loadNumber} has been updated to ${status}.`,
-    //   }),
-    // ]);
+    // Set up the email notification options
+    if((load?.brokerId as IUser).email){
+      let emails = [(load?.brokerId as IUser).email];
+      if((load?.customerId as IUser).email){
+        emails.push((load?.customerId as IUser).email);
+      }
+
+      const emailOptions: SendEmailOptions = {
+        to: emails, // Send the notification to the broker's email
+        subject: "Load Status Update",
+        templateName: "loadStatusNotification",
+        templateData: {
+          loadNumber: load.loadNumber,
+          status: status
+        },
+      };
+  
+      // Send email notification to the broker (uncomment this when email functionality is ready)
+      await EmailService.sendNotificationEmail(emailOptions);
+    }
 
     // Log status change in audit trail
     // await LoadAudit.updateOne(

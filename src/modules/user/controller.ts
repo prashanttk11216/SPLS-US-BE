@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import os from "os";
 import send from "../../utils/apiResponse";
 import { UserModel } from "./model";
 import {
@@ -19,6 +20,7 @@ import { UserRole } from "../../enums/UserRole";
 import logger from "../../utils/logger"; // Ensure you have a logger utility
 import { SortOrder } from "mongoose";
 import { escapeAndNormalizeSearch } from "../../utils/regexHelper";
+import EmailService, { SendEmailOptions } from "../../services/EmailService";
 
 /**
  * Create a new user account, validate the input, hash the password, and handle the user verification process.
@@ -62,21 +64,39 @@ export async function create(req: Request, res: Response): Promise<void> {
     if (req.query.isAdmin && (validatedData.role == UserRole.CUSTOMER || validatedData.role == UserRole.CARRIER)) {
       isVerified = true;
       logger.info(`User account created for ${validatedData.email}`);
-      // await sendEmail({
-      //   to: validatedData.email,
-      //   subject: "Account Created",
-      //   text: `Your account has been created. Email: ${validatedData.email}, Password: ${validatedData.password}`,
-      // });
+      
+      // Set up the email notification options
+      const emailOptions: SendEmailOptions = {
+        to: validatedData.email, // Send the notification to the broker's email
+        subject: "Account Created",
+        templateName: "accountCreated",
+        templateData: {
+          email: validatedData.email,
+          password: validatedData.password
+        },
+      };
+  
+      // Send email notification to the broker (uncomment this when email functionality is ready)
+      await EmailService.sendNotificationEmail(emailOptions);
     } else {
       verificationCode = await createOTP(validatedData.email);
       logger.info(
         `Generated OTP: ${verificationCode} for ${validatedData.email}`
       );
-      // await sendEmail({
-      //   to: validatedData.email,
-      //   subject: "Email Verification",
-      //   text: `Your OTP for email verification is ${verificationCode}. This OTP will expire in 5 minutes.`,
-      // });
+      
+      // Set up the email notification options
+      const emailOptions: SendEmailOptions = {
+        to: validatedData.email, // Send the notification to the broker's email
+        subject: "Email Verification",
+        templateName: "emailVerification",
+        templateData: {
+          email: validatedData.email,
+          verificationCode: verificationCode
+        },
+      };
+  
+      // Send email notification to the broker (uncomment this when email functionality is ready)
+      await EmailService.sendNotificationEmail(emailOptions);
     }
 
     const newUser = new UserModel({
@@ -180,17 +200,35 @@ export async function login(req: Request, res: Response): Promise<void> {
       expiresIn: "5h",
     });
 
-    if(validatedData.employeeId){
-      // const emailOptions: SendEmailOptions = {
-    //   to: "",
-    //   subject: 'User Login Notification',
-    //   templateName: 'userLogin',
-    //   templateData: { employeeId:"abd", firstName:"CD", lastName:"Ccdc", loginTime:"Cdjc" },
-    // };
+    if (validatedData.employeeId) {
+      let mainAdmin = await UserModel.findOne({ role: UserRole.BROKER_ADMIN });
   
-    // await EmailService.sendNotificationEmail(emailOptions);
+      // Get the current login time
+      const loginTime = new Date().toISOString();
+  
+      // Get IP address from request
+      const ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+  
+      // Get PC name (hostname)
+      const pcName = os.hostname();
+  
+      const emailOptions: SendEmailOptions = {
+        to: mainAdmin?.email,
+        subject: 'User Login Notification',
+        templateName: 'userLogin',
+        templateData: {
+          employeeId: validatedData.employeeId,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          contact: user.primaryNumber,
+          loginTime,
+          ipAddress,
+          pcName,
+        },
+      };
+  
+      await EmailService.sendNotificationEmail(emailOptions);
     }
-
 
     // Respond with login success and token
     send(res, 200, "Login successful", { user: userResponse, token });
@@ -267,11 +305,20 @@ export async function createBrokerUser(
 
     await newBrokerUser.save();
 
-    // await sendEmail({
-    //   to: validatedData.email,
-    //   subject: "Account Created",
-    //   text: `Your account has been created. Email: ${validatedData.email}, Employee ID: ${validatedData.employeeId}, Password: ${validatedData.password}`,
-    // });
+    // Set up the email notification options
+    const emailOptions: SendEmailOptions = {
+      to: validatedData.email, // Send the notification to the broker's email
+      subject: "Account Created",
+      templateName: "accountCreated",
+      templateData: {
+        email: validatedData.email,
+        password: validatedData.password,
+        employeeId: validatedData.employeeId
+      },
+    };
+
+    // Send email notification to the broker (uncomment this when email functionality is ready)
+    await EmailService.sendNotificationEmail(emailOptions);
 
     send(res, 201, "Broker user created successfully");
   } catch (error) {

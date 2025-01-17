@@ -2,6 +2,7 @@ import { Document, Types } from "mongoose";
 import { Equipment } from "../enums/Equipment";
 import { DispatchLoadType } from "../enums/DispatchLoadType";
 import { DispatchLoadStatus } from "../enums/DispatchLoadStatus";
+import { IUser } from "./User";
 
 export interface IAddress {
   str: string; // String representation
@@ -71,11 +72,11 @@ export interface ICarrierFee {
 }
 
 export interface IDispatch extends Document {
-  brokerId?: Types.ObjectId;
+  brokerId?: Types.ObjectId | IUser;
   loadNumber: number;
   WONumber: number;
-  customerId?: Types.ObjectId;
-  carrierId?: Types.ObjectId;
+  customerId?: Types.ObjectId | IUser;
+  carrierId?: Types.ObjectId | IUser;
   salesRep: Types.ObjectId;
   type: DispatchLoadType;
   units: number;
