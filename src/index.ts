@@ -67,6 +67,10 @@ const startApp = async () => {
   // Routes
   app.use("/api", router);
 
+  app.get("/heath", (req,res)=>{
+    res.send("working");
+  });
+
   // Use global error handler
   app.use(errorHandler); // Use the imported error handler middleware
 
