@@ -5,8 +5,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "set NODE_ENV=production && node dist/index.js",
-    "start:dev": "nodemon src/index.ts",
-    "build": "tsc --build"
+    "start:dev": "set NODE_ENV=development &&  node dist/index.js",
+    "start:local": "set NODE_ENV=my-local && nodemon src/index.ts",
+    "build:development": "set NODE_ENV=development && tsc --build",
+    "build": "set NODE_ENV=production && tsc --build"
   },
   "author": "",
   "license": "ISC",

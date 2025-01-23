@@ -1,5 +1,5 @@
 import { config } from "dotenv";
-const envFile = process.env.NODE_ENV === "production" ? ".env.production" : ".env.development";
+const envFile = process.env.NODE_ENV === "production" ? ".env.production" : process.env.NODE_ENV == "development" ? ".env.development" : ".env.my-local";
 config({ path: envFile });
 import express, { Express } from "express";
 import router from "./api";
@@ -29,7 +29,7 @@ if (missingEnvs.length) {
 
 sgMail.setApiKey(env.SEND_GRID_EMAIL_API);
 
-// app.use(express.static(path.join(__dirname, '../build'))); 
+app.use(express.static(path.join(__dirname, '../build'))); 
 
 
 // Middleware configuration
