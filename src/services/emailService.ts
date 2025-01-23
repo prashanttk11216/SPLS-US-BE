@@ -20,7 +20,7 @@ export class EmailService {
   async sendNotificationEmail(options: SendEmailOptions): Promise<void> {
     const { to, subject, templateName, templateData } = options;
 
-    // Compile the email template with the provided data
+    // Compile the email template with the provided data chnages
     const emailContent = await compileTemplateWithLayout('main', templateName, templateData);
 
     const mailOptions = {
