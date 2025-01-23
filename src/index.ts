@@ -29,6 +29,9 @@ if (missingEnvs.length) {
 
 sgMail.setApiKey(env.SEND_GRID_EMAIL_API);
 
+// app.use(express.static(path.join(__dirname, '../build'))); 
+
+
 // Middleware configuration
 app.use(cors({ origin: env.CORS_ORIGIN, credentials: false }));
 app.use(helmet()); // Secure headers
