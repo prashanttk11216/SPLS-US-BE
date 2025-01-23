@@ -6,6 +6,7 @@ import {
   fetchLoadsHandler,
   updateLoadStatusHandler,
   refreshLoadAgeHandler,
+  rateConfirmationHandler
 } from "./controller";
 
 const dispatchRouter = express.Router();
@@ -45,5 +46,11 @@ dispatchRouter.delete("/:loadId", deleteLoadHandler);
  * @desc    Refresh the age of single or multiple loads
  */
 dispatchRouter.post("/refresh-age", refreshLoadAgeHandler);
+
+/**
+ * @route   POST /api/dispatch/rate-confirmation/:loadId
+ * @desc    generate pdf for load
+ */
+dispatchRouter.post("/rate-confirmation/:loadId", rateConfirmationHandler);
 
 export default dispatchRouter;

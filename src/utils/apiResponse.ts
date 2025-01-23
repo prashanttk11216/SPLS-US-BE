@@ -26,7 +26,7 @@ const STATUS_CODES: Record<number, string> = {
 
 // Define a type for optional metadata and response data
 type ResponseMeta = Record<string, any>;
-type ResponseData = Record<string, any> | any[] | null;
+type ResponseData = Record<string, any> | any[] | null | Buffer;
 
 // Define the send function to standardize response structure
 const send = (
@@ -34,7 +34,8 @@ const send = (
   statusCode: number = 200,
   msg?: string,
   data: ResponseData = null,
-  meta: ResponseMeta = {}
+  meta: ResponseMeta = {},
+  isBuffer: boolean = false // New parameter to indicate buffer data
 ) => {
   // Validate status code and retrieve default message
   if (!STATUS_CODES[statusCode]) {
@@ -43,6 +44,14 @@ const send = (
 
   // Set message to default if not provided
   const message = msg || STATUS_CODES[statusCode];
+
+  // If isBuffer is true, send the data as a buffer
+  if (isBuffer) {
+    return res
+      .status(statusCode)
+      .header('Content-Type', 'application/pdf')
+      .send(data);
+  }
 
   // Send the response with a structured format
   return res.status(statusCode).json({
@@ -53,5 +62,7 @@ const send = (
     meta,
   });
 };
+
+
 
 export default send;

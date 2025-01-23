@@ -1,0 +1,89 @@
+<div style="padding: 20px;">
+    <!-- Header -->
+    <div style="margin-bottom: 20px;">
+        <h1 style="text-align: center; margin-bottom: 10px;">Rate & Load Confirmation</h1>
+        <div>
+            <span style="display: block;"><strong>Company:</strong> {{companyDetails.name}}</span>
+            <span style="display: block;"><strong>Address:</strong> {{companyDetails.address}}</span>
+            <span style="display: block;"><strong>Phone:</strong> {{companyDetails.phone}}</span>
+            <span style="display: block;"><strong>Email:</strong> {{companyDetails.email}}</span>
+        </div>
+    </div>
+
+    <!-- Dispatcher Details -->
+    <div style="margin-bottom: 20px;">
+        <div style="font-weight: bold; margin-bottom: 10px; text-decoration: underline;">Dispatcher Details</div>
+        <div>
+            <span style="display: block;"><strong>Dispatcher:</strong> {{dispatcherDetails.name}}</span>
+            <span style="display: block;"><strong>Load #:</strong> {{dispatcherDetails.loadNumber}}</span>
+            <span style="display: block;"><strong>Ship Date:</strong> {{dispatcherDetails.shipDate}}</span>
+            <span style="display: block;"><strong>Today's Date:</strong> {{dispatcherDetails.todaysDate}}</span>
+            <span style="display: block;"><strong>Work Order:</strong> {{dispatcherDetails.workOrder}}</span>
+        </div>
+    </div>
+
+    <!-- Carrier Details -->
+    <div style="margin-bottom: 20px;">
+        <div style="font-weight: bold; margin-bottom: 10px; text-decoration: underline;">Carrier Details</div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <tr>
+                <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Carrier</th>
+                <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Phone #</th>
+                <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Fax #</th>
+                <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Equipment</th>
+                <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Agreed Amount</th>
+                <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Load Status</th>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #ccc; padding: 8px;">{{carrierDetails.name}}</td>
+                <td style="border: 1px solid #ccc; padding: 8px;">{{carrierDetails.phone}}</td>
+                <td style="border: 1px solid #ccc; padding: 8px;">{{carrierDetails.fax}}</td>
+                <td style="border: 1px solid #ccc; padding: 8px;">{{carrierDetails.equipment}}</td>
+                <td style="border: 1px solid #ccc; padding: 8px;">{{carrierDetails.agreedAmount}}</td>
+                <td style="border: 1px solid #ccc; padding: 8px;">{{carrierDetails.loadStatus}}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Consignee Details -->
+    <div style="margin-bottom: 20px;">
+        <div style="font-weight: bold; margin-bottom: 10px; text-decoration: underline;">Consignee Details</div>
+        <div>
+            <span style="display: block;"><strong>Name:</strong> {{consignee.name}}</span>
+            <span style="display: block;"><strong>Address:</strong> {{consignee.address}}</span>
+            <span style="display: block;"><strong>Date:</strong> {{consignee.date}}</span>
+            <span style="display: block;"><strong>Type:</strong> {{consignee.type}}</span>
+            <span style="display: block;"><strong>Weight:</strong> {{consignee.weight}}</span>
+            <span style="display: block;"><strong>Appointment:</strong> {{consignee.appointment}}</span>
+            <span style="display: block;"><strong>Description:</strong> {{consignee.description}}</span>
+        </div>
+    </div>
+
+    <!-- Shipper Details -->
+    <div style="margin-bottom: 20px;">
+        <div style="font-weight: bold; margin-bottom: 10px; text-decoration: underline;">Shipper Details</div>
+        <div>
+            <span style="display: block;"><strong>Name:</strong> {{shipper.name}}</span>
+            <span style="display: block;"><strong>Address:</strong> {{shipper.address}}</span>
+            <span style="display: block;"><strong>Date:</strong> {{shipper.date}}</span>
+            <span style="display: block;"><strong>Type:</strong> {{shipper.type}}</span>
+            <span style="display: block;"><strong>Weight:</strong> {{shipper.weight}}</span>
+            <span style="display: block;"><strong>Appointment:</strong> {{shipper.appointment}}</span>
+            <span style="display: block;"><strong>Description:</strong> {{shipper.description}}</span>
+        </div>
+    </div>
+
+    <!-- Notes -->
+    <div style="margin-bottom: 20px;">
+        <div style="font-weight: bold; margin-bottom: 10px; text-decoration: underline;">Notes</div>
+        <div style="font-style: italic;">
+            <p>{{notes.deliveryNote}}</p>
+            <p>{{notes.shipperNote}}</p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align: center; font-size: 12px; color: #666;">
+        Generated on {{dispatcherDetails.todaysDate}}
+    </div>
+</div>

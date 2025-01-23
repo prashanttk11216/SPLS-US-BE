@@ -12,6 +12,8 @@ import { DispatchLoadStatus } from "../../enums/DispatchLoadStatus";
 import { escapeAndNormalizeSearch } from "../../utils/regexHelper";
 import EmailService, { SendEmailOptions } from "../../services/EmailService";
 import { getPaginationParams } from "../../utils/paginationUtils";
+import { PdfGenerator } from "../../utils/pdfGenerator";
+import PdfService from "../../services/PdfService";
 
 const validTransitions: Record<DispatchLoadStatus, DispatchLoadStatus[]> = {
   [DispatchLoadStatus.Draft]: [DispatchLoadStatus.Published],
@@ -531,3 +533,73 @@ export async function refreshLoadAgeHandler(
 }
 
 
+export async function rateConfirmationHandler(req: Request, res: Response): Promise<void> {
+  try {
+    const { loadId } = req.params;
+    const pdfGenerator = new PdfGenerator();
+    let htmlContent = await PdfService.generateHTMLTemplate({
+      templateName: "rateAndLoadConfirmation",
+      templateData: {
+        "companyDetails": {
+          "name": "SPLS LLC",
+          "address": "13100 Wortham Center Dr, Houston, TX, USA 77065",
+          "phone": "832-906-0217",
+          "fax": "",
+          "email": "accounts@spls-us.com"
+        },
+        "dispatcherDetails": {
+          "name": "SPLS L",
+          "loadNumber": "854",
+          "shipDate": "2025-01-06",
+          "todaysDate": "2025-01-07",
+          "workOrder": "0001968"
+        },
+        "carrierDetails": {
+          "name": "WESTCORE LINKS INC",
+          "phone": "(780) 430-0331",
+          "fax": "",
+          "equipment": "Flat with Tarps",
+          "agreedAmount": "$3,700.00 USD",
+          "loadStatus": "Open"
+        },
+        "consignee": {
+          "name": "Elliot Homes",
+          "address": "16461 FM 170, Presidio, TX, Presidio, TX",
+          "date": "2025-01-06",
+          "time": "Major Intersection",
+          "type": "tl",
+          "quantity": "",
+          "weight": "48000 lbs",
+          "appointment": "Yes",
+          "description": "TARPED *** HT CERT PAPERS NEEDED FROM MILL DRIVER TO TAKE ORIGINAL HT INSPECTION DOCS and deliver with load to customer (along with customs docs) – this is a MUST or load will be rejected."
+        },
+        "shipper": {
+          "name": "Foothills Forest Products",
+          "address": "AB-40, Grande Cache, AB T0E 0Y0, Grande Cache, AB, T0E 0Y0",
+          "date": "2025-01-07",
+          "time": "Major Intersection",
+          "type": "tl",
+          "quantity": "18",
+          "weight": "48000 lbs",
+          "appointment": "Yes",
+          "description": "TARPED *** HT CERT PAPERS NEEDED FROM MILL DRIVER TO TAKE ORIGINAL HT INSPECTION DOCS and deliver with load to customer (along with customs docs) – this is a MUST or load will be rejected."
+        },
+        "notes": {
+          "deliveryNote": "DELIVERY MUST BE ON TIME. BOL MUST SIGNED BY RECEIVER IN ORDER TO GET PAYMENT.",
+          "shipperNote": "TRAILER MUST LOAD 28,224 fbm. IF less than 28,224 revised rate will apply based on total FBM loaded on Trailer."
+        }
+      }      
+    })
+    // Get PDF as a buffer
+    const pdfBuffer = await pdfGenerator.generatePdf(htmlContent, { format: "A4" });
+    send(res, 200, `Generated Successfully`, pdfBuffer!, {}, true);
+  } catch (error) {
+    logger.error("Error generating PDF:", error);
+    send(
+      res,
+      500,
+      "An unexpected server error occurred while refreshing load age"
+    );
+  }
+
+}
