@@ -5,3 +5,5 @@ uploads
 # Environment files
 .env
 .env.*
+
+dist
