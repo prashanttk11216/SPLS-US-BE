@@ -21,6 +21,8 @@ const connectDB = async (): Promise<void> => {
 
   const connectWithRetry = async () => {
     try {
+      console.log("MONGO_URI", env.MONGO_URI);
+      
       await mongoose.connect(env.MONGO_URI as string, options);
       logger.info("Database connection established successfully.");
       retries = 0; // Reset retry count on successful connection
