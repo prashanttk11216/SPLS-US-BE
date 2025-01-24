@@ -40,11 +40,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan("combined")); // Logger
 // Middleware to set headers
-app.use((req, res, next) => {
-  res.setHeader('Cross-Origin-Resource-Policy', 'same-site'); // or 'cross-origin'
-  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups'); // or 'same-origin'
-  next();
-});
+// app.use((req, res, next) => {
+//   res.setHeader('Cross-Origin-Resource-Policy', 'same-site'); // or 'cross-origin'
+//   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups'); // or 'same-origin'
+//   next();
+// });
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Database connection (async/await for clarity)
