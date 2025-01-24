@@ -33,7 +33,7 @@ app.use(express.static(path.join(__dirname, '../build')));
 
 
 // Middleware configuration
-app.use(cors({ origin: env.CORS_ORIGIN, credentials: false }));
+app.use(cors({ origin: '*', credentials: false }));
 app.use(helmet()); // Secure headers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

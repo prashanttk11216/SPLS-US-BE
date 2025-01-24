@@ -118,6 +118,8 @@ export async function create(req: Request, res: Response): Promise<void> {
       }
     );
   } catch (error) {
+    console.log("error", error);
+    
     if (error instanceof z.ZodError) {
       logger.error("Validation error:", error.errors);
       send(res, 400);
