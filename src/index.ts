@@ -62,6 +62,8 @@ let server: Server;
 // Start server function (async/await for clarity)
 const startApp = async () => {
   await startDatabase();
+  console.log("SEND_GRID_EMAIL_API", env.SEND_GRID_EMAIL_API);
+  
   sgMail.setApiKey(env.SEND_GRID_EMAIL_API);
 
 
