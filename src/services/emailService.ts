@@ -29,7 +29,9 @@ export class EmailService {
       subject,
       html: emailContent,
     }
-    await sgMail.send(mailOptions)
+    sgMail.send(mailOptions)
+    .then(() => console.log('Email sent'))
+    .catch((error) => console.error(error)); 
     // Send the email
     // await transporter.sendMail(mailOptions);
   }

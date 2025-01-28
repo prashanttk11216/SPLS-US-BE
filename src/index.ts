@@ -27,7 +27,6 @@ if (missingEnvs.length) {
   process.exit(1);
 }
 
-sgMail.setApiKey(env.SEND_GRID_EMAIL_API);
 
 app.use(express.static(path.join(__dirname, '../build'))); 
 
@@ -63,11 +62,13 @@ let server: Server;
 // Start server function (async/await for clarity)
 const startApp = async () => {
   await startDatabase();
+  sgMail.setApiKey(env.SEND_GRID_EMAIL_API);
+
 
   // Routes
   app.use("/api", router);
 
-  app.get("/heath", (req,res)=>{
+  app.get("/health", (req,res)=>{
     res.send("working");
   });
 
