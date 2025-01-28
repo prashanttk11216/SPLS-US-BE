@@ -96,8 +96,11 @@ export async function create(req: Request, res: Response): Promise<void> {
         },
       };
 
+      console.log(emailOptions);
+      
+
       // Send email notification to the broker (uncomment this when email functionality is ready)
-      await EmailService.sendNotificationEmail(emailOptions);
+      // await EmailService.sendNotificationEmail(emailOptions);
     }
 
     const newUser = new UserModel({
