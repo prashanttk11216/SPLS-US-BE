@@ -29,6 +29,8 @@ export class EmailService {
       subject,
       html: emailContent,
     }
+    console.log("Reached");
+    
     sgMail.send(mailOptions)
     .then(() => console.log('Email sent'))
     .catch((error) => console.error(error)); 
