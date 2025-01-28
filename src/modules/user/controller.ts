@@ -122,6 +122,7 @@ export async function create(req: Request, res: Response): Promise<void> {
     
     if (error instanceof z.ZodError) {
       logger.error("Validation error:", error.errors);
+      console.log("error", error.errors);
       send(res, 400);
     } else {
       logger.error("Unexpected error during user creation:", error);
