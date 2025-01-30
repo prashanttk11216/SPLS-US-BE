@@ -28,14 +28,12 @@ export class EmailService {
       to,
       subject,
       html: emailContent,
-    }
-    console.log("Reached");
-    
-    sgMail.send(mailOptions)
-    .then(() => console.log('Email sent'))
-    .catch((error) => console.error(error)); 
+    }    
+    // sgMail.send(mailOptions)
+    // .then(() => console.log('Email sent'))
+    // .catch((error) => console.error(error)); 
     // Send the email
-    // await transporter.sendMail(mailOptions);
+    await transporter.sendMail(mailOptions);
   }
 }
 
