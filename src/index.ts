@@ -1,5 +1,10 @@
 import { config } from "dotenv";
-const envFile = process.env.NODE_ENV === "production" ? ".env.production" : process.env.NODE_ENV == "development" ? ".env.development" : ".env.my-local";
+let envFile = ".env.my-local"
+if(process.env.NODE_ENV === "production"){
+  envFile = ".env.production";
+}else if(process.env.NODE_ENV === "development"){
+  envFile = ".env.development";
+}
 config({ path: envFile });
 import express, { Express } from "express";
 import router from "./api";

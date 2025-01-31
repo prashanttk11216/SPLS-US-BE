@@ -10,6 +10,7 @@ const envSchema = z.object({
     NODE_ENV: z.string(),
     EMAIL_USER: z.string(),
     EMAIL_PASS: z.string(),
+    SEND_GRID_EMAIL_API: z.string().optional()
 }).passthrough(); // Allows other env variables (like NODE_ENV) to be included without explicit definition
 
 // Parse and export the environment variables
