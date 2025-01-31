@@ -7,7 +7,6 @@ const envSchema = z.object({
     JWT_PRIVATE_KEY: z.string(),
     SALT_ROUNDS: z.coerce.number(),
     HOST: z.string(),
-    CORS_ORIGIN: z.string(),
     NODE_ENV: z.string(),
     EMAIL_USER: z.string(),
     EMAIL_PASS: z.string(),
