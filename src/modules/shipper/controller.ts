@@ -25,7 +25,7 @@ export const createShipper = async (
 
     // Check for duplicate email
     const existingShipper = await ShipperModel.findOne({
-      email: validatedData.email,
+      email: validatedData.email.toLowerCase(),
     });
     if (existingShipper) {
       send(res, 409, "Shipper with this Email is already registered.");

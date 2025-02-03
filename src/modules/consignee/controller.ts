@@ -143,7 +143,7 @@ export const createConsignee = async (
 
     // Check for duplicate email
     const existingConsignee = await ConsigneeModel.findOne({
-      email: validatedData.email,
+      email: validatedData.email.toLowerCase(),
     });
     if (existingConsignee) {
       send(res, 409, "Consignee with this Email is already registered.");

@@ -35,7 +35,7 @@ export async function create(req: Request, res: Response): Promise<void> {
     const validatedData = createUserSchema.parse(req.body);
 
     const existingUserByEmail = await UserModel.findOne({
-      email: validatedData.email,
+      email: validatedData.email.toLowerCase(),
     });
 
     if (existingUserByEmail) {
@@ -72,7 +72,7 @@ export async function create(req: Request, res: Response): Promise<void> {
         subject: "Account Created",
         templateName: "accountCreated",
         templateData: {
-          email: validatedData.email,
+          email: validatedData.email.toLowerCase(),
           password: validatedData.password
         },
       };
@@ -91,7 +91,7 @@ export async function create(req: Request, res: Response): Promise<void> {
         subject: "Email Verification",
         templateName: "emailVerification",
         templateData: {
-          email: validatedData.email,
+          email: validatedData.email.toLowerCase(),
           verificationCode: verificationCode
         },
       };
@@ -102,6 +102,7 @@ export async function create(req: Request, res: Response): Promise<void> {
 
     const newUser = new UserModel({
       ...validatedData,
+      email: validatedData.email.toLowerCase(),
       password: hashedPassword,
       isVerified,
     });
@@ -149,7 +150,7 @@ export async function login(req: Request, res: Response): Promise<void> {
       user = await UserModel.findOne({ employeeId: validatedData.employeeId });
     } else if (validatedData.email) {
       // Login for other users (customer, carrier, broker_admin) using email
-      user = await UserModel.findOne({ email: validatedData.email });
+      user = await UserModel.findOne({ email: validatedData.email.toLowerCase() });
     } else {
       send(res, 400, "Email or Employee ID must be provided");
       return;
@@ -187,7 +188,7 @@ export async function login(req: Request, res: Response): Promise<void> {
       _id: user._id,
       firstName: user.firstName,
       lastName: user.lastName,
-      email: user.email,
+      email: user.email.toLowerCase(),
       employeeId: user.employeeId,
       role: user.role,
       primaryNumber: user.primaryNumber,
@@ -269,7 +270,7 @@ export async function createBrokerUser(
 
     // Check for duplicate email
     const existingUserByEmail = await UserModel.findOne({
-      email: validatedData.email,
+      email: validatedData.email.toLowerCase(),
     });
 
     if (existingUserByEmail) {
@@ -303,6 +304,7 @@ export async function createBrokerUser(
     // Create the new broker user and save
     const newBrokerUser = new UserModel({
       ...validatedData,
+      email: validatedData.email.toLowerCase(),
       password: hashedPassword,
       isVerified,
     });
@@ -315,7 +317,7 @@ export async function createBrokerUser(
       subject: "Account Created",
       templateName: "accountCreated",
       templateData: {
-        email: validatedData.email,
+        email: validatedData.email.toLowerCase(),
         password: validatedData.password,
         employeeId: validatedData.employeeId
       },
@@ -555,7 +557,7 @@ export async function requestResetPassword(
 ): Promise<void> {
   try {
     const { email } = req.body;
-    const user = await UserModel.findOne({ email });
+    const user = await UserModel.findOne({ email: email.toLowerCase() });
     if (!user) {
       send(res, 404, "User not found");
       return;
@@ -588,7 +590,7 @@ export async function resetPassword(
 ): Promise<void> {
   try {
     const { email, password } = req.body;
-    const user = await UserModel.findOne({ email });
+    const user = await UserModel.findOne({ email: email.toLowerCase() });
     if (!user) {
       send(res, 404, "User not found");
       return;

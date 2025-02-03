@@ -18,7 +18,7 @@ export async function createOTP(email: string): Promise<string> {
 
   // Save or update OTP in the database with expiration time and reset resend count
   await OTPModel.findOneAndUpdate(
-    { email },
+    { email: email.toLowerCase() },
     {
       otp,
       expiration: new Date(Date.now() + OTP_EXPIRATION_TIME),
@@ -38,7 +38,7 @@ export async function createOTP(email: string): Promise<string> {
 export async function resendOTPHandler(req: Request, res: Response): Promise<void> {
   try {
     const { email } = req.body;
-    const otpRecord = await OTPModel.findOne({ email });
+    const otpRecord = await OTPModel.findOne({ email: email.toLowerCase() });
 
     if (!otpRecord) {
       send(res, 404, "No OTP found. Please request a new OTP.");
@@ -79,7 +79,7 @@ export async function verifyEmail(req: Request, res: Response): Promise<void> {
     const { email, otp } = req.body;
 
     // Check if user exists and is not already verified
-    const user = await UserModel.findOne({ email });
+    const user = await UserModel.findOne({ email: email.toLowerCase() });
     if (!user) {
       send(res, 404, "User not found");
       return;
@@ -91,7 +91,7 @@ export async function verifyEmail(req: Request, res: Response): Promise<void> {
     }
 
     // Retrieve OTP record for email and check if it exists
-    const otpRecord = await OTPModel.findOne({ email });
+    const otpRecord = await OTPModel.findOne({ email: email.toLowerCase() });
     if (!otpRecord) {
       send(res, 404, "OTP not found. Please request a new OTP.");
       return;
