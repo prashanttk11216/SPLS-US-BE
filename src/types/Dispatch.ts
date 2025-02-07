@@ -74,7 +74,7 @@ export interface ICarrierFee {
 export interface IDispatch extends Document {
   brokerId?: Types.ObjectId | IUser;
   loadNumber: number;
-  WONumber: number;
+  WONumber: string;
   customerId?: Types.ObjectId | IUser;
   carrierId?: Types.ObjectId | IUser;
   salesRep: Types.ObjectId;

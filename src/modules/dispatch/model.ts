@@ -78,7 +78,7 @@ const DispatchSchema: Schema = new Schema<IDispatch>(
     loadNumber: { type: Number, unique: true },
     customerId: { type: Schema.Types.ObjectId, ref: "User" },
     salesRep: { type: Schema.Types.ObjectId, ref: "User" },
-    WONumber: { type: Number, unique: true },
+    WONumber: { type: String, unique: true },
     type: { type: String, enum: DispatchLoadType },
     units: { type: Number, min: 0 },
     customerRate: { type: Number, min: 0 },

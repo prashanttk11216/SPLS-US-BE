@@ -67,7 +67,7 @@ const CarrierFeeBreakdownSchema = z.object({
 const baseDispatchSchema = z.object({
   brokerId: z.string().optional(),
   loadNumber: z.number().int().optional(),
-  WONumber: z.number().int().optional(),
+  WONumber: z.string().optional(),
   customerId: z.string().optional(),
   carrierId: z.string().optional(),
   salesRep: z.string().optional(),

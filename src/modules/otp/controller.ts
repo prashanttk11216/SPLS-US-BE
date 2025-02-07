@@ -4,6 +4,7 @@ import { generateOTP } from "../../utils/encryption";
 import { OTPModel } from "./model";
 import { UserModel } from "../user/model";
 import logger from "../../utils/logger"; // Assuming a logger utility is available
+import EmailService, { SendEmailOptions } from "../../services/EmailService";
 
 const OTP_EXPIRATION_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
 const MAX_RESEND_ATTEMPTS = 3; // Maximum OTP resend attempts allowed
@@ -60,7 +61,18 @@ export async function resendOTPHandler(req: Request, res: Response): Promise<voi
     await otpRecord.save();
 
     // TODO: Uncomment the line below to integrate email service for sending OTP.
-    // await sendEmail(email, "Your OTP Code", `Your OTP is: ${otpRecord.otp}`);
+    const emailOptions: SendEmailOptions = {
+      to: email, // Send the notification to the broker's email
+      subject: "Email Verification",
+      templateName: "emailVerification",
+      templateData: {
+        email: email.toLowerCase(),
+        verificationCode: otpRecord.otp
+      },
+    };
+
+    // Send email notification to the broker (uncomment this when email functionality is ready)
+    await EmailService.sendNotificationEmail(emailOptions);
 
     send(res, 200, "OTP resent successfully.");
   } catch (error) {
