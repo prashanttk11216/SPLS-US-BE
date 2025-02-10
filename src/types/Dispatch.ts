@@ -24,7 +24,7 @@ export interface IConsignee {
   PO?: number;
 }
 
-export interface IShipper {
+export interface IDispatchShipper {
   shipperId: Types.ObjectId;
   address: IAddress;
   date: Date;
@@ -88,7 +88,7 @@ export interface IDispatch extends Document {
   allInRate?: number;
   customerRate?: number;
   consignee: IConsignee;
-  shipper: IShipper;
+  shipper: IDispatchShipper;
   postedBy?: Types.ObjectId;
   status: DispatchLoadStatus;
   age?: Date;

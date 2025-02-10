@@ -123,7 +123,8 @@ export async function createLoadHandler(
       send(res, 400, "Invalid input data", { errors: error.errors });
       return;
     }
-
+    console.log(error);
+    
     // Handle any other unexpected errors
     send(res, 500, "Server error");
   }
@@ -185,9 +186,14 @@ export async function fetchLoadsHandler(
 
     if (loadId) {
       // Fetch a single load by its ID
-      const load = await LoadModel.findOne({ _id: loadId })
-      .populate("brokerId", "-password")
-      .populate("postedBy", "-password")
+      let load;
+      if(req?.query?.isPopulate){
+        load = await LoadModel.findOne({ _id: loadId })
+        .populate("brokerId", "-password")
+        .populate("postedBy", "-password")
+      }else {
+        load = await LoadModel.findOne({ _id: loadId });
+      }   
 
       if (!load) {
         send(res, 404, "Load not found");

@@ -54,13 +54,13 @@ export function formatTimeDifference(differenceInTime: number): string {
   if (ageInYears > 0) {
     return `${ageInYears}y`;
   } else if (ageInMonths > 0) {
-    return `${ageInMonths}m`;
+    return `${ageInMonths}mo`;
   } else if (ageInDays > 0) {
     return `${ageInDays}d`;
   } else if (ageInHours > 0) {
     return `${ageInHours}h`;
   } else if (ageInMinutes > 0) {
-    return `${ageInMinutes}m`;
+    return `${ageInMinutes}min`;
   } else if (ageInSeconds > 0) {
     return `${ageInSeconds}s`;
   } else {

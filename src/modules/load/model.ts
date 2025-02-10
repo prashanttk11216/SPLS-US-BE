@@ -4,6 +4,7 @@ import { Mode } from "../../enums/Mode";
 import { Commodity } from "../../enums/Commodity";
 import { ILoad } from "../../types/Load";
 import { formatTimeDifference } from "../../utils/globalHelper";
+import { LoadOption } from "../../enums/LoadOption";
 
 // Define Load interface extending Mongoose's Document
 
@@ -70,8 +71,8 @@ const LoadSchema: Schema = new Schema<ILoad>(
 
     destinationStops: [destinationStopSchema],
 
-    equipment: { type: String, enum: Equipment, required: true },
-    mode: { type: String, enum: Mode, required: true },
+    equipment: { type: String, enum: Object.keys(Equipment), required: true },
+    mode: { type: String, enum: Object.keys(Mode), required: true },
 
     allInRate: { type: Number, min: 0 },
     customerRate: { type: Number, min: 0 },
@@ -82,9 +83,9 @@ const LoadSchema: Schema = new Schema<ILoad>(
     pieces: { type: Number, min: 0 },
     pallets: { type: Number, min: 0 },
     miles: { type: Number, min: 0 },
-    loadOption: { type: String },
+    loadOption: { type: String, enum: Object.keys(LoadOption)},
     specialInstructions: { type: String },
-    commodity: { type: String, enum: [...Object.values(Commodity), ""] },
+    commodity: { type: String, enum: Object.keys(Commodity) },
     loadNumber: { type: Number, unique: true },
 
     postedBy: { type: Schema.Types.ObjectId, ref: "User" },

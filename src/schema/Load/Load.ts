@@ -2,6 +2,7 @@ import { z } from "zod";
 import { Equipment } from "../../enums/Equipment";
 import { Mode } from "../../enums/Mode";
 import { Commodity } from "../../enums/Commodity";
+import { LoadOption } from "../../enums/LoadOption";
 
 // Common schema for Stop objects
 const OriginStopSchema = z.object({
@@ -61,8 +62,9 @@ const baseLoadSchema = z.object({
   destinationLateDropoffTime: z.string().optional(),
   destinationStops: z.array(DestinationStopSchema).optional(),
 
-  equipment: z.nativeEnum(Equipment, { required_error: "Equipment is required" }),
-  mode: z.nativeEnum(Mode, { required_error: "Mode is required" }),
+  equipment: z.enum(Object.keys(Equipment) as [keyof typeof Equipment]),
+  mode: z.enum(Object.keys(Mode) as [keyof typeof Mode]),
+
 
   allInRate: z.number().min(0, { message: "Rate must be a positive number" }).optional(),
   customerRate: z.number().min(0, { message: "Rate must be a positive number" }).optional(),
@@ -73,9 +75,9 @@ const baseLoadSchema = z.object({
   pieces: z.number().min(0, { message: "Pieces must be a positive number" }).optional(),
   pallets: z.number().min(0, { message: "Pallets must be a positive number" }).optional(),
   miles: z.number().min(0, { message: "Miles must be a positive number" }).optional(),
-  loadOption: z.string().optional(),
+  loadOption: z.enum(Object.keys(LoadOption) as [keyof typeof LoadOption]).optional(),
   specialInstructions: z.string().optional(),
-  commodity: z.union([z.nativeEnum(Commodity), z.string().max(0)]).optional(),
+  commodity: z.enum(Object.keys(Commodity) as [keyof typeof Commodity]).optional(),
   loadNumber: z.number().optional(),
 
   postedBy: z.string().optional(),

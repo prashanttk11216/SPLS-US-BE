@@ -33,9 +33,9 @@ export class EmailService {
     // .then(() => console.log('Email sent'))
     // .catch((error) => console.error(error)); 
     // Send the email
-    transporter.sendMail(mailOptions).then(() => console.log('Email sent'))
-    .catch((error) => console.error(error));
+    // transporter.sendMail(mailOptions).then(() => console.log('Email sent'))
+    // .catch((error) => console.error(error));
   }
 }
-
+  
 export default new EmailService();
