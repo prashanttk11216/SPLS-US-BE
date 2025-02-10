@@ -10,7 +10,7 @@ export interface IAddress {
   lng: number; // Longitude
 }
 
-export interface IConsignee {
+export interface IDispatchConsignee {
   consigneeId: Types.ObjectId;
   address: IAddress;
   date: Date;
@@ -87,7 +87,7 @@ export interface IDispatch extends Document {
   equipment: Equipment;
   allInRate?: number;
   customerRate?: number;
-  consignee: IConsignee;
+  consignee: IDispatchConsignee;
   shipper: IDispatchShipper;
   postedBy?: Types.ObjectId;
   status: DispatchLoadStatus;
