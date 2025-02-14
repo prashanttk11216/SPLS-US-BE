@@ -24,7 +24,7 @@ const moduleRoutes: Record<string, ModuleRoute> = {
   otp: { path: otpRouter, IsPrivate: false },
   load: { path: loadRouter, IsPrivate: true },
   dispatch: { path: dispatchRouter, IsPrivate: true },
-  role: { path: roleRouter, IsPrivate: true },
+  role: { path: roleRouter, IsPrivate: false },
   shipper: { path: shipperRouter, IsPrivate: true },
   consignee: { path: consigneeRouter, IsPrivate: true },
   truck: { path: truckRouter, IsPrivate: true },

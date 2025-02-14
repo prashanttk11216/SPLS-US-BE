@@ -14,6 +14,7 @@ import EmailService, { SendEmailOptions } from "../../services/EmailService";
 import { getPaginationParams } from "../../utils/paginationUtils";
 import { PdfGenerator } from "../../utils/pdfGenerator";
 import PdfService from "../../services/PdfService";
+import { hasAccess } from "../../utils/role";
 
 const validTransitions: Record<DispatchLoadStatus, DispatchLoadStatus[]> = {
   [DispatchLoadStatus.Draft]: [DispatchLoadStatus.Published],
@@ -39,20 +40,19 @@ export async function createLoadHandler(
     // Validate incoming request data using Zod schema
     const validatedData = transformedCreateDispatchSchema.parse(req.body);
     const user = (req as Request & { user?: IUser })?.user; // Extract user data from request
+  
 
     // Ensure that broker/admin assigns a 'postedBy' field if missing
     if (
-      !validatedData.postedBy &&
-      (user?.role === UserRole.BROKER_ADMIN ||
-        user?.role === UserRole.BROKER_USER)
-    ) {
+      !validatedData.postedBy && user && hasAccess(user.roles, { roles: [UserRole.BROKER_USER, UserRole.BROKER_ADMIN] }) )
+     {
       validatedData.postedBy = user._id; // Assign the current broker/admin as the poster
     }
 
     // Set the brokerId based on the user's role
-    if (user?.role === UserRole.BROKER_ADMIN) {
+    if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_USER] })) {
       validatedData.brokerId = user._id;
-    } else if (user?.role === UserRole.BROKER_USER) {
+    } else  if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN] })) {
       validatedData.brokerId = user.brokerId;
     }
 
@@ -221,9 +221,9 @@ export async function fetchLoadsHandler(
     const { page, limit, skip } = getPaginationParams(req.query);
 
     // Role-based query conditions
-    if (user?.role === UserRole.BROKER_USER) {
+    if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_USER] })) {
       filters.postedBy = user._id; // Filter by broker's posted loads
-    } else if (user?.role === UserRole.CUSTOMER) {
+    } else if (user && hasAccess(user.roles, { roles: [UserRole.CUSTOMER] })) {
       filters.customerId = user._id; // Filter by customer-specific loads
     }
 
@@ -366,7 +366,6 @@ export async function updateLoadStatusHandler(
   try {
     const user = (req as Request & { user?: IUser })?.user;
     const { status } = req.body;
-    const currentUserRole = user?.role;
 
     // Fetch the load details and populate related broker and customer info
     const load = await DispatchModel.findById(req.params.loadId)
@@ -394,14 +393,6 @@ export async function updateLoadStatusHandler(
       return;
     }
 
-    // Ensure the user has the correct role for status updates
-    if (
-      [DispatchLoadStatus.Published, DispatchLoadStatus.InTransit, DispatchLoadStatus.Completed,]?.includes(status) &&
-      ![UserRole.BROKER_USER, UserRole.BROKER_ADMIN]?.includes(currentUserRole!)
-    ) {
-      send(res, 403, "You do not have permission to perform this action.");
-      return;
-    }
 
     // Update status in the database
     load.status = status;

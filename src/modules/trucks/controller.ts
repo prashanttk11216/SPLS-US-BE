@@ -11,6 +11,7 @@ import { calculateDistance } from "../../utils/globalHelper";
 import { ITruck } from "../../types/Truck";
 import { escapeAndNormalizeSearch } from "../../utils/regexHelper";
 import { getPaginationParams } from "../../utils/paginationUtils";
+import { hasAccess } from "../../utils/role";
 
 // Create Truck API
 export async function createTruck(req: Request, res: Response): Promise<void> {
@@ -18,7 +19,7 @@ export async function createTruck(req: Request, res: Response): Promise<void> {
     const user = (req as Request & { user?: IUser }).user;
 
     // Ensure the user is a carrier
-    if (user?.role !== UserRole.CARRIER) {
+    if (!(user && hasAccess(user.roles, { roles: [UserRole.CARRIER] }))) {
       send(res, 403, "Only carriers can create trucks");
       return;
     }
@@ -110,9 +111,9 @@ export async function getTrucks(req: Request, res: Response): Promise<void> {
     const { page, limit, skip } = getPaginationParams(req.query);
 
     // Role-based query conditions
-    if (user?.role === UserRole.CARRIER) {
+    if (user && hasAccess(user.roles, { roles: [UserRole.CARRIER] })) {
       filters.postedBy = user._id;
-    } else if (user?.role === UserRole.BROKER_ADMIN) {
+    } else if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN] })) {
       filters.brokerId = user._id;
     }
 

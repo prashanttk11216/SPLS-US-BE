@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { UserRole } from "../../enums/UserRole";
+import { getRoles, hasAccess } from "../../utils/role";
 
 // Base schema without superRefine
 const baseUserSchema = z.object({
@@ -9,12 +10,7 @@ const baseUserSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters long"),
   confirmPassword: z.string().min(8, "Confirm password is required"),
   primaryNumber: z.string().min(10, "Contact number must be valid"),
-  role: z.enum([
-    UserRole.BROKER_ADMIN,
-    UserRole.BROKER_USER,
-    UserRole.CARRIER,
-    UserRole.CUSTOMER,
-  ]),
+  roles: z.array(z.string()).min(1, "At least one role is required"),
   company: z.string().optional(),
   avatarUrl: z.string().optional(),
   brokerId: z.string().optional(),
@@ -80,7 +76,7 @@ const baseUserSchema = z.object({
 });
 
 // Add refinements to the base schema
-export const createUserSchema = baseUserSchema.superRefine((data, ctx) => {
+export const createUserSchema = baseUserSchema.superRefine(async (data, ctx) => {
   // Ensure passwords match
   if (data.password !== data.confirmPassword) {
     ctx.addIssue({
@@ -89,18 +85,19 @@ export const createUserSchema = baseUserSchema.superRefine((data, ctx) => {
       code: z.ZodIssueCode.custom,
     });
   }
-
+  let roles = await getRoles();
+  
   // Conditional validation for roles
-  if (data.role === UserRole.BROKER_USER && !data.employeeId) {
+  if (data.roles.includes(roles[UserRole.BROKER_USER].id) && !data.employeeId) {
     ctx.addIssue({
       path: ["employeeId"],
       message: "Employee ID is required for BROKER_USER",
       code: z.ZodIssueCode.custom,
     });
   }
-
+  
   // Billing fields are mandatory for customers and carriers
-  if (data.role === UserRole.CUSTOMER || data.role === UserRole.CARRIER) {
+  if (data.roles.includes(roles[UserRole.CUSTOMER].id) || data.roles.includes(roles[UserRole.CARRIER].id)) {
     const requiredFields = [
       "billingAddress",
       "billingCountry",
@@ -116,7 +113,7 @@ export const createUserSchema = baseUserSchema.superRefine((data, ctx) => {
           message: `${field.replace(
             "billing",
             "Billing"
-          )} is required for customers`,
+          )} is required for customers and carriers`,
           code: z.ZodIssueCode.custom,
         });
       }
@@ -133,9 +130,6 @@ export const editUserSchema = baseUserSchema.partial();
  */
 export const loginSchema = z.object({
   email: z.string().email("Invalid email address").optional(),
-  employeeId: z
-    .string()
-    .min(1, "Employee ID is required for broker users")
-    .optional(),
+  employeeId: z.string().min(1, "Employee ID is required for broker users").optional(),
   password: z.string().min(8, "Password must be at least 8 characters long"),
 });

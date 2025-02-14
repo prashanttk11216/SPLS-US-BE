@@ -1,5 +1,4 @@
 import { Document } from "mongoose";
-import { UserRole } from "../enums/UserRole";
 
 /**
  * IUser interface defining the structure of a User document in MongoDB.
@@ -13,7 +12,7 @@ export interface IUser extends Document {
   primaryNumber: string; // User's contact number
   company?: string; // Company name (optional)
 
-  role: UserRole; // Role of the user
+  roles: Role[]; // Role of the user
   
   address?: {
     str: string; // String representation of the address
@@ -53,4 +52,20 @@ export interface IUser extends Document {
   avatarUrl?: string; // URL for profile picture
   createdAt: Date; // Document creation timestamp
   updatedAt: Date; // Document last update timestamp
+}
+
+
+export type Permission = {
+  resource: string;
+  actions: string[]; // e.g., ["view", "create", "edit", "delete"]
+};
+
+/**
+ * Interface for the Role document.
+ * Represents a role with a specific name and associated permissions.
+ */
+export interface Role {
+  _id: string; // Unique identifier (added by Mongoose)
+  name: string; // e.g., "Broker_User", "Customer"
+  permissions: Permission[]; // Array of permissions assigned to this role
 }

@@ -1,10 +1,11 @@
 import { Router } from "express";
 import {
-  createOrUpdateRole,
+  createRole,
   deleteRole,
-  getRoleById,
   getRoles,
+  updateRole,
 } from "./controller";
+import auth from "../../middleware/auth";
 
 const roleRouter = Router();
 
@@ -15,7 +16,11 @@ const roleRouter = Router();
  * @route POST /api/roles
  * @access Admin
  */
-roleRouter.post("/", createOrUpdateRole);
+roleRouter.post("/", auth, createRole);
+
+
+roleRouter.put("/:_id", auth, updateRole);
+
 
 /**
  * GET /api/roles
@@ -24,17 +29,7 @@ roleRouter.post("/", createOrUpdateRole);
  * @route GET /api/roles
  * @access Admin
  */
-roleRouter.get("/", getRoles);
-
-/**
- * GET /api/roles/:_id
- * Retrieves a specific role by its ID.
- * Returns role data if found; otherwise, sends a not-found error.
- * @param {string} _id - The unique identifier of the role
- * @route GET /api/roles/:_id
- * @access Admin
- */
-roleRouter.get("/:_id", getRoleById);
+roleRouter.get("/:_id?", getRoles);
 
 /**
  * DELETE /api/roles/:_id
@@ -44,6 +39,6 @@ roleRouter.get("/:_id", getRoleById);
  * @route DELETE /api/roles/:_id
  * @access Admin
  */
-roleRouter.delete("/:_id", deleteRole);
+roleRouter.delete("/:_id", auth, deleteRole);
 
 export default roleRouter;

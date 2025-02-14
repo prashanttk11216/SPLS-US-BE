@@ -16,12 +16,15 @@ import {
   editUserSchema,
   loginSchema,
 } from "../../schema/User";
-import { UserRole } from "../../enums/UserRole";
 import logger from "../../utils/logger"; // Ensure you have a logger utility
-import { SortOrder } from "mongoose";
-import { escapeAndNormalizeSearch } from "../../utils/regexHelper";
+import mongoose, { SortOrder } from "mongoose";
 import EmailService, { SendEmailOptions } from "../../services/EmailService";
 import { getPaginationParams } from "../../utils/paginationUtils";
+import { getRoles, hasAccess } from "../../utils/role";
+import { UserRole } from "../../enums/UserRole";
+import { buildSearchFilter } from "../../utils/parseSearchQuerty";
+import { parseSortQuery } from "../../utils/parseSortQuery";
+import { applyPopulation } from "../../utils/populateHelper";
 
 /**
  * Create a new user account, validate the input, hash the password, and handle the user verification process.
@@ -32,7 +35,7 @@ import { getPaginationParams } from "../../utils/paginationUtils";
  */
 export async function create(req: Request, res: Response): Promise<void> {
   try {
-    const validatedData = createUserSchema.parse(req.body);
+    const validatedData = await createUserSchema.parseAsync(req.body);
 
     const existingUserByEmail = await UserModel.findOne({
       email: validatedData.email.toLowerCase(),
@@ -40,16 +43,6 @@ export async function create(req: Request, res: Response): Promise<void> {
 
     if (existingUserByEmail) {
       send(res, 409, "Email already registered");
-      return;
-    }
-
-    // Check if employeeId is provided (required for broker users) and check for duplicates
-    if (validatedData.role === UserRole.BROKER_USER) {
-      send(
-        res,
-        403,
-        "Unauthorized. Only broker admins can create broker users."
-      );
       return;
     }
 
@@ -61,8 +54,9 @@ export async function create(req: Request, res: Response): Promise<void> {
     // Determine if the user creating the customer is an admin
     let isVerified = false;
     let verificationCode;
+    let roles = await getRoles();
 
-    if (req.query.isAdmin && (validatedData.role == UserRole.CUSTOMER || validatedData.role == UserRole.CARRIER)) {
+    if (req.query.isAdmin && (validatedData.roles.includes(roles[UserRole.CUSTOMER].id) || validatedData.roles.includes(roles[UserRole.CARRIER].id))) {
       isVerified = true;
       logger.info(`User account created for ${validatedData.email}`);
 
@@ -118,9 +112,7 @@ export async function create(req: Request, res: Response): Promise<void> {
         otp: verificationCode,
       }
     );
-  } catch (error) {
-    console.log("error", error);
-    
+  } catch (error) {    
     if (error instanceof z.ZodError) {
       logger.error("Validation error:", error.errors);
       console.log("error", error.errors);
@@ -144,13 +136,12 @@ export async function login(req: Request, res: Response): Promise<void> {
     const validatedData = loginSchema.parse(req.body);
 
     let user;
-
     if (validatedData.employeeId) {
       // Login for broker users using employeeId
-      user = await UserModel.findOne({ employeeId: validatedData.employeeId });
+      user = await UserModel.findOne({ employeeId: validatedData.employeeId }).populate("roles");
     } else if (validatedData.email) {
       // Login for other users (customer, carrier, broker_admin) using email
-      user = await UserModel.findOne({ email: validatedData.email.toLowerCase() });
+      user = await UserModel.findOne({ email: validatedData.email.toLowerCase() }).populate("roles");
     } else {
       send(res, 400, "Email or Employee ID must be provided");
       return;
@@ -184,21 +175,8 @@ export async function login(req: Request, res: Response): Promise<void> {
     }
 
     // Prepare the user response data
-    const userResponse = {
-      _id: user._id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email.toLowerCase(),
-      employeeId: user.employeeId,
-      role: user.role,
-      primaryNumber: user.primaryNumber,
-      company: user.company,
-      isVerified: user.isVerified,
-      isActive: user.isActive,
-      updatedAt: user.updatedAt,
-      createdAt: user.createdAt,
-      avatarUrl: user.avatarUrl,
-    };
+    const { password, ...userResponse } = user.toObject();
+    userResponse.email = user.email.toLowerCase(); 
 
     // Generate JWT token for the authenticated user
     const token = await generateToken(userResponse, env.JWT_PRIVATE_KEY, {
@@ -206,7 +184,7 @@ export async function login(req: Request, res: Response): Promise<void> {
     });
 
     if (validatedData.employeeId) {
-      let mainAdmin = await UserModel.findOne({ role: UserRole.BROKER_ADMIN });
+      let mainAdmin = await UserModel.findOne({ roles: ['67ab4baab772037ca62f66e1'] });
 
       // Get the current login time
       const loginTime = new Date().toISOString();
@@ -254,9 +232,8 @@ export async function createBrokerUser(
 ): Promise<void> {
   try {
     const user = (req as Request & { user?: IUser })?.user;
-
     // Check if the logged-in user is a broker_admin
-    if (user?.role !== UserRole.BROKER_ADMIN) {
+    if (!(user && hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN] }))) {
       send(
         res,
         403,
@@ -268,29 +245,17 @@ export async function createBrokerUser(
     // Validate the request body
     const validatedData = createUserSchema.parse(req.body);
 
-    // Check for duplicate email
-    const existingUserByEmail = await UserModel.findOne({
-      email: validatedData.email.toLowerCase(),
+    // Check for duplicate email or employeeId
+    const existingUser = await UserModel.findOne({
+      $or: [
+        { email: validatedData.email.toLowerCase() },
+        { employeeId: validatedData.employeeId },
+      ],
     });
 
-    if (existingUserByEmail) {
-      send(res, 409, "Email already registered");
+    if (existingUser) {
+      send(res, 409, "Email or Employee ID already registered");
       return;
-    }
-
-    // Check if employeeId is provided (required for broker users) and check for duplicates
-    if (
-      validatedData.role === UserRole.BROKER_USER &&
-      validatedData.employeeId
-    ) {
-      const existingUserByEmployeeId = await UserModel.findOne({
-        employeeId: validatedData.employeeId,
-      });
-
-      if (existingUserByEmployeeId) {
-        send(res, 409, "Employee ID already registered");
-        return;
-      }
     }
 
     // Hash the password before storing
@@ -346,10 +311,13 @@ export async function createBrokerUser(
 export async function profile(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as Request & { user?: IUser })?.user?._id;
-    const user = await UserModel.findOne({
+        
+    let query = UserModel.findOne({
       _id: userId,
       isDeleted: false,
-    }).select("-password");
+    });
+    query = applyPopulation(query, req.query.populate as string);
+    const user = await query.select("-password");
 
     if (!user) {
       send(res, 404, "User not found");
@@ -407,10 +375,13 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
     const { _id } = req.params;
 
     if (_id) {
-      const user = await UserModel.findOne({
+      let query = UserModel.findOne({
         _id,
         isDeleted: false,
       }).select("-password");
+
+      query = applyPopulation(query, req.query.populate as string)
+      const user = await query;
 
       if (!user) {
         send(res, 404, "User not found");
@@ -424,13 +395,14 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
     const { page, limit, skip } = getPaginationParams(req.query);
 
 
-    const filters: any = { isDeleted: false };
+    let filters: any = { isDeleted: false };
 
     // Role filter
-    const role = req.query.role as UserRole;
-    if (role && Object.values(UserRole).includes(role)) {
-      filters.role = role;
-    }
+    const role = req.query.role;
+    if (role) {
+      let roles = await getRoles(); 
+      filters.roles = { $in: [new mongoose.Types.ObjectId(roles[role as string].id)] }
+    }    
 
     if (req.query.brokerId) {
       filters.brokerId = req.query.brokerId;
@@ -440,62 +412,29 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
     const search = req.query.search as string;
     const searchField = req.query.searchField as string; // Get the specific field to search
 
-    // Define numeric fields
-    const numberFields = ["primaryNumber"];
-
     if (search && searchField) {
-      const escapedSearch = escapeAndNormalizeSearch(search);
-
-      // Validate and apply filters based on the field type
-      if (numberFields.includes(searchField)) {
-        // Ensure the search value is a valid number
-        const parsedNumber = Number(escapedSearch);
-        if (!isNaN(parsedNumber)) {
-          filters[searchField] = parsedNumber;
-        } else {
-          throw new Error(`Invalid number provided for field ${searchField}`);
-        }
-      } else {
-        // Apply regex for string fields
-        if (searchField == "name") {
-          filters.$or = [
-            { firstName: { $regex: escapedSearch, $options: "i" } },
-            { lastName: { $regex: escapedSearch, $options: "i" } },
-          ];
-        } else {
-          filters[searchField] = { $regex: escapedSearch, $options: "i" };
-        }
-      }
+      const numberFields = ["primaryNumber"]; // Define numeric fields
+      const multiFieldMappings = { name: ["firstName", "lastName"] }; // Dynamic mapping
+      filters = { ...filters, ...buildSearchFilter(search, searchField, numberFields, multiFieldMappings) };
     }
 
     // Sort functionality
     const sortQuery = req.query.sort as string | undefined;
     let sortOptions: [string, SortOrder][] = []; // Array of tuples for sorting
-
-    if (sortQuery) {
-      const sortFields = sortQuery.split(","); // Support multiple sort fields (comma-separated)
-      const validFields = [
-        "email",
+    if(sortQuery){
+      const validFields = ["email",
         "primaryNumber",
         "isActive",
         "name",
         "company",
         "createdAt",
-        "employeeId"
-      ]; // Define valid fields
-
-      sortFields.forEach((field) => {
-        const [key, order] = field.split(":");
-        if (validFields.includes(key)) {
-          // Push the sort field and direction as a tuple
-          sortOptions.push([key, order === "desc" ? -1 : 1]);
-        }
-      });
+        "employeeId"];
+      sortOptions = parseSortQuery(sortQuery, validFields);
     }
 
     // Add all other query parameters dynamically into filters
     for (const [key, value] of Object.entries(req.query)) {
-      if (!['page', 'limit', 'role', 'brokerId', 'sort', 'search', 'searchField'].includes(key)) {
+      if (!['page', 'limit', 'role', 'brokerId', 'sort', 'search', 'searchField', 'populate'].includes(key)) {
         filters[key] = value;
       }
     }
@@ -503,11 +442,15 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
     // Total count and user retrieval with pagination and sorting
     const totalItems = await UserModel.countDocuments(filters);
 
-    const users = await UserModel.find({ ...filters, })
+    let query = UserModel.find({ ...filters, })
       .select("-password")
       .skip(skip)
       .limit(limit)
-      .sort(sortOptions); // Apply sorting
+      .sort(sortOptions);
+
+    query = applyPopulation(query, req.query.populate as string);
+    
+    const users = await query;
 
     const totalPages = Math.ceil(totalItems / limit);
 
@@ -614,9 +557,8 @@ export async function toggleActiveStatus(
   try {
     const { userId } = req.params;
     const requester = (req as Request & { user?: IUser })?.user;
-
     // Check if the requester has the broker_admin role
-    if (requester?.role !== UserRole.BROKER_ADMIN) {
+    if (!(requester && hasAccess(requester.roles, {roles: [UserRole.BROKER_ADMIN]}))) {
       send(
         res,
         403,

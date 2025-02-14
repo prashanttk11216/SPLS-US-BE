@@ -10,6 +10,7 @@ import { buildSearchFilter } from "../../utils/parseSearchQuerty";
 import { applyPopulation } from "../../utils/populateHelper";
 import { ConsigneeModel } from "./model";
 import { createConsigneeSchema, updateConsigneeSchema } from "../../schema/Consignee";
+import { hasAccess } from "../../utils/role";
 
 /**
  * Create a new Consignee.
@@ -32,7 +33,7 @@ export const createConsignee = async (
       send(res, 409, "Consignee with this Email is already registered.");
       return;
     }
-    if (user?.role === UserRole.BROKER_ADMIN) {
+    if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN] })) {
       validatedData.brokerId = validatedData.postedBy = user?._id!;
     } else {
       validatedData.postedBy = user?._id!;

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const roleSchema = z.object({
+  _id: z.string().optional(),
   name: z.string().min(1, "Role name is required"),
   permissions: z.array(
     z.object({
@@ -9,3 +10,5 @@ export const roleSchema = z.object({
     })
   ).optional(),
 });
+
+export type IRole = z.infer<typeof roleSchema>;

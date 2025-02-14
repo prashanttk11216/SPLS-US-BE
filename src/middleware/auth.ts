@@ -36,7 +36,7 @@ async function auth(req: Request, res: Response, next: NextFunction): Promise<vo
     }
 
     // Now userExist is of type JwtPayload
-    const user = await UserModel.findById(userExist._id).select("-password");
+    const user = await UserModel.findById(userExist._id).populate("roles").select("-password");
 
     // Check if the user was found
     if (!user) {

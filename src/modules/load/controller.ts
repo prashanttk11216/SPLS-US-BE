@@ -15,6 +15,7 @@ import { formatDate } from "../../utils/dateFormat";
 import EmailService, { SendEmailOptions } from "../../services/EmailService";
 import { escapeAndNormalizeSearch } from "../../utils/regexHelper";
 import { getPaginationParams } from "../../utils/paginationUtils";
+import { hasAccess } from "../../utils/role";
 
 const validTransitions: Record<LoadStatus, LoadStatus[]> = {
   [LoadStatus.Draft]: [LoadStatus.Published],
@@ -43,7 +44,7 @@ export async function createLoadHandler(
     const user = (req as Request & { user?: IUser })?.user; // Extract user data from request
 
     // Handle the case where the user is a customer
-    if (user?.role === UserRole.CUSTOMER) {
+    if (user && hasAccess(user.roles, { roles: [UserRole.CUSTOMER] })) {
       // Associate the load with the customer and broker (if applicable)
       validatedData.brokerId = user.brokerId;
       validatedData.customerId = user._id;
@@ -59,21 +60,20 @@ export async function createLoadHandler(
     // Ensure that broker/admin assigns a 'postedBy' field if missing
     if (
       !validatedData.postedBy &&
-      (user?.role === UserRole.BROKER_ADMIN ||
-        user?.role === UserRole.BROKER_USER)
+      (user && hasAccess(user.roles, { roles: [UserRole.BROKER_USER, UserRole.BROKER_ADMIN] }))
     ) {
       validatedData.postedBy = user._id; // Assign the current broker/admin as the poster
     }
 
     // Set the brokerId based on the user's role
-    if (user?.role === UserRole.BROKER_ADMIN) {
+    if ((user && hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN] }))) {
       validatedData.brokerId = user._id;
-    } else if (user?.role === UserRole.BROKER_USER) {
+    } else if ((user && hasAccess(user.roles, { roles: [UserRole.BROKER_USER] }))) {
       validatedData.brokerId = user.brokerId;
     }
 
     // Set default load status for non-customer roles
-    if (user?.role !== UserRole.CUSTOMER) {
+    if (!(user && hasAccess(user.roles, { roles: [UserRole.CUSTOMER] }))) {
       validatedData.status = LoadStatus.Published; // Brokers/Admins can publish loads
     }
 
@@ -210,14 +210,14 @@ export async function fetchLoadsHandler(
     const { page, limit, skip } = getPaginationParams(req.query);
 
     // Role-based query conditions
-    if (user?.role === UserRole.BROKER_USER) {
+    if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_USER] })) {
       filters.postedBy = user._id; // Filter by broker's posted loads
-    } else if (user?.role === UserRole.CUSTOMER) {
+    } else if (user && hasAccess(user.roles, { roles: [UserRole.CUSTOMER] })) {
       filters.customerId = user._id; // Filter by customer-specific loads
     }
 
     // Show only Published Loads to the Carrier
-    if (user?.role === UserRole.CARRIER) {
+    if (user && hasAccess(user.roles, { roles: [UserRole.CARRIER] })) {
       filters.status = LoadStatus.Published; // Only published loads for carriers
     }
 
@@ -435,7 +435,7 @@ export async function requestLoadHandler(
     const user = (req as Request & { user?: IUser })?.user;
 
     // Ensure the user is a carrier
-    if (user?.role !== UserRole.CARRIER) {
+    if (!(user && hasAccess(user.roles, { roles: [UserRole.CARRIER] }))) {
       send(res, 403, "Only carriers can choose pending loads");
       return;
     }
@@ -822,7 +822,6 @@ export async function updateLoadStatusHandler(
   try {
     const user = (req as Request & { user?: IUser })?.user;
     const { status } = req.body;
-    const currentUserRole = user?.role;
 
     // Fetch the load details and populate related broker and customer info
     const load = await LoadModel.findById(req.params.loadId)
@@ -847,19 +846,6 @@ export async function updateLoadStatusHandler(
         400,
         `Invalid status transition from ${currentStatus} to ${status}`
       );
-      return;
-    }
-
-    // Ensure the user has the correct role for status updates
-    if (
-      [
-        LoadStatus.DealClosed,
-        LoadStatus.Published,
-        LoadStatus.PendingResponse,
-      ]?.includes(status) &&
-      ![UserRole.BROKER_USER, UserRole.BROKER_ADMIN]?.includes(currentUserRole!)
-    ) {
-      send(res, 403, "You do not have permission to perform this action.");
       return;
     }
 
@@ -1008,10 +994,7 @@ export async function assignLoadToCarrierHandler(
     const user = (req as Request & { user?: IUser })?.user;
 
     // Ensure the user has a broker role
-    if (
-      user?.role !== UserRole.BROKER_ADMIN &&
-      user?.role !== UserRole.BROKER_USER
-    ) {
+    if (!(user && hasAccess(user.roles, { roles: [UserRole.BROKER_USER, UserRole.BROKER_ADMIN] }))) {
       send(res, 403, "Only brokers can assign loads to carriers");
       return;
     }
@@ -1067,7 +1050,7 @@ export async function getAssignedLoadsHandler(
     const user = (req as Request & { user?: IUser })?.user;
 
     // Ensure the user is a carrier
-    if (user?.role !== UserRole.CARRIER) {
+    if (!(user && hasAccess(user.roles, { roles: [UserRole.CARRIER] }))) {
       send(res, 403, "Only carriers can view their assigned loads");
       return;
     }

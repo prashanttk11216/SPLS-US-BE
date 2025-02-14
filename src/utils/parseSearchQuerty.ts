@@ -5,8 +5,8 @@ type Filters = Record<string, any>;
 export const buildSearchFilter = (
   search: string | undefined,
   searchField: string | undefined,
-  numberFields: string[],
-  multiFieldMappings: Record<string, string[]> // Mapping for fields like "name"
+  numberFields?: string[],
+  multiFieldMappings?: Record<string, string[]> // Mapping for fields like "name"
 ): Filters => {
   let filters: Filters = {};
 
@@ -14,7 +14,7 @@ export const buildSearchFilter = (
 
   const escapedSearch = escapeAndNormalizeSearch(search); // Ensure you have this function implemented
 
-  if (numberFields.includes(searchField)) {
+  if (numberFields?.includes(searchField)) {
     // Handle numeric fields
     const parsedNumber = Number(escapedSearch);
     if (!isNaN(parsedNumber)) {
@@ -22,7 +22,7 @@ export const buildSearchFilter = (
     } else {
       throw new Error(`Invalid number provided for field ${searchField}`);
     }
-  } else if (multiFieldMappings[searchField]) {
+  } else if (multiFieldMappings && multiFieldMappings[searchField]) {
     // Handle fields that map to multiple DB fields
     filters.$or = multiFieldMappings[searchField].map((field) => ({
       [field]: { $regex: escapedSearch, $options: "i" },

@@ -15,6 +15,7 @@ export interface PermissionDocument extends Document {
  * Represents a role with a specific name and associated permissions.
  */
 export interface RoleDocument extends Document {
+  _id: string; // Unique identifier (added by Mongoose)
   name: string; // e.g., "Broker_User", "Customer"
   permissions: PermissionType[]; // Array of permissions assigned to this role
 }
@@ -24,12 +25,7 @@ const PermissionSchema = new Schema<PermissionDocument>(
   {
     resource: { type: String, required: true }, // e.g., "loads", "customers"
     actions: {
-      type: [String],
-      required: true,
-      validate: [
-        (arr: string[]) => arr.length > 0,
-        "At least one action is required",
-      ], // Validates at least one action exists
+      type: [String]
     },
   },
   {
@@ -43,11 +39,7 @@ const RoleSchema = new Schema<RoleDocument>(
   {
     name: { type: String, required: true, unique: true },
     permissions: {
-      type: [PermissionSchema],
-      validate: [
-        (arr: PermissionDocument[]) => arr.length > 0,
-        "At least one permission is required",
-      ],
+      type: [PermissionSchema]
     },
   },
   {

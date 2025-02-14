@@ -10,6 +10,7 @@ import { getPaginationParams } from "../../utils/paginationUtils";
 import { parseSortQuery } from "../../utils/parseSortQuery";
 import { buildSearchFilter } from "../../utils/parseSearchQuerty";
 import { applyPopulation } from "../../utils/populateHelper";
+import { hasAccess } from "../../utils/role";
 
 /**
  * Create a new Shipper.
@@ -21,6 +22,7 @@ export const createShipper = async (
   try {
     // Validate request body
     const validatedData = createShipperSchema.parse(req.body);
+    
 
     const user = (req as Request & { user?: IUser })?.user;
 
@@ -32,7 +34,7 @@ export const createShipper = async (
       send(res, 409, "Shipper with this Email is already registered.");
       return;
     }
-    if (user?.role === UserRole.BROKER_ADMIN) {
+    if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN] })) {
       validatedData.brokerId = validatedData.postedBy = user?._id!;
     } else {
       validatedData.postedBy = user?._id!;
@@ -152,7 +154,7 @@ export const getShipper = async (req: Request, res: Response): Promise<void> => 
       .limit(limit)
       .sort(sortOptions);
 
-    query = applyPopulation(query, req.query.populate as string); // ✅ Works with `find`
+    query = applyPopulation(query, req.query.populate as string);
     
     const shipper = await query;
 

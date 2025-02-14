@@ -15,10 +15,12 @@ const UserSchema: Schema = new Schema(
     password: { type: String, required: true }, // Encrypted password
     primaryNumber: { type: String, required: true }, // Contact number
     company: { type: String },
+    avatarUrl: { type: String },
 
     // Role and permissions
-    role: { type: String, enum: Object.values(UserRole), required: true }, // Role of the user
+    // role: { type: String, enum: Object.values(UserRole), required: true }, // Role of the user
 
+    roles: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Role', required: true }],
 
     address: {
       str: { type: String }, // String representation
@@ -52,15 +54,12 @@ const UserSchema: Schema = new Schema(
       ref: "User", // Reference to the broker (if applicable)
       required: true
     },
-    employeeId: { type: String }, // Employee ID for brokers (if applicable)
-   
+    employeeId: { type: String, unique: true }, // Employee ID for brokers (if applicable)
+    
     // Flags for status and additional details
     isVerified: { type: Boolean, default: false }, // Email verification status
     isDeleted: { type: Boolean, default: false }, // Soft delete flag
     isActive: { type: Boolean, default: true }, // Activation status
-
-    // Avatar and additional information
-    avatarUrl: { type: String }, // URL for the user's profile picture
   },
   {
     timestamps: true, // Adds createdAt and updatedAt fields
@@ -72,4 +71,4 @@ const UserSchema: Schema = new Schema(
  * UserModel: Mongoose model for the User schema
  * Defines and exports the User model based on the IUser interface and UserSchema.
  */
-export const UserModel = mongoose.model<IUser>("User", UserSchema);
+export const UserModel = mongoose.model<any>("User", UserSchema);
