@@ -377,6 +377,17 @@ export async function updateLoadStatusHandler(
           load.loadNumber = lastLoad ? lastLoad.loadNumber! + 1 : 1; // Start from 1 if no loads exist
       }
     }
+
+    if(status == DispatchLoadStatus.Invoiced){
+      // Auto-generate load number if not provided
+      const lastLoad = await DispatchModel.findOne({
+        invoiceNumber: { $exists: true, $ne: null },
+      })
+        .sort({ invoiceNumber: -1 })
+        .select("invoiceNumber");
+
+        load.invoiceNumber = lastLoad ? lastLoad.invoiceNumber! + 1 : 1;
+    }
     // Update status in the database
     load.status = status;
     await load.save();

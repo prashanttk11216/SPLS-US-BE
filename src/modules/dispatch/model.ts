@@ -72,10 +72,17 @@ const CarrierFeeBreakdownSchema: Schema = new Schema({
   OtherChargeSchema: [OtherChargeSchema],
 });
 
+const DocumentSchema = new Schema({
+  filename: { type: String, required: true },
+  path: { type: String, required: true }
+});
+
+
 const DispatchSchema: Schema = new Schema<IDispatch>(
   {
     brokerId: { type: Schema.Types.ObjectId, ref: "User" },
     loadNumber: { type: Number, unique: true },
+    invoiceNumber: { type: Number, unique: true },
     customerId: { type: Schema.Types.ObjectId, ref: "User" },
     salesRep: { type: Schema.Types.ObjectId, ref: "User" },
     WONumber: { type: String, unique: true },
@@ -103,6 +110,7 @@ const DispatchSchema: Schema = new Schema<IDispatch>(
     shipper: {
       type: shipperSchema,
     },
+    documents: [DocumentSchema],
     postedBy: { type: Schema.Types.ObjectId, ref: "User" },
     status: {
       type: String,
