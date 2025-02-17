@@ -6,7 +6,9 @@ import {
   fetchLoadsHandler,
   updateLoadStatusHandler,
   refreshLoadAgeHandler,
-  rateConfirmationHandler
+  rateConfirmationHandler,
+  BOLHandler,
+  invoicedHandler
 } from "./controller";
 
 const dispatchRouter = express.Router();
@@ -52,5 +54,14 @@ dispatchRouter.post("/refresh-age", refreshLoadAgeHandler);
  * @desc    generate pdf for load
  */
 dispatchRouter.post("/rate-confirmation/:loadId", rateConfirmationHandler);
+
+/**
+ * @route   POST /api/dispatch/rate-confirmation/:loadId
+ * @desc    generate pdf for load
+ */
+dispatchRouter.post("/BOL/:loadId", BOLHandler);
+
+dispatchRouter.post("/invoiced/:loadId", invoicedHandler);
+
 
 export default dispatchRouter;
