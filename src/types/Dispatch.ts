@@ -16,7 +16,7 @@ export interface IDispatchConsignee {
   date: Date;
   time?: Date;
   description?: string;
-  type?: string;
+  type?: Equipment;
   qty?: number;
   weight?: number;
   value?: number;
@@ -30,7 +30,7 @@ export interface IDispatchShipper {
   date: Date;
   time?: Date;
   description?: string;
-  type?: string;
+  type?: Equipment;
   qty?: number;
   weight?: number;
   value?: number;
@@ -89,7 +89,7 @@ export interface IDispatch extends Document {
   customerRate?: number;
   consignee: IDispatchConsignee;
   shipper: IDispatchShipper;
-  postedBy?: Types.ObjectId;
+  postedBy?: Types.ObjectId | IUser;
   status: DispatchLoadStatus;
   age?: Date;
   formattedAge?: string; // Virtual field

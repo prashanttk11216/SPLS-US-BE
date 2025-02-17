@@ -38,7 +38,6 @@ const shipperSchema = z.object({
   PO: z.number().optional(),
 });
 
-
 // Fuel Service Charge Schema
 const FscSchema = z.object({
   isPercentage: z.boolean().optional(),
@@ -66,10 +65,10 @@ const CarrierFeeBreakdownSchema = z.object({
 // Dispatch Schema
 const baseDispatchSchema = z.object({
   brokerId: z.string().optional(),
-  loadNumber: z.number().int().optional(),
-  WONumber: z.string().optional(),
   customerId: z.string().optional(),
   carrierId: z.string().optional(),
+  loadNumber: z.number().optional(),
+  WONumber: z.string().optional(),
   salesRep: z.string().optional(),
   type: z.string().optional(),
   units: z.number().min(0).optional(),

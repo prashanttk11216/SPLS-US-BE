@@ -22,7 +22,7 @@ const consigneeSchema = new Schema({
   date: { type: Date },
   time: { type: Date },
   description: { type: String },
-  type: { type: String },
+  type: { type: String, enum: Object.keys(Equipment) },
   qty: { type: Number, min: 0 },
   weight: { type: Number, min: 0 },
   value: { type: Number, min: 0 },
@@ -37,7 +37,7 @@ const shipperSchema = new Schema({
   date: { type: Date },
   time: { type: Date },
   description: { type: String },
-  type: { type: String },
+  type: { type: String , enum: Object.keys(Equipment)},
   qty: { type: Number, min: 0 },
   weight: { type: Number, min: 0 },
   value: { type: Number, min: 0 },
@@ -63,7 +63,7 @@ const OtherChargeSchema: Schema = new Schema({
 });
 
 const CarrierFeeBreakdownSchema: Schema = new Schema({
-  type: { type: String, enum: DispatchLoadType },
+  type: { type: String, enum: Object.keys(DispatchLoadType) },
   units: { type: Number, min: 0 },
   rate: { type: Number, min: 0 }, // Agreed base rate
   PDs: { type: Number, min: 0, default: 0 }, // Number of picks/drops
@@ -79,7 +79,7 @@ const DispatchSchema: Schema = new Schema<IDispatch>(
     customerId: { type: Schema.Types.ObjectId, ref: "User" },
     salesRep: { type: Schema.Types.ObjectId, ref: "User" },
     WONumber: { type: String, unique: true },
-    type: { type: String, enum: DispatchLoadType },
+    type: { type: String, enum: Object.keys(DispatchLoadType) },
     units: { type: Number, min: 0 },
     customerRate: { type: Number, min: 0 },
     PDs: { type: Number, min: 0 },
@@ -93,7 +93,7 @@ const DispatchSchema: Schema = new Schema<IDispatch>(
       breakdown: CarrierFeeBreakdownSchema, // Detailed breakdown structure
     },
     carrierId: { type: Schema.Types.ObjectId, ref: "User" },
-    equipment: { type: String, enum: Equipment },
+    equipment: { type: String, enum: Object.keys(Equipment) },
     allInRate: { type: Number, min: 0 },
 
     consignee: {

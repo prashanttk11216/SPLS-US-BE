@@ -19,10 +19,12 @@ import { hasAccess } from "../../utils/role";
 const validTransitions: Record<DispatchLoadStatus, DispatchLoadStatus[]> = {
   [DispatchLoadStatus.Draft]: [DispatchLoadStatus.Published],
   [DispatchLoadStatus.Published]: [DispatchLoadStatus.InTransit, DispatchLoadStatus.Cancelled],
-  [DispatchLoadStatus.InTransit]: [DispatchLoadStatus.Completed, DispatchLoadStatus.Cancelled],
-  [DispatchLoadStatus.Completed]: [], // No transitions possible after completion
-  [DispatchLoadStatus.Cancelled]: [], // No transitions possible after cancellation
+  [DispatchLoadStatus.InTransit]: [DispatchLoadStatus.Delivered, DispatchLoadStatus.Cancelled], // Added Delivered
+  [DispatchLoadStatus.Delivered]: [DispatchLoadStatus.Completed], // Delivered can transition to Completed (Invoiced & Completed)
+  [DispatchLoadStatus.Completed]: [], // No transitions after completion
+  [DispatchLoadStatus.Cancelled]: [], // No transitions after cancellation
 };
+
 
 /**
  * Create a new load entry, ensuring the user is authorized (broker or customer),
@@ -50,9 +52,9 @@ export async function createLoadHandler(
     }
 
     // Set the brokerId based on the user's role
-    if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_USER] })) {
+    if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN] })) {
       validatedData.brokerId = user._id;
-    } else  if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN] })) {
+    } else  if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_USER] })) {
       validatedData.brokerId = user.brokerId;
     }
 
@@ -128,40 +130,6 @@ export async function updateLoadHandler(
     // Step 1: Validate incoming data using Zod schema
     const validatedData = updateDispatchSchema.parse(req.body); // Ensure the incoming data matches the expected format
 
-    // Handle load number logic
-    if (validatedData.loadNumber) {
-      // Validate if the provided loadNumber already exists in the database
-      const existingLoad = await DispatchModel.findOne({
-        loadNumber: validatedData.loadNumber,
-      });
-      if (existingLoad) {
-        // If the loadNumber exists, suggest the next available number
-        const lastLoad = await DispatchModel.findOne({
-          loadNumber: { $exists: true, $ne: null },
-        })
-          .sort({ loadNumber: -1 })
-          .select("loadNumber");
-        const nextLoadNumber = lastLoad ? lastLoad.loadNumber! + 1 : 1;
-
-        send(
-          res,
-          400,
-          `The provided loadNumber is already in use. Suggested loadNumber: ${nextLoadNumber}`
-        );
-        return;
-      }
-    } else {
-      if(validatedData.status !== DispatchLoadStatus.Draft){
-        // Auto-generate load number if not provided
-        const lastLoad = await DispatchModel.findOne({
-          loadNumber: { $exists: true, $ne: null },
-        })
-          .sort({ loadNumber: -1 })
-          .select("loadNumber");
-
-        validatedData.loadNumber = lastLoad ? lastLoad.loadNumber! + 1 : 1; // Start from 1 if no loads exist
-      }
-    }
 
     // Step 2: Find and update the load by its ID
     const updatedLoad = await DispatchModel.findByIdAndUpdate(
@@ -381,9 +349,9 @@ export async function updateLoadStatusHandler(
 
     // Validate the status transition
     if (
-      !validTransitions[currentStatus as DispatchLoadStatus]?.includes(
-        status as DispatchLoadStatus
-      )
+        !validTransitions[currentStatus as DispatchLoadStatus]?.includes(
+          status as DispatchLoadStatus
+        )
     ) {
       send(
         res,
@@ -394,16 +362,30 @@ export async function updateLoadStatusHandler(
     }
 
 
+    // Handle load number logic
+    if(currentStatus == DispatchLoadStatus.Draft){
+      if (!load.loadNumber) {
+        // Auto-generate load number if not provided
+        const lastLoad = await DispatchModel.findOne({
+          loadNumber: { $exists: true, $ne: null },
+        })
+          .sort({ loadNumber: -1 })
+          .select("loadNumber");
+
+          load.loadNumber = lastLoad ? lastLoad.loadNumber! + 1 : 1; // Start from 1 if no loads exist
+      }
+    }
     // Update status in the database
     load.status = status;
     await load.save();
 
     // Set up the email notification options
-    if((load?.brokerId as IUser).email){
-      let emails = [(load?.brokerId as IUser).email];
-      if((load?.customerId as IUser).email){
-        emails.push((load?.customerId as IUser).email);
-      }
+    if((load.brokerId as IUser).email){
+      let emails = [(load?.brokerId as IUser)?.email];
+
+      if((load?.customerId as IUser)?.email){
+        emails.push((load?.customerId as IUser)?.email);
+      }      
 
       const emailOptions: SendEmailOptions = {
         to: emails, // Send the notification to the broker's email
