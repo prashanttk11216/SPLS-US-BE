@@ -30,7 +30,7 @@ const TruckSchema: Schema = new Schema<ITruck>(
       required: false,
     },
 
-    equipment: { type: String, enum: Equipment, required: true },
+    equipment: { type: String, enum: Object.keys(Equipment), required: true },
 
     allInRate: { type: Number, min: 0 },
     weight: { type: Number, min: 0 },

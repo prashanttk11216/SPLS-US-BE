@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Equipment } from "../../enums/Equipment";
 
 export const createTruckSchema = z.object({
   origin: z.object({
@@ -12,7 +13,7 @@ export const createTruckSchema = z.object({
     lat: z.number().optional(),
     lng: z.number().optional(),
   }).optional(),
-  equipment: z.string(),
+  equipment: z.enum(Object.keys(Equipment) as [keyof typeof Equipment]),
   allInRate: z.number().min(0).optional(),
   weight: z.number().min(0).optional(),
   length: z.number().min(0).optional(),
