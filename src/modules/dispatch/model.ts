@@ -83,6 +83,7 @@ const DispatchSchema: Schema = new Schema<IDispatch>(
     brokerId: { type: Schema.Types.ObjectId, ref: "User" },
     loadNumber: { type: Number, unique: true },
     invoiceNumber: { type: Number, unique: true },
+    invoiceDate: { type: Date },
     customerId: { type: Schema.Types.ObjectId, ref: "User" },
     salesRep: { type: Schema.Types.ObjectId, ref: "User" },
     WONumber: { type: String, unique: true },

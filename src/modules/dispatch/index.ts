@@ -8,7 +8,10 @@ import {
   refreshLoadAgeHandler,
   rateConfirmationHandler,
   BOLHandler,
-  invoicedHandler
+  invoicedHandler,
+  reportsHandler,
+  accountingSummary,
+  accountingExport
 } from "./controller";
 
 const dispatchRouter = express.Router();
@@ -63,5 +66,10 @@ dispatchRouter.post("/BOL/:loadId", BOLHandler);
 
 dispatchRouter.post("/invoiced/:loadId", invoicedHandler);
 
+dispatchRouter.post("/accounting-summary", accountingSummary);
+
+dispatchRouter.post("/accounting-export", accountingExport);
+
+dispatchRouter.post("/reports", reportsHandler);
 
 export default dispatchRouter;

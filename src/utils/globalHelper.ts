@@ -67,3 +67,5 @@ export function formatTimeDifference(differenceInTime: number): string {
     return "0s"; // Default to 0 seconds if no difference
   }
 }
+
+export const getEnumValue  = <T extends Record<string, any>>(enumObj: T, key: string | undefined): string => key && enumObj[key as keyof T] ? enumObj[key as keyof T] : "N/A";

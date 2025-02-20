@@ -15,6 +15,11 @@ import { getPaginationParams } from "../../utils/paginationUtils";
 import { PdfGenerator } from "../../utils/pdfGenerator";
 import PdfService from "../../services/PdfService";
 import { hasAccess } from "../../utils/role";
+import { generateExcelBuffer } from "../../utils/excelUtils";
+import { IDispatch } from "../../types/Dispatch";
+import { Equipment } from "../../enums/Equipment";
+import { DispatchLoadType } from "../../enums/DispatchLoadType";
+import { getEnumValue } from "../../utils/globalHelper";
 
 const validTransitions: Record<DispatchLoadStatus, DispatchLoadStatus[]> = {
   [DispatchLoadStatus.Draft]: [DispatchLoadStatus.Published],
@@ -218,6 +223,7 @@ export async function fetchLoadsHandler(
     // Define numeric fields
     const numberFields = [  "loadNumber",
       "WONumber",
+      "invoiceNumber",
       "shipper.weight",
       "consignee.weight",
       "allInRate"];
@@ -268,6 +274,8 @@ export async function fetchLoadsHandler(
       const validFields = [
         "age",
         "WONumber",
+        "invoiceNumber",
+        "invoiceDate",
         "equipment",
         "shipper.address",
         "shipper.date",
@@ -387,6 +395,7 @@ export async function updateLoadStatusHandler(
         .select("invoiceNumber");
 
         load.invoiceNumber = lastLoad ? lastLoad.invoiceNumber! + 1 : 1;
+        load.invoiceDate = new Date();
     }
     // Update status in the database
     load.status = status;
@@ -660,7 +669,6 @@ export async function BOLHandler(req: Request, res: Response): Promise<void> {
   }
 }
 
-
 export async function invoicedHandler(req: Request, res: Response): Promise<void> {
   try {
     const { loadId } = req.params;
@@ -728,5 +736,455 @@ export async function invoicedHandler(req: Request, res: Response): Promise<void
       500,
       "An unexpected server error occurred while refreshing load age"
     );
+  }
+}
+
+export async function accountingSummary(req: Request, res: Response): Promise<void> {
+  try {
+
+    const filters: any = { status: DispatchLoadStatus.Invoiced}; // Parse and validate query parameters
+    const fromDate = req.body.fromDate;
+    const toDate = req.body.toDate;
+
+    if(!fromDate){
+      send(res, 400,"Please pass date range.")
+    }
+    const dateField = 'createdAt';
+    if (dateField && (fromDate || toDate)) {
+      filters[dateField] = {};
+      if (fromDate) {
+        filters[dateField].$gte = fromDate; // Filter records on or after fromDate
+      }
+      if (toDate) {
+        filters[dateField].$lte = toDate; // Filter records on or before toDate
+      }
+    }
+
+    const loads = await DispatchModel.find(filters)
+    .populate("brokerId", "-password")
+    .populate("postedBy", "-password");
+
+
+    const pdfGenerator = new PdfGenerator();
+    let htmlContent = await PdfService.generateHTMLTemplate({
+      templateName: "AccountSummaryExport",
+      templateData: {
+        "companyDetails": {
+          "name": "SPLS LLC",
+          "address": "13100 Wortham Center Dr, Houston, TX, USA 77065",
+          "phone": "832-906-0217",
+          "fax": "",
+          "email": "accounts@spls-us.com"
+        },
+        "dispatcherDetails": {
+          "name": "SPLS L",
+          "loadNumber": "854",
+          "shipDate": "2025-01-06",
+          "todaysDate": "2025-01-07",
+          "workOrder": "0001968"
+        },
+        "carrierDetails": {
+          "name": "WESTCORE LINKS INC",
+          "phone": "(780) 430-0331",
+          "fax": "",
+          "equipment": "Flat with Tarps",
+          "agreedAmount": "$3,700.00 USD",
+          "loadStatus": "Open"
+        },
+        "consignee": {
+          "name": "Elliot Homes",
+          "address": "16461 FM 170, Presidio, TX, Presidio, TX",
+          "date": "2025-01-06",
+          "time": "Major Intersection",
+          "type": "tl",
+          "quantity": "",
+          "weight": "48000 lbs",
+          "appointment": "Yes",
+          "description": "TARPED *** HT CERT PAPERS NEEDED FROM MILL DRIVER TO TAKE ORIGINAL HT INSPECTION DOCS and deliver with load to customer (along with customs docs) – this is a MUST or load will be rejected."
+        },
+        "shipper": {
+          "name": "Foothills Forest Products",
+          "address": "AB-40, Grande Cache, AB T0E 0Y0, Grande Cache, AB, T0E 0Y0",
+          "date": "2025-01-07",
+          "time": "Major Intersection",
+          "type": "tl",
+          "quantity": "18",
+          "weight": "48000 lbs",
+          "appointment": "Yes",
+          "description": "TARPED *** HT CERT PAPERS NEEDED FROM MILL DRIVER TO TAKE ORIGINAL HT INSPECTION DOCS and deliver with load to customer (along with customs docs) – this is a MUST or load will be rejected."
+        },
+        "notes": {
+          "deliveryNote": "DELIVERY MUST BE ON TIME. BOL MUST SIGNED BY RECEIVER IN ORDER TO GET PAYMENT.",
+          "shipperNote": "TRAILER MUST LOAD 28,224 fbm. IF less than 28,224 revised rate will apply based on total FBM loaded on Trailer."
+        }
+      }      
+    })
+    // Get PDF as a buffer
+    const pdfBuffer = await pdfGenerator.generatePdf(htmlContent, { format: "A4" });
+    send(res, 200, `Generated Successfully`, pdfBuffer!, {}, true);
+  } catch (error) {
+    logger.error("Error generating PDF:", error);
+    send( 
+      res,
+      500,
+      "An unexpected server error occurred while refreshing load age"
+    );
+  }
+}
+
+export async function accountingExport(req: Request, res: Response): Promise<void> {
+  try {
+    const { ids } = req.body;
+    let matchQuery: any = { _id: { $in: ids }, status: DispatchLoadStatus.Invoiced};
+
+    // Fetch loads and group them
+    let excelBuffer;
+    const loads = await DispatchModel.find(matchQuery).populate("brokerId postedBy customerId carrierId")
+    .select("-password");
+    let dataSheets: Record<string, any[]> = {};
+    let formatedLoad: any = []
+    loads.forEach((load: IDispatch)=>{
+        const broker = load.brokerId as IUser;
+        const carrier = load.carrierId as IUser;
+        const customer = load.customerId as IUser;
+        const postedBy = load.postedBy as IUser;
+
+
+        formatedLoad.push({
+          CreatedAt: load.createdAt,
+          LoadNumber: load.loadNumber,
+          Status: load.status,
+          InvoiceNumber: load.invoiceNumber,
+          Equipment: getEnumValue(Equipment, load.equipment),
+          SalesRep: load.salesRep,
+          Type: getEnumValue(DispatchLoadType, load.type),
+          Units: load.units,
+          CustomerRate: load.customerRate,
+          PDs: load.PDs,
+          FuelServiceCharge: load.fuelServiceCharge?.value,
+          OtherChargesTotal: load.otherCharges?.totalAmount,
+          CarrierFee: load.carrierFee?.totalAmount,
+          AllInRate: load.allInRate,
+
+          // Shipper Details
+          ShipperAddress: load.shipper.address.str,
+          ShipperDate: load.shipper.date,
+          ShipperTime: load.shipper.time,
+          ShipperType: getEnumValue(Equipment, load.shipper.type),
+          ShipperDescription: load.shipper.description,
+          ShipperQTY: load.shipper.qty,
+          ShipperValue: load.shipper.value,
+          ShipperWeight: load.shipper.weight,
+          ShipperNotes: load.shipper.notes,
+          ShipperPO: load.shipper.PO,
+
+           // Consignee Details
+          ConsigneeAddress: load.consignee.address.str,
+          ConsigneeDate: load.consignee.date,
+          ConsigneeTime: load.consignee.time,
+          ConsigneeType:  getEnumValue(Equipment, load.consignee.type),
+          ConsigneeDescription: load.consignee.description,
+          ConsigneeQTY: load.consignee.qty,
+          ConsigneeValue: load.consignee.value,
+          ConsigneeWeight: load.consignee.weight,
+          ConsigneeNotes: load.consignee.notes,
+          ConsigneePO: load.consignee.PO,
+
+
+          // Broker Details
+          BrokerCompany: broker?.company,
+          BrokerEmail: broker?.email,
+          BrokerPhone: broker?.primaryNumber,
+          BrokerAddress: broker?.address?.str,
+          BrokerBillingAddress: broker?.billingAddress?.str,
+          BrokerCountry: broker?.country,
+          BrokerState: broker?.state,
+          BrokerCity: broker?.city,
+          BrokerZip: broker?.zip,
+
+        // Carrier Details
+        CarrierCompany: carrier?.company || "",
+        CarrierEmail: carrier?.email || "",
+        CarrierPhone: carrier?.primaryNumber || "",
+        CarrierAddress: carrier?.address?.str || "",
+
+        // Customer Details
+        CustomerCompany: customer?.company || "",
+        CustomerEmail: customer?.email || "",
+        CustomerPhone: customer?.primaryNumber || "",
+        CustomerAddress: customer?.address?.str || "",
+
+        // Posted By Details
+        PostedBy: `${postedBy?.firstName} ${postedBy?.lastName}` || "",
+        PostedByEmail: postedBy?.email || "",
+        PostedByPhone: postedBy?.primaryNumber || "",
+        PostedByCompany: postedBy?.company || "",
+        PostedByAddress: postedBy?.address?.str || "",
+        });
+    });
+    dataSheets["Report"] = formatedLoad
+    // console.log(dataSheets);
+    
+    excelBuffer = generateExcelBuffer(dataSheets);
+
+    res.setHeader("Content-Disposition", "attachment; filename=report.xlsx");
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+    send(res, 200, "Generated Successfully", excelBuffer, {});
+  } catch (error) {
+    logger.error("Error generating report:", error);
+    send(res, 500, "An unexpected server error occurred while generating the report");
+  }
+}
+
+export async function reportsHandler(req: Request, res: Response): Promise<void> {
+  try {
+    const { category, categoryValue, filterBy, fromDate,  toDate} = req.body;
+    let matchQuery: any = { status: DispatchLoadStatus.Invoiced};
+
+    if (category === "CUSTOMER") {
+      if (categoryValue !== "ALL") {
+        matchQuery.customerId = categoryValue;
+      }
+    } else if (category === "CARRIER") {
+      if (categoryValue !== "ALL") {
+        matchQuery.carrierId = categoryValue;
+      }
+    }
+
+    let sortOptions: [string, SortOrder][] = [];
+    if (filterBy === "SHIP_DATE") {
+      sortOptions.push(["shipper.date", 1]);
+    } else if (filterBy === "DEL_DATE") {
+      sortOptions.push(["consignee.date", 1]);
+    } else if (filterBy === "INVOICE_DATE") {
+      sortOptions.push(["invoiceDate", 1]);
+    }
+
+    const dateField = "createdAt" // Get the specific field to search
+    const fromDateInput = fromDate ? new Date(fromDate as string) : undefined;
+    const toDateInput = toDate ? new Date(toDate as string) : undefined;    
+    if (dateField && (fromDateInput || toDateInput)) {
+      matchQuery[dateField] = {};
+      if (fromDate) {
+        matchQuery[dateField].$gte = fromDateInput; // Filter records on or after fromDate
+      }
+      if (toDate) {
+        matchQuery[dateField].$lte = toDateInput; // Filter records on or before toDate
+      }
+    }
+
+    // Fetch loads and group them
+    let loads;
+    let excelBuffer;
+    if (categoryValue === "ALL") {
+      const groupField = category === "CUSTOMER" ? "$customerId" : "$carrierId";
+      loads = await DispatchModel.aggregate([
+        { $match: matchQuery },
+        {
+          $group: {
+            _id: groupField,
+            loads: { $push: "$$ROOT" },
+            
+          }
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "loads.brokerId",
+            foreignField: "_id",
+            as: "brokerId"
+          }
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "loads.postedBy",
+            foreignField: "_id",
+            as: "postedBy"
+          }
+        },
+        {
+          $lookup: {
+            from: "customers",
+            localField: "loads.customerId",
+            foreignField: "_id",
+            as: "customerDetails"
+          }
+        },
+        {
+          $lookup: {
+            from: "carriers",
+            localField: "loads.carrierId",
+            foreignField: "_id",
+            as: "carrierId"
+          }
+        },
+      ]);
+      let dataSheets: Record<string, any[]> = {};
+      loads.forEach(group => {
+        let formatedLoad: any = [];
+        group.loads.forEach((load: IDispatch)=>{
+          const broker = load.brokerId as IUser;
+          const carrier = load.carrierId as IUser;
+          const customer = load.customerId as IUser;
+          formatedLoad.push({
+            CreatedAt: load.createdAt,
+            LoadNumber: load.loadNumber,
+            Status: load.status,
+            InvoiceNumber: load.invoiceNumber,
+            Equipment: getEnumValue(Equipment, load.equipment),
+            SalesRep: load.salesRep,
+            Type: getEnumValue(DispatchLoadType, load.type),
+            Units: load.units,
+            CustomerRate: load.customerRate,
+            PDs: load.PDs,
+            FuelServiceCharge: load.fuelServiceCharge?.value,
+            OtherChargesTotal: load.otherCharges?.totalAmount,
+            CarrierFee: load.carrierFee?.totalAmount,
+            AllInRate: load.allInRate,
+
+            // Shipper Details
+            ShipperAddress: load.shipper.address.str,
+            ShipperDate: load.shipper.date,
+            ShipperTime: load.shipper.time,
+            ShipperType: getEnumValue(Equipment, load.shipper.type),
+            ShipperDescription: load.shipper.description,
+            ShipperQTY: load.shipper.qty,
+            ShipperValue: load.shipper.value,
+            ShipperWeight: load.shipper.weight,
+            ShipperNotes: load.shipper.notes,
+            ShipperPO: load.shipper.PO,
+
+             // Consignee Details
+            ConsigneeAddress: load.consignee.address.str,
+            ConsigneeDate: load.consignee.date,
+            ConsigneeTime: load.consignee.time,
+            ConsigneeType:  getEnumValue(Equipment, load.consignee.type),
+            ConsigneeDescription: load.consignee.description,
+            ConsigneeQTY: load.consignee.qty,
+            ConsigneeValue: load.consignee.value,
+            ConsigneeWeight: load.consignee.weight,
+            ConsigneeNotes: load.consignee.notes,
+            ConsigneePO: load.consignee.PO,
+
+
+            // Broker Details
+            BrokerCompany: broker?.company,
+            BrokerEmail: broker?.email,
+            BrokerPhone: broker?.primaryNumber,
+            BrokerAddress: broker?.address?.str,
+            BrokerBillingAddress: broker?.billingAddress?.str,
+            BrokerCountry: broker?.country,
+            BrokerState: broker?.state,
+            BrokerCity: broker?.city,
+            BrokerZip: broker?.zip,
+
+          // Carrier Details
+          CarrierCompany: carrier?.company || "",
+          CarrierEmail: carrier?.email || "",
+          CarrierPhone: carrier?.primaryNumber || "",
+          CarrierAddress: carrier?.address?.str || "",
+
+          // Customer Details
+          CustomerCompany: customer?.company || "",
+          CustomerEmail: customer?.email || "",
+          CustomerPhone: customer?.primaryNumber || "",
+          CustomerAddress: customer?.address?.str || "",
+
+
+          })
+        });
+
+        dataSheets[group._id] = formatedLoad; // Grouped data per sheet
+      });
+      excelBuffer = generateExcelBuffer(dataSheets);
+    } else {
+      loads = await DispatchModel.find(matchQuery).populate("brokerId postedBy customerId carrierId")
+      .select("-password").sort(sortOptions);
+      let dataSheets: Record<string, any[]> = {};
+      let formatedLoad: any = []
+      loads.forEach((load: IDispatch)=>{
+        const broker = load.brokerId as IUser;
+          const carrier = load.carrierId as IUser;
+          const customer = load.customerId as IUser;
+          formatedLoad.push({
+            CreatedAt: load.createdAt,
+            LoadNumber: load.loadNumber,
+            Status: load.status,
+            InvoiceNumber: load.invoiceNumber,
+            Equipment: getEnumValue(Equipment, load.equipment),
+            SalesRep: load.salesRep,
+            Type: getEnumValue(DispatchLoadType, load.type),
+            Units: load.units,
+            CustomerRate: load.customerRate,
+            PDs: load.PDs,
+            FuelServiceCharge: load.fuelServiceCharge?.value,
+            OtherChargesTotal: load.otherCharges?.totalAmount,
+            CarrierFee: load.carrierFee?.totalAmount,
+            AllInRate: load.allInRate,
+
+            // Shipper Details
+            ShipperAddress: load.shipper.address.str,
+            ShipperDate: load.shipper.date,
+            ShipperTime: load.shipper.time,
+            ShipperType: getEnumValue(Equipment, load.shipper.type),
+            ShipperDescription: load.shipper.description,
+            ShipperQTY: load.shipper.qty,
+            ShipperValue: load.shipper.value,
+            ShipperWeight: load.shipper.weight,
+            ShipperNotes: load.shipper.notes,
+            ShipperPO: load.shipper.PO,
+
+             // Consignee Details
+            ConsigneeAddress: load.consignee.address.str,
+            ConsigneeDate: load.consignee.date,
+            ConsigneeTime: load.consignee.time,
+            ConsigneeType:  getEnumValue(Equipment, load.consignee.type),
+            ConsigneeDescription: load.consignee.description,
+            ConsigneeQTY: load.consignee.qty,
+            ConsigneeValue: load.consignee.value,
+            ConsigneeWeight: load.consignee.weight,
+            ConsigneeNotes: load.consignee.notes,
+            ConsigneePO: load.consignee.PO,
+
+
+            // Broker Details
+            BrokerCompany: broker?.company,
+            BrokerEmail: broker?.email,
+            BrokerPhone: broker?.primaryNumber,
+            BrokerAddress: broker?.address?.str,
+            BrokerBillingAddress: broker?.billingAddress?.str,
+            BrokerCountry: broker?.country,
+            BrokerState: broker?.state,
+            BrokerCity: broker?.city,
+            BrokerZip: broker?.zip,
+
+          // Carrier Details
+          CarrierCompany: carrier?.company || "",
+          CarrierEmail: carrier?.email || "",
+          CarrierPhone: carrier?.primaryNumber || "",
+          CarrierAddress: carrier?.address?.str || "",
+
+          // Customer Details
+          CustomerCompany: customer?.company || "",
+          CustomerEmail: customer?.email || "",
+          CustomerPhone: customer?.primaryNumber || "",
+          CustomerAddress: customer?.address?.str || "",
+
+
+          })
+      });
+      dataSheets["Report"] = formatedLoad
+      excelBuffer = generateExcelBuffer(formatedLoad);
+    }
+
+    res.setHeader("Content-Disposition", "attachment; filename=report.xlsx");
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+    send(res, 200, "Generated Successfully", excelBuffer, {});
+  } catch (error) {
+    logger.error("Error generating report:", error);
+    send(res, 500, "An unexpected server error occurred while generating the report");
   }
 }

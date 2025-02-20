@@ -80,6 +80,7 @@ export interface IDispatch extends Document {
   brokerId?: Types.ObjectId | IUser;
   loadNumber: number;
   invoiceNumber?: number;
+  invoiceDate?: Date;
   WONumber: string;
   customerId?: Types.ObjectId | IUser;
   carrierId?: Types.ObjectId | IUser;

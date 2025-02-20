@@ -3,12 +3,12 @@
   "version": "1.1.0",
   "main": "index.ts",
   "scripts": {
-  "test": "echo \"Error: no test specified\" && exit 1",
-  "start": "cross-env NODE_ENV=production node dist/index.js",
-  "start:dev": "cross-env NODE_ENV=development nodemon src/index.ts",
-  "start:local": "cross-env NODE_ENV=my-local nodemon src/index.ts",
-  "build:development": "cross-env NODE_ENV=development tsc --build",
-  "build": "cross-env NODE_ENV=production tsc --build"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "cross-env NODE_ENV=production node dist/index.js",
+    "start:dev": "cross-env NODE_ENV=development nodemon src/index.ts",
+    "start:local": "cross-env NODE_ENV=my-local nodemon src/index.ts",
+    "build:development": "cross-env NODE_ENV=development tsc --build",
+    "build": "cross-env NODE_ENV=production tsc --build"
   },
   "author": "",
   "license": "ISC",
@@ -49,6 +49,7 @@
     "nodemailer": "^6.9.16",
     "puppeteer": "^24.1.0",
     "winston": "^3.15.0",
+    "xlsx": "^0.18.5",
     "zod": "^3.23.8"
   }
 }
