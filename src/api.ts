@@ -10,6 +10,7 @@ import shipperRouter from "./modules/shipper";
 import consigneeRouter from "./modules/consignee";
 import truckRouter from "./modules/trucks";
 import dispatchRouter from "./modules/dispatch";
+import quoteRouter from "./modules/sales/quote";
 
 const router = Router();
 
@@ -27,6 +28,7 @@ const moduleRoutes: Record<string, ModuleRoute> = {
   role: { path: roleRouter, IsPrivate: false },
   shipper: { path: shipperRouter, IsPrivate: true },
   consignee: { path: consigneeRouter, IsPrivate: true },
+  quote: { path: quoteRouter, IsPrivate: true },
   truck: { path: truckRouter, IsPrivate: true },
   upload: { path: uploadRouter, IsPrivate: true },
 };

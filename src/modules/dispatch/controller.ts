@@ -1021,6 +1021,12 @@ export async function reportsHandler(req: Request, res: Response): Promise<void>
           }
         },
       ]);
+      // Handle case when no loads are found
+      if (!loads || loads.length === 0) {
+        send(res, 404, "No matching loads found for the given filters.");
+        return;
+      }
+
       let dataSheets: Record<string, any[]> = {};
       loads.forEach(group => {
         let formatedLoad: any = [];
@@ -1102,6 +1108,12 @@ export async function reportsHandler(req: Request, res: Response): Promise<void>
     } else {
       loads = await DispatchModel.find(matchQuery).populate("brokerId postedBy customerId carrierId")
       .select("-password").sort(sortOptions);
+
+      if (!loads || loads.length === 0) {
+        send(res, 404, "No matching loads found for the given filters.");
+        return;
+      }
+      
       let dataSheets: Record<string, any[]> = {};
       let formatedLoad: any = []
       loads.forEach((load: IDispatch)=>{
@@ -1175,8 +1187,8 @@ export async function reportsHandler(req: Request, res: Response): Promise<void>
 
           })
       });
-      dataSheets["Report"] = formatedLoad
-      excelBuffer = generateExcelBuffer(formatedLoad);
+      dataSheets["Report"] = formatedLoad;
+      excelBuffer = generateExcelBuffer(dataSheets);
     }
 
     res.setHeader("Content-Disposition", "attachment; filename=report.xlsx");
