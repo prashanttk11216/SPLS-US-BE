@@ -5,9 +5,9 @@ const quoteRouter = Router();
 
 quoteRouter.get("/:quoteId?", getQuotes);
 
-quoteRouter.post("/create", createQuote);
+quoteRouter.post("/", createQuote);
 
-quoteRouter.put("/edit/:quoteId", updateQuote);
+quoteRouter.put("/:quoteId", updateQuote);
 
 quoteRouter.delete("/:quoteId", deleteQuote);
 

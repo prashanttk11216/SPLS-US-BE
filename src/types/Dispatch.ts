@@ -16,7 +16,7 @@ export interface IDispatchConsignee {
   date: Date;
   time?: Date;
   description?: string;
-  type?: Equipment;
+  type?: string;
   qty?: number;
   weight?: number;
   value?: number;
@@ -30,7 +30,7 @@ export interface IDispatchShipper {
   date: Date;
   time?: Date;
   description?: string;
-  type?: Equipment;
+  type?: string;
   qty?: number;
   weight?: number;
   value?: number;
