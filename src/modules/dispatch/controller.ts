@@ -19,6 +19,10 @@ import { IDispatch } from "../../types/Dispatch";
 import { Equipment } from "../../enums/Equipment";
 import { DispatchLoadType } from "../../enums/DispatchLoadType";
 import { getEnumValue } from "../../utils/globalHelper";
+import { formatDate } from "../../utils/dateFormat";
+import { formatNumber } from "../../utils/numberUtils";
+import { IShipper } from "../shipper/model";
+import { IConsignee } from "../consignee/model";
 
 const validTransitions: Record<DispatchLoadStatus, DispatchLoadStatus[]> = {
   [DispatchLoadStatus.Draft]: [DispatchLoadStatus.Published],
@@ -530,68 +534,96 @@ export async function rateConfirmationHandler(req: Request, res: Response): Prom
   try {
     const { loadId } = req.params;
 
-    const loads = await DispatchModel.findById(loadId)
-    .populate("brokerId postedBy customerId carrierId")
-    .select("-password");
+    const load = await DispatchModel.findById(loadId)
+  .populate([
+    { path: 'brokerId', select: '-password' },
+    { path: 'postedBy', select: '-password' },
+    { path: 'customerId', select: '-password' },
+    { path: 'carrierId', select: '-password' },
+    { path: 'shipper.shipperId', select: '-password' },
+    { path: 'consignee.consigneeId', select: '-password' },
+  ])
+  .lean(); // Optional: Convert to plain JavaScript object
+
 
     // Handle case when no loads are found
-    // if (!loads) {
+    // if (!load) {
     //   send(res, 404, "No matching loads found.");
     //   return;
     // }
 
+
+    const broker = load?.brokerId as IUser;
+    const carrier = load?.carrierId as IUser;
+    const customer = load?.customerId as IUser;
+    const postedBy = load?.postedBy as IUser;
+    const shipper = load?.shipper.shipperId as IShipper;
+    const consignee = load?.consignee.consigneeId as IConsignee;
+
+    const today = new Date();
     const pdfGenerator = new PdfGenerator();
     let htmlContent = await PdfService.generateHTMLTemplate({
       templateName: "rateAndLoadConfirmation",
       templateData: {
-        "companyDetails": {
-          "name": "SPLS LLC",
-          "address": "13100 Wortham Center Dr, Houston, TX, USA 77065",
-          "phone": "832-906-0217",
-          "fax": "",
-          "email": "accounts@spls-us.com"
-        },
         "dispatcherDetails": {
-          "name": "SPLS L",
-          "loadNumber": "854",
-          "shipDate": "2025-01-06",
-          "todaysDate": "2025-01-07",
-          "workOrder": "0001968"
+          "name": (broker?.firstName + " " + broker.lastName) || "N/A",
+          "loadNumber": load?.loadNumber || "N/A",
+          "primaryNumber": broker.primaryNumber || "N/A",
+          "email": broker.email || "N/A",
+          "shipDate": formatDate(load?.shipper.date!, "MM/dd/yyyy") || "N/A",
+          "todaysDate": formatDate(today, "MM/dd/yyyy") || "N/A",
+          "WO": load?.WONumber || "N/A"
         },
+
+        "companyDetails": {
+          "company": broker.company || "N/A",
+          "address": broker.address || "N/A",
+          "primaryNumber": broker.primaryNumber || "N/A",
+        },
+
         "carrierDetails": {
-          "name": "WESTCORE LINKS INC",
-          "phone": "(780) 430-0331",
-          "fax": "",
-          "equipment": "Flat with Tarps",
-          "agreedAmount": "$3,700.00 USD",
-          "loadStatus": "Open"
+          "name": (carrier.firstName + " " + carrier.lastName) || "N/A",
+          "primaryNumber": broker.primaryNumber || "N/A",
+          "equipment": getEnumValue(Equipment, load?.equipment) || "N/A",
+          "address": carrier.address || "N/A",
+          "agreedAmount": "$ " + (formatNumber(load?.carrierFee.totalAmount) || 0.00) + "USD",
+          "loadStatus": getEnumValue(DispatchLoadStatus, load?.status) || "N/A"
         },
+
         "consignee": {
-          "name": "Elliot Homes",
-          "address": "16461 FM 170, Presidio, TX, Presidio, TX",
-          "date": "2025-01-06",
-          "time": "Major Intersection",
-          "type": "tl",
-          "quantity": "",
-          "weight": "48000 lbs",
-          "appointment": "Yes",
-          "description": "TARPED *** HT CERT PAPERS NEEDED FROM MILL DRIVER TO TAKE ORIGINAL HT INSPECTION DOCS and deliver with load to customer (along with customs docs) – this is a MUST or load will be rejected."
+          "name": (consignee.firstName + " " + consignee.lastName) || "N/A",
+          "address": consignee.address || "N/A",
+          "primaryNumber": consignee.primaryNumber || "N/A",
+          "date": formatDate(load?.consignee.date!, "MM/dd/yyyy") || "N/A",
+          "time": formatDate(load?.consignee.time!, "h:mm aa") || "N/A",
+          "type": load?.consignee.type || "N/A",
+          "quantity": load?.consignee.qty || "N/A",
+          "weight": ((load?.consignee.weight || 0) + " lbs"),
+          "shippingHours": consignee.shippingHours || "N/A",
+          "appointment": consignee.isAppointments ? "Yes" : "No",
+          "description": load?.consignee.description || "N/A",
+          "notes": load?.consignee.notes || "N/A"
         },
+
         "shipper": {
-          "name": "Foothills Forest Products",
-          "address": "AB-40, Grande Cache, AB T0E 0Y0, Grande Cache, AB, T0E 0Y0",
-          "date": "2025-01-07",
-          "time": "Major Intersection",
-          "type": "tl",
-          "quantity": "18",
-          "weight": "48000 lbs",
-          "appointment": "Yes",
-          "description": "TARPED *** HT CERT PAPERS NEEDED FROM MILL DRIVER TO TAKE ORIGINAL HT INSPECTION DOCS and deliver with load to customer (along with customs docs) – this is a MUST or load will be rejected."
+          "name": (shipper.firstName + " " + shipper.lastName) || "N/A",
+          "email": shipper.email || "N/A",
+          "address": shipper.address || "N/A",
+          "primaryNumber": shipper.primaryNumber || "N/A",
+          "date": formatDate(load?.shipper.date!, "MM/dd/yyyy") || "N/A",
+          "time": formatDate(load?.shipper.time!, "h:mm aa") || "N/A",
+          "type": load?.shipper.type || "N/A",
+          "quantity": load?.shipper.qty || "N/A",
+          "weight": ((load?.shipper.weight || 0) + " lbs"),
+          "shippingHours": shipper.shippingHours || "N/A",
+          "appointment": shipper.isAppointments ? "Yes" : "No",
+          "description": load?.shipper.description || "N/A",
+          "notes": load?.shipper.notes || "N/A"
         },
-        "notes": {
-          "deliveryNote": "DELIVERY MUST BE ON TIME. BOL MUST SIGNED BY RECEIVER IN ORDER TO GET PAYMENT.",
-          "shipperNote": "TRAILER MUST LOAD 28,224 fbm. IF less than 28,224 revised rate will apply based on total FBM loaded on Trailer."
-        }
+        // "notes": {
+        //   "deliveryNote": "DELIVERY MUST BE ON TIME. BOL MUST SIGNED BY RECEIVER IN ORDER TO GET PAYMENT.",
+        //   "shipperNote": "TRAILER MUST LOAD 28,224 fbm. IF less than 28,224 revised rate will apply based on total FBM loaded on Trailer."
+        // }
       }      
     })
     // Get PDF as a buffer

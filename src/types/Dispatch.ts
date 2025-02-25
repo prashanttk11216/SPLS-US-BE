@@ -3,6 +3,8 @@ import { Equipment } from "../enums/Equipment";
 import { DispatchLoadType } from "../enums/DispatchLoadType";
 import { DispatchLoadStatus } from "../enums/DispatchLoadStatus";
 import { IUser } from "./User";
+import { IShipper } from "../modules/shipper/model";
+import { IConsignee } from "../modules/consignee/model";
 
 export interface IAddress {
   str: string; // String representation
@@ -11,7 +13,7 @@ export interface IAddress {
 }
 
 export interface IDispatchConsignee {
-  consigneeId: Types.ObjectId;
+  consigneeId: Types.ObjectId | IConsignee;
   address: IAddress;
   date: Date;
   time?: Date;
@@ -25,7 +27,7 @@ export interface IDispatchConsignee {
 }
 
 export interface IDispatchShipper {
-  shipperId: Types.ObjectId;
+  shipperId: Types.ObjectId | IShipper;
   address: IAddress;
   date: Date;
   time?: Date;
