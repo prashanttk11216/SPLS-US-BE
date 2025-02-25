@@ -616,10 +616,10 @@ export async function BOLHandler(req: Request, res: Response): Promise<void> {
     .select("-password");
 
     // Handle case when no loads are found
-    if (!loads) {
-      send(res, 404, "No matching loads found.");
-      return;
-    }
+    // if (!loads) {
+    //   send(res, 404, "No matching loads found.");
+    //   return;
+    // }
     const pdfGenerator = new PdfGenerator();
     let htmlContent = await PdfService.generateHTMLTemplate({
       templateName: "BOL",
