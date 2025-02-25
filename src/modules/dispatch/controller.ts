@@ -1,4 +1,3 @@
-// loadController.ts
 import { Request, Response } from "express";
 import send from "../../utils/apiResponse";
 import { z } from "zod";
@@ -527,10 +526,20 @@ export async function refreshLoadAgeHandler(
   }
 }
 
-
 export async function rateConfirmationHandler(req: Request, res: Response): Promise<void> {
   try {
     const { loadId } = req.params;
+
+    const loads = await DispatchModel.findById(loadId)
+    .populate("brokerId postedBy customerId carrierId")
+    .select("-password");
+
+    // Handle case when no loads are found
+    if (!loads) {
+      send(res, 404, "No matching loads found.");
+      return;
+    }
+
     const pdfGenerator = new PdfGenerator();
     let htmlContent = await PdfService.generateHTMLTemplate({
       templateName: "rateAndLoadConfirmation",
@@ -602,6 +611,15 @@ export async function rateConfirmationHandler(req: Request, res: Response): Prom
 export async function BOLHandler(req: Request, res: Response): Promise<void> {
   try {
     const { loadId } = req.params;
+    const loads = await DispatchModel.findById(loadId)
+    .populate("brokerId postedBy customerId carrierId")
+    .select("-password");
+
+    // Handle case when no loads are found
+    if (!loads) {
+      send(res, 404, "No matching loads found.");
+      return;
+    }
     const pdfGenerator = new PdfGenerator();
     let htmlContent = await PdfService.generateHTMLTemplate({
       templateName: "BOL",
@@ -672,6 +690,15 @@ export async function BOLHandler(req: Request, res: Response): Promise<void> {
 export async function invoicedHandler(req: Request, res: Response): Promise<void> {
   try {
     const { loadId } = req.params;
+    const loads = await DispatchModel.findById(loadId)
+    .populate("brokerId postedBy customerId carrierId")
+    .select("-password");
+
+    // Handle case when no loads are found
+    if (!loads) {
+      send(res, 404, "No matching loads found.");
+      return;
+    }
     const pdfGenerator = new PdfGenerator();
     let htmlContent = await PdfService.generateHTMLTemplate({
       templateName: "invoicedLoad",
@@ -741,7 +768,6 @@ export async function invoicedHandler(req: Request, res: Response): Promise<void
 
 export async function accountingSummary(req: Request, res: Response): Promise<void> {
   try {
-
     const filters: any = { status: DispatchLoadStatus.Invoiced}; // Parse and validate query parameters
     const fromDate = req.body.fromDate;
     const toDate = req.body.toDate;
@@ -761,9 +787,14 @@ export async function accountingSummary(req: Request, res: Response): Promise<vo
     }
 
     const loads = await DispatchModel.find(filters)
-    .populate("brokerId", "-password")
-    .populate("postedBy", "-password");
+    .populate("brokerId postedBy customerId carrierId")
+    .select("-password");
 
+    // Handle case when no loads are found
+    if (!loads || loads.length === 0) {
+      send(res, 404, "No matching loads found for the given filters.");
+      return;
+    }
 
     const pdfGenerator = new PdfGenerator();
     let htmlContent = await PdfService.generateHTMLTemplate({
@@ -841,6 +872,12 @@ export async function accountingExport(req: Request, res: Response): Promise<voi
     let excelBuffer;
     const loads = await DispatchModel.find(matchQuery).populate("brokerId postedBy customerId carrierId")
     .select("-password");
+
+    if (!loads || loads.length === 0) {
+      send(res, 404, "No matching loads found for the given filters.");
+      return;
+    }
+
     let dataSheets: Record<string, any[]> = {};
     let formatedLoad: any = []
     loads.forEach((load: IDispatch)=>{
@@ -922,9 +959,7 @@ export async function accountingExport(req: Request, res: Response): Promise<voi
         PostedByAddress: postedBy?.address?.str || "",
         });
     });
-    dataSheets["Report"] = formatedLoad
-    // console.log(dataSheets);
-    
+    dataSheets["Loads"] = formatedLoad;
     excelBuffer = generateExcelBuffer(dataSheets);
 
     res.setHeader("Content-Disposition", "attachment; filename=report.xlsx");
@@ -942,14 +977,8 @@ export async function reportsHandler(req: Request, res: Response): Promise<void>
     const { category, categoryValue, filterBy, fromDate,  toDate} = req.body;
     let matchQuery: any = { status: DispatchLoadStatus.Invoiced};
 
-    if (category === "CUSTOMER") {
-      if (categoryValue !== "ALL") {
-        matchQuery.customerId = categoryValue;
-      }
-    } else if (category === "CARRIER") {
-      if (categoryValue !== "ALL") {
-        matchQuery.carrierId = categoryValue;
-      }
+    if (categoryValue !== "ALL") {
+      matchQuery[category === "CUSTOMER" ? "customerId" : "carrierId"] = categoryValue;
     }
 
     let sortOptions: [string, SortOrder][] = [];
@@ -984,8 +1013,7 @@ export async function reportsHandler(req: Request, res: Response): Promise<void>
         {
           $group: {
             _id: groupField,
-            loads: { $push: "$$ROOT" },
-            
+            loads: { $push: "$$ROOT" },  
           }
         },
         {
@@ -1101,7 +1129,6 @@ export async function reportsHandler(req: Request, res: Response): Promise<void>
 
           })
         });
-
         dataSheets[group._id] = formatedLoad; // Grouped data per sheet
       });
       excelBuffer = generateExcelBuffer(dataSheets);
