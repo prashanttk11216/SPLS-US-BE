@@ -535,10 +535,10 @@ export async function rateConfirmationHandler(req: Request, res: Response): Prom
     .select("-password");
 
     // Handle case when no loads are found
-    if (!loads) {
-      send(res, 404, "No matching loads found.");
-      return;
-    }
+    // if (!loads) {
+    //   send(res, 404, "No matching loads found.");
+    //   return;
+    // }
 
     const pdfGenerator = new PdfGenerator();
     let htmlContent = await PdfService.generateHTMLTemplate({
@@ -695,10 +695,10 @@ export async function invoicedHandler(req: Request, res: Response): Promise<void
     .select("-password");
 
     // Handle case when no loads are found
-    if (!loads) {
-      send(res, 404, "No matching loads found.");
-      return;
-    }
+    // if (!loads) {
+    //   send(res, 404, "No matching loads found.");
+    //   return;
+    // }
     const pdfGenerator = new PdfGenerator();
     let htmlContent = await PdfService.generateHTMLTemplate({
       templateName: "invoicedLoad",
@@ -791,10 +791,10 @@ export async function accountingSummary(req: Request, res: Response): Promise<vo
     .select("-password");
 
     // Handle case when no loads are found
-    if (!loads || loads.length === 0) {
-      send(res, 404, "No matching loads found for the given filters.");
-      return;
-    }
+    // if (!loads || loads.length === 0) {
+    //   send(res, 404, "No matching loads found for the given filters.");
+    //   return;
+    // }
 
     const pdfGenerator = new PdfGenerator();
     let htmlContent = await PdfService.generateHTMLTemplate({
@@ -873,10 +873,10 @@ export async function accountingExport(req: Request, res: Response): Promise<voi
     const loads = await DispatchModel.find(matchQuery).populate("brokerId postedBy customerId carrierId")
     .select("-password");
 
-    if (!loads || loads.length === 0) {
-      send(res, 404, "No matching loads found for the given filters.");
-      return;
-    }
+    // if (!loads || loads.length === 0) {
+    //   send(res, 404, "No matching loads found for the given filters.");
+    //   return;
+    // }
 
     let dataSheets: Record<string, any[]> = {};
     let formatedLoad: any = []
