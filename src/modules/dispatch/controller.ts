@@ -1,7 +1,10 @@
 import { Request, Response } from "express";
 import send from "../../utils/apiResponse";
 import { z } from "zod";
-import {  transformedCreateDispatchSchema, updateDispatchSchema } from "../../schema/Dispatch/index";
+import {
+  transformedCreateDispatchSchema,
+  updateDispatchSchema,
+} from "../../schema/Dispatch/index";
 import { IUser } from "../../types/User";
 import { UserRole } from "../../enums/UserRole";
 import { DispatchModel } from "./model";
@@ -23,18 +26,24 @@ import { formatDate } from "../../utils/dateFormat";
 import { formatNumber } from "../../utils/numberUtils";
 import { IShipper } from "../shipper/model";
 import { IConsignee } from "../consignee/model";
+import { formatPhoneNumber } from "../../utils/phoneUtils";
 
 const validTransitions: Record<DispatchLoadStatus, DispatchLoadStatus[]> = {
   [DispatchLoadStatus.Draft]: [DispatchLoadStatus.Published],
-  [DispatchLoadStatus.Published]: [DispatchLoadStatus.InTransit, DispatchLoadStatus.Cancelled],
-  [DispatchLoadStatus.InTransit]: [DispatchLoadStatus.Delivered, DispatchLoadStatus.Cancelled],
+  [DispatchLoadStatus.Published]: [
+    DispatchLoadStatus.InTransit,
+    DispatchLoadStatus.Cancelled,
+  ],
+  [DispatchLoadStatus.InTransit]: [
+    DispatchLoadStatus.Delivered,
+    DispatchLoadStatus.Cancelled,
+  ],
   [DispatchLoadStatus.Delivered]: [DispatchLoadStatus.Completed],
   [DispatchLoadStatus.Completed]: [DispatchLoadStatus.Invoiced], // Invoiced can transition to InvoicedPaid or Completed
   [DispatchLoadStatus.Invoiced]: [DispatchLoadStatus.InvoicedPaid], // InvoicedPaid can transition to Completed
   [DispatchLoadStatus.InvoicedPaid]: [],
   [DispatchLoadStatus.Cancelled]: [], // No transitions after cancellation
 };
-
 
 /**
  * Create a new load entry, ensuring the user is authorized (broker or customer),
@@ -52,22 +61,27 @@ export async function createLoadHandler(
     // Validate incoming request data using Zod schema
     const validatedData = transformedCreateDispatchSchema.parse(req.body);
     const user = (req as Request & { user?: IUser })?.user; // Extract user data from request
-  
 
     // Ensure that broker/admin assigns a 'postedBy' field if missing
     if (
-      !validatedData.postedBy && user && hasAccess(user.roles, { roles: [UserRole.BROKER_USER, UserRole.BROKER_ADMIN] }) )
-     {
+      !validatedData.postedBy &&
+      user &&
+      hasAccess(user.roles, {
+        roles: [UserRole.BROKER_USER, UserRole.BROKER_ADMIN],
+      })
+    ) {
       validatedData.postedBy = user._id; // Assign the current broker/admin as the poster
     }
 
     // Set the brokerId based on the user's role
     if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN] })) {
       validatedData.brokerId = user._id;
-    } else  if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_USER] })) {
+    } else if (
+      user &&
+      hasAccess(user.roles, { roles: [UserRole.BROKER_USER] })
+    ) {
       validatedData.brokerId = user.brokerId;
     }
-
 
     // Handle load number logic
     if (validatedData.loadNumber) {
@@ -92,7 +106,7 @@ export async function createLoadHandler(
         return;
       }
     } else {
-      if(validatedData.status !== DispatchLoadStatus.Draft){
+      if (validatedData.status !== DispatchLoadStatus.Draft) {
         // Auto-generate load number if not provided
         const lastLoad = await DispatchModel.findOne({
           loadNumber: { $exists: true, $ne: null },
@@ -113,7 +127,7 @@ export async function createLoadHandler(
     send(res, 201, "Load created successfully", load); // Send a success response with the created load
   } catch (error) {
     console.log(error);
-    
+
     // Handle validation errors from Zod
     if (error instanceof z.ZodError) {
       send(res, 400, "Invalid input data", { errors: error.errors });
@@ -139,7 +153,6 @@ export async function updateLoadHandler(
   try {
     // Step 1: Validate incoming data using Zod schema
     const validatedData = updateDispatchSchema.parse(req.body); // Ensure the incoming data matches the expected format
-
 
     // Step 2: Find and update the load by its ID
     const updatedLoad = await DispatchModel.findByIdAndUpdate(
@@ -207,8 +220,12 @@ export async function fetchLoadsHandler(
 
     // Apply date range filter if provided
     const dateField = req.query.dateField as string; // Get the specific field to search
-    const fromDate = req.query.fromDate ? new Date(req.query.fromDate as string) : undefined;
-    const toDate = req.query.toDate ? new Date(req.query.toDate as string) : undefined;    
+    const fromDate = req.query.fromDate
+      ? new Date(req.query.fromDate as string)
+      : undefined;
+    const toDate = req.query.toDate
+      ? new Date(req.query.toDate as string)
+      : undefined;
     if (dateField && (fromDate || toDate)) {
       filters[dateField] = {};
       if (fromDate) {
@@ -224,12 +241,14 @@ export async function fetchLoadsHandler(
     const searchField = req.query.searchField as string;
 
     // Define numeric fields
-    const numberFields = [  "loadNumber",
+    const numberFields = [
+      "loadNumber",
       "WONumber",
       "invoiceNumber",
       "shipper.weight",
       "consignee.weight",
-      "allInRate"];
+      "allInRate",
+    ];
 
     if (search && searchField) {
       const escapedSearch = escapeAndNormalizeSearch(search);
@@ -249,7 +268,6 @@ export async function fetchLoadsHandler(
       }
     }
 
-    
     // Add all other query parameters dynamically into filters
     for (const [key, value] of Object.entries(req.query)) {
       if (
@@ -261,7 +279,7 @@ export async function fetchLoadsHandler(
           "toDate",
           "search",
           "searchField",
-          "dateField"
+          "dateField",
         ].includes(key)
       ) {
         filters[key] = value; // Add non-pagination, non-special filters
@@ -301,8 +319,8 @@ export async function fetchLoadsHandler(
 
     // Execute the query with pagination, sorting, and populating relevant fields
     const loads = await DispatchModel.find(filters)
-    .populate("brokerId", "-password")
-    .populate("postedBy", "-password")
+      .populate("brokerId", "-password")
+      .populate("postedBy", "-password")
       .skip(skip)
       .limit(limit)
       .sort(sortOptions);
@@ -321,7 +339,7 @@ export async function fetchLoadsHandler(
     send(res, 200, "Loads retrieved successfully", loads, pagination);
   } catch (error) {
     console.log(error);
-    
+
     // Handle errors gracefully
     if (error instanceof z.ZodError) {
       send(res, 400, "Invalid filter parameters", { errors: error.errors });
@@ -350,8 +368,8 @@ export async function updateLoadStatusHandler(
 
     // Fetch the load details and populate related broker and customer info
     const load = await DispatchModel.findById(req.params.loadId)
-    .populate("brokerId", "-password")
-    .populate("postedBy", "-password")
+      .populate("brokerId", "-password")
+      .populate("postedBy", "-password");
 
     if (!load) {
       send(res, 404, "Load not found");
@@ -362,9 +380,9 @@ export async function updateLoadStatusHandler(
 
     // Validate the status transition
     if (
-        !validTransitions[currentStatus as DispatchLoadStatus]?.includes(
-          status as DispatchLoadStatus
-        )
+      !validTransitions[currentStatus as DispatchLoadStatus]?.includes(
+        status as DispatchLoadStatus
+      )
     ) {
       send(
         res,
@@ -374,9 +392,8 @@ export async function updateLoadStatusHandler(
       return;
     }
 
-
     // Handle load number logic
-    if(currentStatus == DispatchLoadStatus.Draft){
+    if (currentStatus == DispatchLoadStatus.Draft) {
       if (!load.loadNumber) {
         // Auto-generate load number if not provided
         const lastLoad = await DispatchModel.findOne({
@@ -385,11 +402,11 @@ export async function updateLoadStatusHandler(
           .sort({ loadNumber: -1 })
           .select("loadNumber");
 
-          load.loadNumber = lastLoad ? lastLoad.loadNumber! + 1 : 1; // Start from 1 if no loads exist
+        load.loadNumber = lastLoad ? lastLoad.loadNumber! + 1 : 1; // Start from 1 if no loads exist
       }
     }
 
-    if(status == DispatchLoadStatus.Invoiced){
+    if (status == DispatchLoadStatus.Invoiced) {
       // Auto-generate load number if not provided
       const lastLoad = await DispatchModel.findOne({
         invoiceNumber: { $exists: true, $ne: null },
@@ -397,20 +414,20 @@ export async function updateLoadStatusHandler(
         .sort({ invoiceNumber: -1 })
         .select("invoiceNumber");
 
-        load.invoiceNumber = lastLoad ? lastLoad.invoiceNumber! + 1 : 1;
-        load.invoiceDate = new Date();
+      load.invoiceNumber = lastLoad ? lastLoad.invoiceNumber! + 1 : 1;
+      load.invoiceDate = new Date();
     }
     // Update status in the database
     load.status = status;
     await load.save();
 
     // Set up the email notification options
-    if((load.brokerId as IUser).email){
+    if ((load.brokerId as IUser).email) {
       let emails = [(load?.brokerId as IUser)?.email];
 
-      if((load?.customerId as IUser)?.email){
+      if ((load?.customerId as IUser)?.email) {
         emails.push((load?.customerId as IUser)?.email);
-      }      
+      }
 
       const emailOptions: SendEmailOptions = {
         to: emails, // Send the notification to the broker's email
@@ -418,10 +435,10 @@ export async function updateLoadStatusHandler(
         templateName: "loadStatusNotification",
         templateData: {
           loadNumber: load.loadNumber,
-          status: status
+          status: status,
         },
       };
-  
+
       // Send email notification to the broker (uncomment this when email functionality is ready)
       await EmailService.sendNotificationEmail(emailOptions);
     }
@@ -530,28 +547,29 @@ export async function refreshLoadAgeHandler(
   }
 }
 
-export async function rateConfirmationHandler(req: Request, res: Response): Promise<void> {
+export async function rateConfirmationHandler(
+  req: Request,
+  res: Response
+): Promise<void> {
   try {
     const { loadId } = req.params;
 
     const load = await DispatchModel.findById(loadId)
-  .populate([
-    { path: 'brokerId', select: '-password' },
-    { path: 'postedBy', select: '-password' },
-    { path: 'customerId', select: '-password' },
-    { path: 'carrierId', select: '-password' },
-    { path: 'shipper.shipperId', select: '-password' },
-    { path: 'consignee.consigneeId', select: '-password' },
-  ])
-  .lean(); // Optional: Convert to plain JavaScript object
-
+      .populate([
+        { path: "brokerId", select: "-password" },
+        { path: "postedBy", select: "-password" },
+        { path: "customerId", select: "-password" },
+        { path: "carrierId", select: "-password" },
+        { path: "shipper.shipperId", select: "-password" },
+        { path: "consignee.consigneeId", select: "-password" },
+      ])
+      .lean(); // Optional: Convert to plain JavaScript object
 
     // Handle case when no loads are found
-    // if (!load) {
-    //   send(res, 404, "No matching loads found.");
-    //   return;
-    // }
-
+    if (!load) {
+      send(res, 404, "No matching loads found.");
+      return;
+    }
 
     const broker = load?.brokerId as IUser;
     const carrier = load?.carrierId as IUser;
@@ -565,69 +583,67 @@ export async function rateConfirmationHandler(req: Request, res: Response): Prom
     let htmlContent = await PdfService.generateHTMLTemplate({
       templateName: "rateAndLoadConfirmation",
       templateData: {
-        "dispatcherDetails": {
-          "name": (broker?.firstName + " " + broker.lastName) || "N/A",
-          "loadNumber": load?.loadNumber || "N/A",
-          "primaryNumber": broker.primaryNumber || "N/A",
-          "email": broker.email || "N/A",
-          "shipDate": formatDate(load?.shipper.date!, "MM/dd/yyyy") || "N/A",
-          "todaysDate": formatDate(today, "MM/dd/yyyy") || "N/A",
-          "WO": load?.WONumber || "N/A"
+        dispatcherDetails: {
+          name: broker?.firstName + " " + broker.lastName || "N/A",
+          loadNumber: load?.loadNumber || "N/A",
+          primaryNumber: formatPhoneNumber(broker.primaryNumber),
+          email: broker.email || "N/A",
+          shipDate: formatDate(load?.shipper.date!, "MM/dd/yyyy") || "N/A",
+          todaysDate: formatDate(today, "MM/dd/yyyy") || "N/A",
+          WO: load?.WONumber || "N/A",
         },
 
-        "companyDetails": {
-          "company": broker.company || "N/A",
-          "address": broker.address || "N/A",
-          "primaryNumber": broker.primaryNumber || "N/A",
+        companyDetails: {
+          company: broker.company || "N/A",
+          address: broker.address?.str || "N/A",
+          primaryNumber: formatPhoneNumber(broker.primaryNumber),
         },
 
-        "carrierDetails": {
-          "name": (carrier.firstName + " " + carrier.lastName) || "N/A",
-          "primaryNumber": broker.primaryNumber || "N/A",
-          "equipment": getEnumValue(Equipment, load?.equipment) || "N/A",
-          "address": carrier.address || "N/A",
-          "agreedAmount": "$ " + (formatNumber(load?.carrierFee.totalAmount) || 0.00) + "USD",
-          "loadStatus": getEnumValue(DispatchLoadStatus, load?.status) || "N/A"
+        carrierDetails: {
+          name: carrier.firstName + " " + carrier.lastName || "N/A",
+          primaryNumber: formatPhoneNumber(broker.primaryNumber),
+          equipment: getEnumValue(Equipment, load?.equipment) || "N/A",
+          address: carrier.address?.str || "N/A",
+          agreedAmount: formatNumber(load?.carrierFee.totalAmount) || 0.0,
+          loadStatus: getEnumValue(DispatchLoadStatus, load?.status) || "N/A",
         },
 
-        "consignee": {
-          "name": (consignee.firstName + " " + consignee.lastName) || "N/A",
-          "address": consignee.address || "N/A",
-          "primaryNumber": consignee.primaryNumber || "N/A",
-          "date": formatDate(load?.consignee.date!, "MM/dd/yyyy") || "N/A",
-          "time": formatDate(load?.consignee.time!, "h:mm aa") || "N/A",
-          "type": load?.consignee.type || "N/A",
-          "quantity": load?.consignee.qty || "N/A",
-          "weight": ((load?.consignee.weight || 0) + " lbs"),
-          "shippingHours": consignee.shippingHours || "N/A",
-          "appointment": consignee.isAppointments ? "Yes" : "No",
-          "description": load?.consignee.description || "N/A",
-          "notes": load?.consignee.notes || "N/A"
+        consignee: {
+          name: (consignee.firstName + " " + consignee.lastName) || "N/A",
+          address: consignee.address.str || "N/A",
+          primaryNumber: formatPhoneNumber(consignee.primaryNumber),
+          date: formatDate(load?.consignee.date!, "MM/dd/yyyy") || "N/A",
+          time: formatDate(load?.consignee.time!, "h:mm aa") || "N/A",
+          type: load?.consignee.type || "N/A",
+          qty: load?.consignee.qty || "N/A",
+          weight: (load?.consignee.weight || 0) + " lbs",
+          shippingHours: consignee.shippingHours || "N/A",
+          appointment: consignee.isAppointments ? "Yes" : "No",
+          description: load?.consignee.description || "N/A",
+          notes: load?.consignee.notes || "N/A",
         },
 
-        "shipper": {
-          "name": (shipper.firstName + " " + shipper.lastName) || "N/A",
-          "email": shipper.email || "N/A",
-          "address": shipper.address || "N/A",
-          "primaryNumber": shipper.primaryNumber || "N/A",
-          "date": formatDate(load?.shipper.date!, "MM/dd/yyyy") || "N/A",
-          "time": formatDate(load?.shipper.time!, "h:mm aa") || "N/A",
-          "type": load?.shipper.type || "N/A",
-          "quantity": load?.shipper.qty || "N/A",
-          "weight": ((load?.shipper.weight || 0) + " lbs"),
-          "shippingHours": shipper.shippingHours || "N/A",
-          "appointment": shipper.isAppointments ? "Yes" : "No",
-          "description": load?.shipper.description || "N/A",
-          "notes": load?.shipper.notes || "N/A"
+        shipper: {
+          name: shipper.firstName + " " + shipper.lastName || "N/A",
+          email: shipper.email || "N/A",
+          address: shipper.address.str || "N/A",
+          primaryNumber: formatPhoneNumber(shipper.primaryNumber),
+          date: formatDate(load?.shipper.date!, "MM/dd/yyyy") || "N/A",
+          time: formatDate(load?.shipper.time!, "h:mm aa") || "N/A",
+          type: load?.shipper.type || "N/A",
+          qty: load?.shipper.qty || "N/A",
+          weight: (load?.shipper.weight || 0) + " lbs",
+          shippingHours: shipper.shippingHours || "N/A",
+          appointment: shipper.isAppointments ? "Yes" : "No",
+          description: load?.shipper.description || "N/A",
+          notes: load?.shipper.notes || "N/A",
         },
-        // "notes": {
-        //   "deliveryNote": "DELIVERY MUST BE ON TIME. BOL MUST SIGNED BY RECEIVER IN ORDER TO GET PAYMENT.",
-        //   "shipperNote": "TRAILER MUST LOAD 28,224 fbm. IF less than 28,224 revised rate will apply based on total FBM loaded on Trailer."
-        // }
-      }      
-    })
+      },
+    });
     // Get PDF as a buffer
-    const pdfBuffer = await pdfGenerator.generatePdf(htmlContent, { format: "A4" });
+    const pdfBuffer = await pdfGenerator.generatePdf(htmlContent, {
+      format: "A4",
+    });
     send(res, 200, `Generated Successfully`, pdfBuffer!, {}, true);
   } catch (error) {
     logger.error("Error generating PDF:", error);
@@ -637,77 +653,96 @@ export async function rateConfirmationHandler(req: Request, res: Response): Prom
       "An unexpected server error occurred while refreshing load age"
     );
   }
-
 }
 
 export async function BOLHandler(req: Request, res: Response): Promise<void> {
   try {
+
+    const {codAmount, codFee, declaredValue} = req.body
     const { loadId } = req.params;
-    const loads = await DispatchModel.findById(loadId)
-    .populate("brokerId postedBy customerId carrierId")
-    .select("-password");
+    
+    const load = await DispatchModel.findById(loadId)
+      .populate([
+        { path: "brokerId", select: "-password" },
+        { path: "postedBy", select: "-password" },
+        { path: "customerId", select: "-password" },
+        { path: "carrierId", select: "-password" },
+        { path: "shipper.shipperId", select: "-password" },
+        { path: "consignee.consigneeId", select: "-password" },
+      ])
+      .lean(); // Optional: Convert to plain JavaScript object
 
     // Handle case when no loads are found
-    // if (!loads) {
-    //   send(res, 404, "No matching loads found.");
-    //   return;
-    // }
+    if (!load) {
+      send(res, 404, "No matching loads found.");
+      return;
+    }
+    const broker = load?.brokerId as IUser;
+    const carrier = load?.carrierId as IUser;
+    const customer = load?.customerId as IUser;
+    const postedBy = load?.postedBy as IUser;
+    const shipper = load?.shipper.shipperId as IShipper;
+    const consignee = load?.consignee.consigneeId as IConsignee;
+
     const pdfGenerator = new PdfGenerator();
     let htmlContent = await PdfService.generateHTMLTemplate({
       templateName: "BOL",
       templateData: {
-        "companyDetails": {
-          "name": "SPLS LLC",
-          "address": "13100 Wortham Center Dr, Houston, TX, USA 77065",
-          "phone": "832-906-0217",
-          "fax": "",
-          "email": "accounts@spls-us.com"
+        dispatcherDetails: {
+          name: broker?.firstName + " " + broker.lastName || "N/A",
+          loadNumber: load?.loadNumber || "N/A",
+          shipDate: formatDate(load?.shipper.date!, "MM/dd/yyyy") || "N/A",
+          delDate: formatDate(load?.consignee.date!, "MM/dd/yyyy") || "N/A",
+          PO: load.shipper.PO || "N/A",
+          freightCharge: "Prepaid",
         },
-        "dispatcherDetails": {
-          "name": "SPLS L",
-          "loadNumber": "854",
-          "shipDate": "2025-01-06",
-          "todaysDate": "2025-01-07",
-          "workOrder": "0001968"
+
+        companyDetails: {
+          company: broker.company || "N/A",
+          address: broker.address?.str || "N/A",
+          primaryNumber: formatPhoneNumber(broker.primaryNumber),
         },
-        "carrierDetails": {
-          "name": "WESTCORE LINKS INC",
-          "phone": "(780) 430-0331",
-          "fax": "",
-          "equipment": "Flat with Tarps",
-          "agreedAmount": "$3,700.00 USD",
-          "loadStatus": "Open"
+
+        shipper: {
+          name: shipper.firstName + " " + shipper.lastName || "N/A",
+          email: shipper.email || "N/A",
+          address: shipper.address.str || "N/A",
+          primaryNumber: formatPhoneNumber(shipper.primaryNumber),
         },
-        "consignee": {
-          "name": "Elliot Homes",
-          "address": "16461 FM 170, Presidio, TX, Presidio, TX",
-          "date": "2025-01-06",
-          "time": "Major Intersection",
-          "type": "tl",
-          "quantity": "",
-          "weight": "48000 lbs",
-          "appointment": "Yes",
-          "description": "TARPED *** HT CERT PAPERS NEEDED FROM MILL DRIVER TO TAKE ORIGINAL HT INSPECTION DOCS and deliver with load to customer (along with customs docs) – this is a MUST or load will be rejected."
+
+        consignee: {
+          name: consignee.firstName + " " + consignee.lastName || "N/A",
+          address: consignee.address.str || "N/A",
+          primaryNumber: formatPhoneNumber(consignee.primaryNumber),
         },
-        "shipper": {
-          "name": "Foothills Forest Products",
-          "address": "AB-40, Grande Cache, AB T0E 0Y0, Grande Cache, AB, T0E 0Y0",
-          "date": "2025-01-07",
-          "time": "Major Intersection",
-          "type": "tl",
-          "quantity": "18",
-          "weight": "48000 lbs",
-          "appointment": "Yes",
-          "description": "TARPED *** HT CERT PAPERS NEEDED FROM MILL DRIVER TO TAKE ORIGINAL HT INSPECTION DOCS and deliver with load to customer (along with customs docs) – this is a MUST or load will be rejected."
+
+        carrierDetails: {
+          name: carrier.firstName + " " + carrier.lastName || "N/A",
+          primaryNumber: formatPhoneNumber(broker.primaryNumber),
+          address: carrier.address?.str || "N/A",
         },
-        "notes": {
-          "deliveryNote": "DELIVERY MUST BE ON TIME. BOL MUST SIGNED BY RECEIVER IN ORDER TO GET PAYMENT.",
-          "shipperNote": "TRAILER MUST LOAD 28,224 fbm. IF less than 28,224 revised rate will apply based on total FBM loaded on Trailer."
-        }
-      }      
-    })
+
+        loadItem: {
+          qty: load.shipper.qty || "N/A",
+          description: load.shipper.description || "N/A",
+          type: load.shipper.type || "N/A",
+          weight: load.shipper.weight || "N/A"
+        },
+
+        notes: {
+          shippingNote: load.shipper.notes || "N/A",
+          deliveryNotes: load.consignee.notes || "N/A"
+        },
+
+        codAmount:  codAmount ? formatNumber(codAmount) : "N/A",
+        codFee:  codFee || "N/A",
+        declaredValue: declaredValue ? formatNumber(declaredValue) : "N/A",
+      },
+    });
     // Get PDF as a buffer
-    const pdfBuffer = await pdfGenerator.generatePdf(htmlContent, { format: "A4" });
+    const pdfBuffer = await pdfGenerator.generatePdf(htmlContent, {
+      format: "A4",
+    });
     send(res, 200, `Generated Successfully`, pdfBuffer!, {}, true);
   } catch (error) {
     logger.error("Error generating PDF:", error);
@@ -719,74 +754,97 @@ export async function BOLHandler(req: Request, res: Response): Promise<void> {
   }
 }
 
-export async function invoicedHandler(req: Request, res: Response): Promise<void> {
+export async function invoicedHandler(
+  req: Request,
+  res: Response
+): Promise<void> {
   try {
     const { loadId } = req.params;
-    const loads = await DispatchModel.findById(loadId)
-    .populate("brokerId postedBy customerId carrierId")
-    .select("-password");
+    const load = await DispatchModel.findById(loadId)
+      .populate([
+        { path: "brokerId", select: "-password" },
+        { path: "postedBy", select: "-password" },
+        { path: "customerId", select: "-password" },
+        { path: "carrierId", select: "-password" },
+        { path: "shipper.shipperId", select: "-password" },
+        { path: "consignee.consigneeId", select: "-password" },
+      ])
+      .lean(); // Optional: Convert to plain JavaScript object
 
     // Handle case when no loads are found
-    // if (!loads) {
-    //   send(res, 404, "No matching loads found.");
-    //   return;
-    // }
+    if (!load) {
+      send(res, 404, "No matching loads found.");
+      return;
+    }
+    const broker = load?.brokerId as IUser;
+    const carrier = load?.carrierId as IUser;
+    const customer = load?.customerId as IUser;
+    const postedBy = load?.postedBy as IUser;
+    const shipper = load?.shipper.shipperId as IShipper;
+    const consignee = load?.consignee.consigneeId as IConsignee;
+
     const pdfGenerator = new PdfGenerator();
     let htmlContent = await PdfService.generateHTMLTemplate({
       templateName: "invoicedLoad",
       templateData: {
-        "companyDetails": {
-          "name": "SPLS LLC",
-          "address": "13100 Wortham Center Dr, Houston, TX, USA 77065",
-          "phone": "832-906-0217",
-          "fax": "",
-          "email": "accounts@spls-us.com"
+        invoiceDetails: {
+          loadNumber: load?.loadNumber || "N/A",
+          invoiceNumber: load?.invoiceNumber || "N/A",
+          invoiceDate: formatDate(load?.invoiceDate!, "MM/dd/yyyy") || "N/A",
+          WONumber: load.WONumber || "N/A",
+          allInRate: load.allInRate ? `${formatNumber(load.allInRate)}` : 0.00,
+          type: getEnumValue(DispatchLoadType, load.type) || "N/A",
         },
-        "dispatcherDetails": {
-          "name": "SPLS L",
-          "loadNumber": "854",
-          "shipDate": "2025-01-06",
-          "todaysDate": "2025-01-07",
-          "workOrder": "0001968"
+
+        payableTo: {
+          company: broker.company || "N/A",
+          address: broker.address?.str || "N/A",
+          primaryNumber: formatPhoneNumber(broker.primaryNumber),
         },
-        "carrierDetails": {
-          "name": "WESTCORE LINKS INC",
-          "phone": "(780) 430-0331",
-          "fax": "",
-          "equipment": "Flat with Tarps",
-          "agreedAmount": "$3,700.00 USD",
-          "loadStatus": "Open"
+
+        billTo: {
+          name: customer.firstName + " " + customer.lastName || "N/A",
+          email: shipper.email || "N/A",
+          address: shipper.address.str || "N/A",
+          primaryNumber: formatPhoneNumber(shipper.primaryNumber),
         },
-        "consignee": {
-          "name": "Elliot Homes",
-          "address": "16461 FM 170, Presidio, TX, Presidio, TX",
-          "date": "2025-01-06",
-          "time": "Major Intersection",
-          "type": "tl",
-          "quantity": "",
-          "weight": "48000 lbs",
-          "appointment": "Yes",
-          "description": "TARPED *** HT CERT PAPERS NEEDED FROM MILL DRIVER TO TAKE ORIGINAL HT INSPECTION DOCS and deliver with load to customer (along with customs docs) – this is a MUST or load will be rejected."
+
+        consignee: {
+          name: consignee.firstName + " " + consignee.lastName || "N/A",
+          address: consignee.address.str || "N/A",
+          primaryNumber: formatPhoneNumber(consignee.primaryNumber),
+          date: formatDate(load?.consignee.date!, "MM/dd/yyyy") || "N/A",
+          time: formatDate(load?.consignee.time!, "h:mm aa") || "N/A",
+          type: load?.consignee.type || "N/A",
+          qty: load?.consignee.qty || "N/A",
+          weight: (load?.consignee.weight || 0) + " lbs",
+          shippingHours: consignee.shippingHours || "N/A",
+          appointment: consignee.isAppointments ? "Yes" : "No",
+          description: load?.consignee.description || "N/A",
+          notes: load?.consignee.notes || "N/A",
         },
-        "shipper": {
-          "name": "Foothills Forest Products",
-          "address": "AB-40, Grande Cache, AB T0E 0Y0, Grande Cache, AB, T0E 0Y0",
-          "date": "2025-01-07",
-          "time": "Major Intersection",
-          "type": "tl",
-          "quantity": "18",
-          "weight": "48000 lbs",
-          "appointment": "Yes",
-          "description": "TARPED *** HT CERT PAPERS NEEDED FROM MILL DRIVER TO TAKE ORIGINAL HT INSPECTION DOCS and deliver with load to customer (along with customs docs) – this is a MUST or load will be rejected."
+
+        shipper: {
+          name: shipper.firstName + " " + shipper.lastName || "N/A",
+          email: shipper.email || "N/A",
+          address: shipper.address.str || "N/A",
+          primaryNumber: formatPhoneNumber(shipper.primaryNumber),
+          date: formatDate(load?.shipper.date!, "MM/dd/yyyy") || "N/A",
+          time: formatDate(load?.shipper.time!, "h:mm aa") || "N/A",
+          type: load?.shipper.type || "N/A",
+          qty: load?.shipper.qty || "N/A",
+          weight: (load?.shipper.weight || 0) + " lbs",
+          shippingHours: shipper.shippingHours || "N/A",
+          appointment: shipper.isAppointments ? "Yes" : "No",
+          description: load?.shipper.description || "N/A",
+          notes: load?.shipper.notes || "N/A",
         },
-        "notes": {
-          "deliveryNote": "DELIVERY MUST BE ON TIME. BOL MUST SIGNED BY RECEIVER IN ORDER TO GET PAYMENT.",
-          "shipperNote": "TRAILER MUST LOAD 28,224 fbm. IF less than 28,224 revised rate will apply based on total FBM loaded on Trailer."
-        }
-      }      
-    })
+      },
+    });
     // Get PDF as a buffer
-    const pdfBuffer = await pdfGenerator.generatePdf(htmlContent, { format: "A4" });
+    const pdfBuffer = await pdfGenerator.generatePdf(htmlContent, {
+      format: "A4",
+    });
     send(res, 200, `Generated Successfully`, pdfBuffer!, {}, true);
   } catch (error) {
     logger.error("Error generating PDF:", error);
@@ -798,16 +856,19 @@ export async function invoicedHandler(req: Request, res: Response): Promise<void
   }
 }
 
-export async function accountingSummary(req: Request, res: Response): Promise<void> {
+export async function accountingSummary(
+  req: Request,
+  res: Response
+): Promise<void> {
   try {
-    const filters: any = { status: DispatchLoadStatus.Invoiced}; // Parse and validate query parameters
+    const filters: any = { status: DispatchLoadStatus.Invoiced }; // Parse and validate query parameters
     const fromDate = req.body.fromDate;
     const toDate = req.body.toDate;
 
-    if(!fromDate){
-      send(res, 400,"Please pass date range.")
+    if (!fromDate) {
+      send(res, 400, "Please pass date range.");
     }
-    const dateField = 'createdAt';
+    const dateField = "createdAt";
     if (dateField && (fromDate || toDate)) {
       filters[dateField] = {};
       if (fromDate) {
@@ -819,75 +880,57 @@ export async function accountingSummary(req: Request, res: Response): Promise<vo
     }
 
     const loads = await DispatchModel.find(filters)
-    .populate("brokerId postedBy customerId carrierId")
-    .select("-password");
+      .populate([
+        { path: "brokerId", select: "-password" },
+        { path: "postedBy", select: "-password" },
+        { path: "customerId", select: "-password" },
+        { path: "carrierId", select: "-password" },
+        { path: "shipper.shipperId", select: "-password" },
+        { path: "consignee.consigneeId", select: "-password" },
+      ])
+      .lean(); // Optional: Convert to plain JavaScript object
 
     // Handle case when no loads are found
-    // if (!loads || loads.length === 0) {
-    //   send(res, 404, "No matching loads found for the given filters.");
-    //   return;
-    // }
+    if (!loads || loads.length === 0) {
+      send(res, 404, "No matching loads found.");
+      return;
+    }
+
+    const formatedDetails: any[] = []
+
+    loads.forEach((load)=>{
+      const customer = load?.customerId as IUser;
+
+      let advance = 0.00;
+      let balance: number = (load.allInRate && load.allInRate - advance) || 0.00;
+
+      formatedDetails.push({
+        loadNumber: load.loadNumber,
+        invoiceNumber: load.invoiceNumber,
+        invoiceDate: formatDate(load?.invoiceDate!, "MM/dd/yyyy") || "N/A",
+        customerName: customer.company ? customer.company : (customer.firstName + " " + customer.lastName),
+        allInRate: load.allInRate ? formatNumber(load.allInRate) : "N/A",
+        advance: advance,
+        balance: formatNumber(balance)
+      });
+    });
+    
 
     const pdfGenerator = new PdfGenerator();
     let htmlContent = await PdfService.generateHTMLTemplate({
       templateName: "AccountSummaryExport",
       templateData: {
-        "companyDetails": {
-          "name": "SPLS LLC",
-          "address": "13100 Wortham Center Dr, Houston, TX, USA 77065",
-          "phone": "832-906-0217",
-          "fax": "",
-          "email": "accounts@spls-us.com"
-        },
-        "dispatcherDetails": {
-          "name": "SPLS L",
-          "loadNumber": "854",
-          "shipDate": "2025-01-06",
-          "todaysDate": "2025-01-07",
-          "workOrder": "0001968"
-        },
-        "carrierDetails": {
-          "name": "WESTCORE LINKS INC",
-          "phone": "(780) 430-0331",
-          "fax": "",
-          "equipment": "Flat with Tarps",
-          "agreedAmount": "$3,700.00 USD",
-          "loadStatus": "Open"
-        },
-        "consignee": {
-          "name": "Elliot Homes",
-          "address": "16461 FM 170, Presidio, TX, Presidio, TX",
-          "date": "2025-01-06",
-          "time": "Major Intersection",
-          "type": "tl",
-          "quantity": "",
-          "weight": "48000 lbs",
-          "appointment": "Yes",
-          "description": "TARPED *** HT CERT PAPERS NEEDED FROM MILL DRIVER TO TAKE ORIGINAL HT INSPECTION DOCS and deliver with load to customer (along with customs docs) – this is a MUST or load will be rejected."
-        },
-        "shipper": {
-          "name": "Foothills Forest Products",
-          "address": "AB-40, Grande Cache, AB T0E 0Y0, Grande Cache, AB, T0E 0Y0",
-          "date": "2025-01-07",
-          "time": "Major Intersection",
-          "type": "tl",
-          "quantity": "18",
-          "weight": "48000 lbs",
-          "appointment": "Yes",
-          "description": "TARPED *** HT CERT PAPERS NEEDED FROM MILL DRIVER TO TAKE ORIGINAL HT INSPECTION DOCS and deliver with load to customer (along with customs docs) – this is a MUST or load will be rejected."
-        },
-        "notes": {
-          "deliveryNote": "DELIVERY MUST BE ON TIME. BOL MUST SIGNED BY RECEIVER IN ORDER TO GET PAYMENT.",
-          "shipperNote": "TRAILER MUST LOAD 28,224 fbm. IF less than 28,224 revised rate will apply based on total FBM loaded on Trailer."
-        }
-      }      
-    })
+        loadDetails: formatedDetails
+      },
+    });
     // Get PDF as a buffer
-    const pdfBuffer = await pdfGenerator.generatePdf(htmlContent, { format: "A4" });
+    const pdfBuffer = await pdfGenerator.generatePdf(htmlContent, {
+      format: "A4",
+    });
     send(res, 200, `Generated Successfully`, pdfBuffer!, {}, true);
   } catch (error) {
     logger.error("Error generating PDF:", error);
-    send( 
+    send(
       res,
       500,
       "An unexpected server error occurred while refreshing load age"
@@ -895,15 +938,22 @@ export async function accountingSummary(req: Request, res: Response): Promise<vo
   }
 }
 
-export async function accountingExport(req: Request, res: Response): Promise<void> {
+export async function accountingExport(
+  req: Request,
+  res: Response
+): Promise<void> {
   try {
     const { ids } = req.body;
-    let matchQuery: any = { _id: { $in: ids }, status: DispatchLoadStatus.Invoiced};
+    let matchQuery: any = {
+      _id: { $in: ids },
+      status: DispatchLoadStatus.Invoiced,
+    };
 
     // Fetch loads and group them
     let excelBuffer;
-    const loads = await DispatchModel.find(matchQuery).populate("brokerId postedBy customerId carrierId")
-    .select("-password");
+    const loads = await DispatchModel.find(matchQuery)
+      .populate("brokerId postedBy customerId carrierId")
+      .select("-password");
 
     // if (!loads || loads.length === 0) {
     //   send(res, 404, "No matching loads found for the given filters.");
@@ -911,106 +961,115 @@ export async function accountingExport(req: Request, res: Response): Promise<voi
     // }
 
     let dataSheets: Record<string, any[]> = {};
-    let formatedLoad: any = []
-    loads.forEach((load: IDispatch)=>{
-        const broker = load.brokerId as IUser;
-        const carrier = load.carrierId as IUser;
-        const customer = load.customerId as IUser;
-        const postedBy = load.postedBy as IUser;
+    let formatedLoad: any = [];
+    loads.forEach((load: IDispatch) => {
+      const broker = load.brokerId as IUser;
+      const carrier = load.carrierId as IUser;
+      const customer = load.customerId as IUser;
+      const postedBy = load.postedBy as IUser;
 
+      formatedLoad.push({
+        CreatedAt: load.createdAt,
+        LoadNumber: load.loadNumber,
+        Status: load.status,
+        InvoiceNumber: load.invoiceNumber,
+        Equipment: getEnumValue(Equipment, load.equipment),
+        SalesRep: load.salesRep,
+        Type: getEnumValue(DispatchLoadType, load.type),
+        Units: load.units,
+        CustomerRate: load.customerRate,
+        PDs: load.PDs,
+        FuelServiceCharge: load.fuelServiceCharge?.value,
+        OtherChargesTotal: load.otherCharges?.totalAmount,
+        CarrierFee: load.carrierFee?.totalAmount,
+        AllInRate: load.allInRate ? `$ ${formatNumber(load.allInRate)}` : "N/A",
 
-        formatedLoad.push({
-          CreatedAt: load.createdAt,
-          LoadNumber: load.loadNumber,
-          Status: load.status,
-          InvoiceNumber: load.invoiceNumber,
-          Equipment: getEnumValue(Equipment, load.equipment),
-          SalesRep: load.salesRep,
-          Type: getEnumValue(DispatchLoadType, load.type),
-          Units: load.units,
-          CustomerRate: load.customerRate,
-          PDs: load.PDs,
-          FuelServiceCharge: load.fuelServiceCharge?.value,
-          OtherChargesTotal: load.otherCharges?.totalAmount,
-          CarrierFee: load.carrierFee?.totalAmount,
-          AllInRate: load.allInRate,
+        // Shipper Details
+        ShipperAddress: load.shipper.address.str,
+        ShipperDate: load.shipper.date,
+        ShipperTime: load.shipper.time,
+        ShipperType: getEnumValue(Equipment, load.shipper.type),
+        ShipperDescription: load.shipper.description,
+        ShipperQTY: load.shipper.qty,
+        ShipperValue: load.shipper.value,
+        ShipperWeight: load.shipper.weight,
+        ShipperNotes: load.shipper.notes,
+        ShipperPO: load.shipper.PO,
 
-          // Shipper Details
-          ShipperAddress: load.shipper.address.str,
-          ShipperDate: load.shipper.date,
-          ShipperTime: load.shipper.time,
-          ShipperType: getEnumValue(Equipment, load.shipper.type),
-          ShipperDescription: load.shipper.description,
-          ShipperQTY: load.shipper.qty,
-          ShipperValue: load.shipper.value,
-          ShipperWeight: load.shipper.weight,
-          ShipperNotes: load.shipper.notes,
-          ShipperPO: load.shipper.PO,
+        // Consignee Details
+        ConsigneeAddress: load.consignee.address.str,
+        ConsigneeDate: load.consignee.date,
+        ConsigneeTime: load.consignee.time,
+        ConsigneeType: getEnumValue(Equipment, load.consignee.type),
+        ConsigneeDescription: load.consignee.description,
+        ConsigneeQTY: load.consignee.qty,
+        ConsigneeValue: load.consignee.value,
+        ConsigneeWeight: load.consignee.weight,
+        ConsigneeNotes: load.consignee.notes,
+        ConsigneePO: load.consignee.PO,
 
-           // Consignee Details
-          ConsigneeAddress: load.consignee.address.str,
-          ConsigneeDate: load.consignee.date,
-          ConsigneeTime: load.consignee.time,
-          ConsigneeType:  getEnumValue(Equipment, load.consignee.type),
-          ConsigneeDescription: load.consignee.description,
-          ConsigneeQTY: load.consignee.qty,
-          ConsigneeValue: load.consignee.value,
-          ConsigneeWeight: load.consignee.weight,
-          ConsigneeNotes: load.consignee.notes,
-          ConsigneePO: load.consignee.PO,
-
-
-          // Broker Details
-          BrokerCompany: broker?.company,
-          BrokerEmail: broker?.email,
-          BrokerPhone: broker?.primaryNumber,
-          BrokerAddress: broker?.address?.str,
-          BrokerBillingAddress: broker?.billingAddress?.str,
-          BrokerCountry: broker?.country,
-          BrokerState: broker?.state,
-          BrokerCity: broker?.city,
-          BrokerZip: broker?.zip,
+        // Broker Details
+        BrokerCompany: broker?.company,
+        BrokerEmail: broker?.email,
+        BrokerPhone: formatPhoneNumber(broker?.primaryNumber),
+        BrokerAddress: broker?.address?.str,
+        BrokerBillingAddress: broker?.billingAddress?.str,
+        BrokerCountry: broker?.country,
+        BrokerState: broker?.state,
+        BrokerCity: broker?.city,
+        BrokerZip: broker?.zip,
 
         // Carrier Details
         CarrierCompany: carrier?.company || "",
         CarrierEmail: carrier?.email || "",
-        CarrierPhone: carrier?.primaryNumber || "",
+        CarrierPhone: formatPhoneNumber(carrier?.primaryNumber),
         CarrierAddress: carrier?.address?.str || "",
 
         // Customer Details
         CustomerCompany: customer?.company || "",
         CustomerEmail: customer?.email || "",
-        CustomerPhone: customer?.primaryNumber || "",
+        CustomerPhone: formatPhoneNumber(customer?.primaryNumber),
         CustomerAddress: customer?.address?.str || "",
 
         // Posted By Details
         PostedBy: `${postedBy?.firstName} ${postedBy?.lastName}` || "",
         PostedByEmail: postedBy?.email || "",
-        PostedByPhone: postedBy?.primaryNumber || "",
+        PostedByPhone: formatPhoneNumber(postedBy?.primaryNumber),
         PostedByCompany: postedBy?.company || "",
         PostedByAddress: postedBy?.address?.str || "",
-        });
+      });
     });
     dataSheets["Loads"] = formatedLoad;
     excelBuffer = generateExcelBuffer(dataSheets);
 
     res.setHeader("Content-Disposition", "attachment; filename=report.xlsx");
-    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
 
     send(res, 200, "Generated Successfully", excelBuffer, {});
   } catch (error) {
     logger.error("Error generating report:", error);
-    send(res, 500, "An unexpected server error occurred while generating the report");
+    send(
+      res,
+      500,
+      "An unexpected server error occurred while generating the report"
+    );
   }
 }
 
-export async function reportsHandler(req: Request, res: Response): Promise<void> {
+export async function reportsHandler(
+  req: Request,
+  res: Response
+): Promise<void> {
   try {
-    const { category, categoryValue, filterBy, fromDate,  toDate} = req.body;
-    let matchQuery: any = { status: DispatchLoadStatus.Invoiced};
+    const { category, categoryValue, filterBy, fromDate, toDate } = req.body;
+    let matchQuery: any = { status: DispatchLoadStatus.Invoiced };
 
     if (categoryValue !== "ALL") {
-      matchQuery[category === "CUSTOMER" ? "customerId" : "carrierId"] = categoryValue;
+      matchQuery[category === "CUSTOMER" ? "customerId" : "carrierId"] =
+        categoryValue;
     }
 
     let sortOptions: [string, SortOrder][] = [];
@@ -1022,9 +1081,9 @@ export async function reportsHandler(req: Request, res: Response): Promise<void>
       sortOptions.push(["invoiceDate", 1]);
     }
 
-    const dateField = "createdAt" // Get the specific field to search
+    const dateField = "createdAt"; // Get the specific field to search
     const fromDateInput = fromDate ? new Date(fromDate as string) : undefined;
-    const toDateInput = toDate ? new Date(toDate as string) : undefined;    
+    const toDateInput = toDate ? new Date(toDate as string) : undefined;
     if (dateField && (fromDateInput || toDateInput)) {
       matchQuery[dateField] = {};
       if (fromDate) {
@@ -1045,40 +1104,40 @@ export async function reportsHandler(req: Request, res: Response): Promise<void>
         {
           $group: {
             _id: groupField,
-            loads: { $push: "$$ROOT" },  
-          }
+            loads: { $push: "$$ROOT" },
+          },
         },
         {
           $lookup: {
             from: "users",
             localField: "loads.brokerId",
             foreignField: "_id",
-            as: "brokerId"
-          }
+            as: "brokerId",
+          },
         },
         {
           $lookup: {
             from: "users",
             localField: "loads.postedBy",
             foreignField: "_id",
-            as: "postedBy"
-          }
+            as: "postedBy",
+          },
         },
         {
           $lookup: {
             from: "customers",
             localField: "loads.customerId",
             foreignField: "_id",
-            as: "customerDetails"
-          }
+            as: "customerDetails",
+          },
         },
         {
           $lookup: {
             from: "carriers",
             localField: "loads.carrierId",
             foreignField: "_id",
-            as: "carrierId"
-          }
+            as: "carrierId",
+          },
         },
       ]);
       // Handle case when no loads are found
@@ -1088,9 +1147,9 @@ export async function reportsHandler(req: Request, res: Response): Promise<void>
       }
 
       let dataSheets: Record<string, any[]> = {};
-      loads.forEach(group => {
+      loads.forEach((group) => {
         let formatedLoad: any = [];
-        group.loads.forEach((load: IDispatch)=>{
+        group.loads.forEach((load: IDispatch) => {
           const broker = load.brokerId as IUser;
           const carrier = load.carrierId as IUser;
           const customer = load.customerId as IUser;
@@ -1108,7 +1167,8 @@ export async function reportsHandler(req: Request, res: Response): Promise<void>
             FuelServiceCharge: load.fuelServiceCharge?.value,
             OtherChargesTotal: load.otherCharges?.totalAmount,
             CarrierFee: load.carrierFee?.totalAmount,
-            AllInRate: load.allInRate,
+            AllInRate: load.allInRate ? `$ ${formatNumber(load.allInRate)}` : "N/A",
+
 
             // Shipper Details
             ShipperAddress: load.shipper.address.str,
@@ -1122,11 +1182,11 @@ export async function reportsHandler(req: Request, res: Response): Promise<void>
             ShipperNotes: load.shipper.notes,
             ShipperPO: load.shipper.PO,
 
-             // Consignee Details
+            // Consignee Details
             ConsigneeAddress: load.consignee.address.str,
             ConsigneeDate: load.consignee.date,
             ConsigneeTime: load.consignee.time,
-            ConsigneeType:  getEnumValue(Equipment, load.consignee.type),
+            ConsigneeType: getEnumValue(Equipment, load.consignee.type),
             ConsigneeDescription: load.consignee.description,
             ConsigneeQTY: load.consignee.qty,
             ConsigneeValue: load.consignee.value,
@@ -1134,11 +1194,10 @@ export async function reportsHandler(req: Request, res: Response): Promise<void>
             ConsigneeNotes: load.consignee.notes,
             ConsigneePO: load.consignee.PO,
 
-
             // Broker Details
             BrokerCompany: broker?.company,
             BrokerEmail: broker?.email,
-            BrokerPhone: broker?.primaryNumber,
+            BrokerPhone: formatPhoneNumber(broker?.primaryNumber),
             BrokerAddress: broker?.address?.str,
             BrokerBillingAddress: broker?.billingAddress?.str,
             BrokerCountry: broker?.country,
@@ -1146,116 +1205,121 @@ export async function reportsHandler(req: Request, res: Response): Promise<void>
             BrokerCity: broker?.city,
             BrokerZip: broker?.zip,
 
-          // Carrier Details
-          CarrierCompany: carrier?.company || "",
-          CarrierEmail: carrier?.email || "",
-          CarrierPhone: carrier?.primaryNumber || "",
-          CarrierAddress: carrier?.address?.str || "",
+            // Carrier Details
+            CarrierCompany: carrier?.company || "",
+            CarrierEmail: carrier?.email || "",
+            CarrierPhone: formatPhoneNumber(carrier?.primaryNumber),
+            CarrierAddress: carrier?.address?.str || "",
 
-          // Customer Details
-          CustomerCompany: customer?.company || "",
-          CustomerEmail: customer?.email || "",
-          CustomerPhone: customer?.primaryNumber || "",
-          CustomerAddress: customer?.address?.str || "",
-
-
-          })
+            // Customer Details
+            CustomerCompany: customer?.company || "",
+            CustomerEmail: customer?.email || "",
+            CustomerPhone: formatPhoneNumber(customer?.primaryNumber),
+            CustomerAddress: customer?.address?.str || "",
+          });
         });
         dataSheets[group._id] = formatedLoad; // Grouped data per sheet
       });
       excelBuffer = generateExcelBuffer(dataSheets);
     } else {
-      loads = await DispatchModel.find(matchQuery).populate("brokerId postedBy customerId carrierId")
-      .select("-password").sort(sortOptions);
+      loads = await DispatchModel.find(matchQuery)
+        .populate("brokerId postedBy customerId carrierId")
+        .select("-password")
+        .sort(sortOptions);
 
       if (!loads || loads.length === 0) {
         send(res, 404, "No matching loads found for the given filters.");
         return;
       }
-      
+
       let dataSheets: Record<string, any[]> = {};
-      let formatedLoad: any = []
-      loads.forEach((load: IDispatch)=>{
+      let formatedLoad: any = [];
+      loads.forEach((load: IDispatch) => {
         const broker = load.brokerId as IUser;
-          const carrier = load.carrierId as IUser;
-          const customer = load.customerId as IUser;
-          formatedLoad.push({
-            CreatedAt: load.createdAt,
-            LoadNumber: load.loadNumber,
-            Status: load.status,
-            InvoiceNumber: load.invoiceNumber,
-            Equipment: getEnumValue(Equipment, load.equipment),
-            SalesRep: load.salesRep,
-            Type: getEnumValue(DispatchLoadType, load.type),
-            Units: load.units,
-            CustomerRate: load.customerRate,
-            PDs: load.PDs,
-            FuelServiceCharge: load.fuelServiceCharge?.value,
-            OtherChargesTotal: load.otherCharges?.totalAmount,
-            CarrierFee: load.carrierFee?.totalAmount,
-            AllInRate: load.allInRate,
-
-            // Shipper Details
-            ShipperAddress: load.shipper.address.str,
-            ShipperDate: load.shipper.date,
-            ShipperTime: load.shipper.time,
-            ShipperType: getEnumValue(Equipment, load.shipper.type),
-            ShipperDescription: load.shipper.description,
-            ShipperQTY: load.shipper.qty,
-            ShipperValue: load.shipper.value,
-            ShipperWeight: load.shipper.weight,
-            ShipperNotes: load.shipper.notes,
-            ShipperPO: load.shipper.PO,
-
-             // Consignee Details
-            ConsigneeAddress: load.consignee.address.str,
-            ConsigneeDate: load.consignee.date,
-            ConsigneeTime: load.consignee.time,
-            ConsigneeType:  getEnumValue(Equipment, load.consignee.type),
-            ConsigneeDescription: load.consignee.description,
-            ConsigneeQTY: load.consignee.qty,
-            ConsigneeValue: load.consignee.value,
-            ConsigneeWeight: load.consignee.weight,
-            ConsigneeNotes: load.consignee.notes,
-            ConsigneePO: load.consignee.PO,
+        const carrier = load.carrierId as IUser;
+        const customer = load.customerId as IUser;
+        formatedLoad.push({
+          CreatedAt: load.createdAt,
+          LoadNumber: load.loadNumber,
+          Status: load.status,
+          InvoiceNumber: load.invoiceNumber,
+          Equipment: getEnumValue(Equipment, load.equipment),
+          SalesRep: load.salesRep,
+          Type: getEnumValue(DispatchLoadType, load.type),
+          Units: load.units,
+          CustomerRate: load.customerRate,
+          PDs: load.PDs,
+          FuelServiceCharge: load.fuelServiceCharge?.value,
+          OtherChargesTotal: load.otherCharges?.totalAmount,
+          CarrierFee: load.carrierFee?.totalAmount,
+          AllInRate: load.allInRate ? `$ ${formatNumber(load.allInRate)}` : "N/A",
 
 
-            // Broker Details
-            BrokerCompany: broker?.company,
-            BrokerEmail: broker?.email,
-            BrokerPhone: broker?.primaryNumber,
-            BrokerAddress: broker?.address?.str,
-            BrokerBillingAddress: broker?.billingAddress?.str,
-            BrokerCountry: broker?.country,
-            BrokerState: broker?.state,
-            BrokerCity: broker?.city,
-            BrokerZip: broker?.zip,
+          // Shipper Details
+          ShipperAddress: load.shipper.address.str,
+          ShipperDate: load.shipper.date,
+          ShipperTime: load.shipper.time,
+          ShipperType: getEnumValue(Equipment, load.shipper.type),
+          ShipperDescription: load.shipper.description,
+          ShipperQTY: load.shipper.qty,
+          ShipperValue: load.shipper.value,
+          ShipperWeight: load.shipper.weight,
+          ShipperNotes: load.shipper.notes,
+          ShipperPO: load.shipper.PO,
+
+          // Consignee Details
+          ConsigneeAddress: load.consignee.address.str,
+          ConsigneeDate: load.consignee.date,
+          ConsigneeTime: load.consignee.time,
+          ConsigneeType: getEnumValue(Equipment, load.consignee.type),
+          ConsigneeDescription: load.consignee.description,
+          ConsigneeQTY: load.consignee.qty,
+          ConsigneeValue: load.consignee.value,
+          ConsigneeWeight: load.consignee.weight,
+          ConsigneeNotes: load.consignee.notes,
+          ConsigneePO: load.consignee.PO,
+
+          // Broker Details
+          BrokerCompany: broker?.company,
+          BrokerEmail: broker?.email,
+          BrokerPhone: formatPhoneNumber(broker?.primaryNumber),
+          BrokerAddress: broker?.address?.str,
+          BrokerBillingAddress: broker?.billingAddress?.str,
+          BrokerCountry: broker?.country,
+          BrokerState: broker?.state,
+          BrokerCity: broker?.city,
+          BrokerZip: broker?.zip,
 
           // Carrier Details
           CarrierCompany: carrier?.company || "",
           CarrierEmail: carrier?.email || "",
-          CarrierPhone: carrier?.primaryNumber || "",
+          CarrierPhone: formatPhoneNumber(carrier?.primaryNumber),
           CarrierAddress: carrier?.address?.str || "",
 
           // Customer Details
           CustomerCompany: customer?.company || "",
           CustomerEmail: customer?.email || "",
-          CustomerPhone: customer?.primaryNumber || "",
+          CustomerPhone: formatPhoneNumber(customer?.primaryNumber),
           CustomerAddress: customer?.address?.str || "",
-
-
-          })
+        });
       });
       dataSheets["Report"] = formatedLoad;
       excelBuffer = generateExcelBuffer(dataSheets);
     }
 
     res.setHeader("Content-Disposition", "attachment; filename=report.xlsx");
-    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
 
     send(res, 200, "Generated Successfully", excelBuffer, {});
   } catch (error) {
     logger.error("Error generating report:", error);
-    send(res, 500, "An unexpected server error occurred while generating the report");
+    send(
+      res,
+      500,
+      "An unexpected server error occurred while generating the report"
+    );
   }
 }

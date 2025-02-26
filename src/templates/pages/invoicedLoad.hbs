@@ -11,7 +11,7 @@
         </td>
         {{!-- Invoice# Value--}}
         <td style="width: 163.297px;">
-          <p style="margin-left: 5px;"><strong>361</strong></p>
+          <p style="margin-left: 5px;"><strong>{{invoiceDetails.invoiceNumber}}</strong></p>
         </td>
       </tr>
       <tr>
@@ -20,7 +20,7 @@
         </td>
         {{!-- Invoice date Value--}}
         <td style="width: 163.297px;">
-          <p style="margin-left: 5px;font-weight: 400;">2023-09-07</p>
+          <p style="margin-left: 5px;font-weight: 400;">{{invoiceDetails.invoiceDate}}</p>
         </td>
       </tr>
       <tr>
@@ -37,21 +37,22 @@
           <p style="margin-left: 5px;font-weight: 400;">W/O(Ref):</p>
         </td>
         <td style="width: 163.297px;">
-          <p style="margin-left: 5px;font-weight: 400;">0001497</p>
+          <p style="margin-left: 5px;font-weight: 400;">{{invoiceDetails.WONumber}}</p>
         </td>
       </tr>
     </tbody>
   </table>
   <h3><strong>PAYABLE TO:</strong></h3>
-  <p><strong>SPLS LLC</strong></p>
-  <p><span style="font-weight: 400;">13100 Wortham Center Dr Houston, TX, USA
-      77065 Phone: 832-906-0217</span></p>
-  <p><span style="font-weight: 400;">Fax:</span></p>
+  <p><strong>{{payableTo.company}}</strong></p>
+  <p><span style="font-weight: 400;">{{payableTo.address}}</span></p>
+  <p><span style="font-weight: 400;">{{payableTo.primaryNumber}}</span></p>
+  <p><span style="font-weight: 400;">Fax:  N/A</span></p>
   <p style="text-align: center;"><br /><br /></p>
   <h3><strong>BILL TO:</strong></h3>
-  <p><span style="font-weight: 400;">Adams Warehouse &amp; Delivery</span></p>
-  <p><span style="font-weight: 400;">200 Portwall St. Houston, Tx 77029 Houston,
-      TX, USA 77029</span></p>
+  <p><span style="font-weight: 400;">{{billTo.name}}</span></p>
+  <p><span style="font-weight: 400;">{{billTo.email}}</span></p>
+  <p><span style="font-weight: 400;">{{billTo.address}}</span></p>
+  <p><span style="font-weight: 400;">{{billTo.primaryNumber}}</span></p>
   <p style="text-align: left;"><br /></p>
   <table style="height: 28px; background-color: #f3f3f3;" border="1">
     <tbody>
@@ -60,7 +61,7 @@
       </tr>
     </tbody>
   </table>
-  <h3>LOAD#: 383</h3>
+  <h3>LOAD#: {{invoiceDetails.loadNumber}}</h3>
   {{!-- Table --}}
   <table style="border: none; border-collapse: collapse;">
     <tbody>
@@ -69,14 +70,13 @@
           <p><strong>Shipper 1:</strong></p>
         </td>
         <td style="width: 404.359px; border: none;">
-          <p><span style="font-weight: 400;">Barbours Cut Terminal, La Porte,
-              TX, USA</span></p>
+          <p><span style="font-weight: 400;">{{shipper.name}}, {{shipper.address}}</span></p>
         </td>
         {{!-- only space not a value --}}
         <td style="width: 103.531px; border: none;"></td>
         <td style="width: 198.93px; border: none;" colspan="2">
           <p><strong>Date:</strong>
-            <span style="font-weight: 400;">2023-09-05</span></p>
+            <span style="font-weight: 400;">{{shipper.date}}</span></p>
         </td>
       </tr>
       <tr>
@@ -84,13 +84,19 @@
           <p><strong>Type:</strong></p>
         </td>
         <td style="width: 513.891px; border: none;" colspan="2">
-          <p><span style="font-weight: 400;">TL</span></p>
+          <p><span style="font-weight: 400;">{{shipper.type}}</span></p>
         </td>
         <td style="width: 103.531px; border: none;">
           <p><strong>Quantity:</strong></p>
         </td>
+        <td style="width: 513.891px; border: none;">
+          <p><span style="font-weight: 400;">{{shipper.qty}}</span></p>
+        </td>
         <td style="width: 82.7578px; border: none;">
           <p><strong>Weight:</strong></p>
+        </td>
+        <td style="width: 513.891px; border: none;">
+          <p><span style="font-weight: 400;">{{shipper.weight}}</span></p>
         </td>
         {{!-- only space not a value --}}
         <td style="width: 110.172px; border: none;"></td>
@@ -100,7 +106,7 @@
           <p><strong>Description:</strong></p>
         </td>
         <td style="width: 404.359px; border: none;">
-          <p><span style="font-weight: 400;">20ft legal weight</span></p>
+          <p><span style="font-weight: 400;">{{shipper.description}}</span></p>
         </td>
         {{!-- only space not a value --}}
         <td style="width: 103.531px; border: none;"></td>
@@ -122,14 +128,13 @@
           <p><strong>Consignee 1:</strong></p>
         </td>
         <td style="width: 513.891px; border: none;" colspan="2">
-          <p><span style="font-weight: 400;">ADAMS WAREHOUSE 200 PORTWALL,
-              Houston, TX, USA</span></p>
+          <p><span style="font-weight: 400;">{{consignee.name}} , {{consignee.address}}</span></p>
         </td>
         <td style="width: 82.7578px; border: none;">
           <p><strong>Date:</strong></p>
         </td>
         <td style="width: 110.172px; border: none;">
-          <p><span style="font-weight: 400;">2023-09-05</span></p>
+          <p><span style="font-weight: 400;">{{consignee.date}}</span></p>
         </td>
       </tr>
       <tr>
@@ -137,13 +142,19 @@
           <p><strong>Type:</strong></p>
         </td>
         <td style="width: 513.891px; border: none;" colspan="2">
-          <p><span style="font-weight: 400;">TL</span></p>
+          <p><span style="font-weight: 400;">{{consignee.type}}</span></p>
         </td>
         <td style="width: 103.531px; border: none;">
           <p><strong>Quantity:</strong></p>
         </td>
+        <td style="width: 513.891px; border: none;" colspan="2">
+          <p><span style="font-weight: 400;">{{consignee.qty}}</span></p>
+        </td>
         <td style="width: 82.7578px; border: none;">
           <p><strong>Weight:</strong></p>
+        </td>
+        <td style="width: 513.891px; border: none;" colspan="2">
+          <p><span style="font-weight: 400;">{{consignee.weight}}</span></p>
         </td>
         {{!-- only space not a value --}}
         <td style="width: 110.172px; border: none;"></td>
@@ -153,59 +164,8 @@
           <p><strong>Description:</strong></p>
         </td>
         <td style="width: 513.891px; border: none;" colspan="2">
-          <p><span style="font-weight: 400;">20ft legal weight</span></p>
+          <p><span style="font-weight: 400;">{{consignee.description}}</span></p>
         </td>
-        {{!-- only space not a value --}}
-        <td style="width: 82.7578px; border: none;"></td>
-        <td style="width: 110.172px; border: none;"></td>
-      </tr>
-      <tr>
-        <td style="width: 188.18px; border: none;">
-          <p><strong>Purchase Order #:</strong></p>
-        </td>
-        {{!-- Purchase Order value --}}
-        <td style="width: 404.359px; border: none;"><p>NA</p></td>
-        {{!-- only space not a value --}}
-        <td style="width: 103.531px; border: none;"></td>
-        <td style="width: 198.93px; border: none;" colspan="2"></td>
-      </tr>
-      <tr>
-        <td style="width: 188.18px; border: none;">
-          <p><strong>Consignee 2:</strong></p>
-        </td>
-        <td style="width: 513.891px; border: none;" colspan="2">
-          <p><span style="font-weight: 400;">Barbours Cut Terminal, La Porte,
-              TX, USA</span></p>
-        </td>
-        <td style="width: 82.7578px; border: none;">
-          <p><strong>Date:</strong></p>
-        </td>
-        <td style="width: 110.172px; border: none;">
-          <p><span style="font-weight: 400;">2023-09-05</span></p>
-        </td>
-      </tr>
-      <tr>
-        <td style="width: 188.18px; border: none;">
-          <p><strong>Type:</strong></p>
-        </td>
-        <td style="width: 513.891px; border: none;" colspan="2">
-          <p><span style="font-weight: 400;">Empty</span></p>
-        </td>
-        <td style="width: 103.531px; border: none;">
-          <p><strong>Quantity:</strong></p>
-        </td>
-        <td style="width: 82.7578px; border: none;">
-          <p><strong>Weight:</strong></p>
-        </td>
-        {{!-- only space not a value --}}
-        <td style="width: 110.172px; border: none;"></td>
-      </tr>
-      <tr>
-        <td style="width: 188.18px; border: none;">
-          <p><strong>Description:</strong></p>
-        </td>
-        {{!-- Description value --}}
-        <td style="width: 513.891px; border: none;" colspan="2"><p>NA</p></td>
         {{!-- only space not a value --}}
         <td style="width: 82.7578px; border: none;"></td>
         <td style="width: 110.172px; border: none;"></td>
@@ -223,9 +183,9 @@
     </tbody>
   </table>
   <h3><strong>RATES AND CHARGES</strong></h3>
-  <p><span style="font-weight: 400;">Line Haul</span>
-    <span style="font-weight: 400; float: right;">$500.00</span></p>
+  <p><span style="font-weight: 400;">{{invoiceDetails.type}}</span>
+    <span style="font-weight: 400; float: right;">$ {{invoiceDetails.allInRate}}</span></p>
   <hr />
   <p><strong>Total Rate:</strong>
-    <strong style="float: right;">$500.00 USD</strong></p>
+    <strong style="float: right;">$ {{invoiceDetails.allInRate}} USD</strong></p>
 </div>
