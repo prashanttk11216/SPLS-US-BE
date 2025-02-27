@@ -406,17 +406,6 @@ export async function updateLoadStatusHandler(
       }
     }
 
-    if (status == DispatchLoadStatus.Invoiced) {
-      // Auto-generate load number if not provided
-      const lastLoad = await DispatchModel.findOne({
-        invoiceNumber: { $exists: true, $ne: null },
-      })
-        .sort({ invoiceNumber: -1 })
-        .select("invoiceNumber");
-
-      load.invoiceNumber = lastLoad ? lastLoad.invoiceNumber! + 1 : 1;
-      load.invoiceDate = new Date();
-    }
     // Update status in the database
     load.status = status;
     await load.save();
@@ -796,6 +785,28 @@ export async function invoicedHandler(
       send(res, 404, "No matching loads found.");
       return;
     }
+
+    let newInvoiceNumber;
+    let newInvoiceDate;
+    if(!(load.invoiceNumber && load.invoiceDate)){
+      // Auto-generate invoice number if not provided
+      const lastLoad = await DispatchModel.findOne({
+        invoiceNumber: { $exists: true, $ne: null },
+      })
+        .sort({ invoiceNumber: -1 })
+        .select("invoiceNumber")
+        .lean();
+
+      newInvoiceNumber = lastLoad?.invoiceNumber ? lastLoad.invoiceNumber + 1 : 1;
+      newInvoiceDate = new Date();
+
+      // Update load with invoice details
+      await DispatchModel.findByIdAndUpdate(loadId, {
+        invoiceNumber: newInvoiceNumber,
+        invoiceDate: newInvoiceDate,
+      });
+    }
+    
     const broker = load?.brokerId as IUser;
     const carrier = load?.carrierId as IUser;
     const customer = load?.customerId as IUser;
@@ -809,8 +820,8 @@ export async function invoicedHandler(
       templateData: {
         invoiceDetails: {
           loadNumber: load?.loadNumber || "N/A",
-          invoiceNumber: load?.invoiceNumber || "N/A",
-          invoiceDate: formatDate(load?.invoiceDate!, "MM/dd/yyyy") || "N/A",
+          invoiceNumber: newInvoiceNumber ? newInvoiceNumber : load.invoiceNumber  || "N/A",
+          invoiceDate: formatDate(newInvoiceDate ? newInvoiceDate: load.invoiceDate !, "MM/dd/yyyy") || "N/A",
           WONumber: load.WONumber || "N/A",
           allInRate: load.allInRate ? `${formatNumber(load.allInRate)}` : 0.00,
           type: getEnumValue(DispatchLoadType, load.type) || "N/A",
