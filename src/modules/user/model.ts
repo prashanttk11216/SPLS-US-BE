@@ -54,6 +54,10 @@ const UserSchema: Schema = new Schema(
       ref: "User", // Reference to the broker (if applicable)
       required: true
     },
+    postedBy: { 
+      type: Schema.Types.ObjectId, 
+      ref: "User",
+    },
     employeeId: { type: String, unique: true }, // Employee ID for brokers (if applicable)
     
     // Flags for status and additional details
@@ -71,4 +75,4 @@ const UserSchema: Schema = new Schema(
  * UserModel: Mongoose model for the User schema
  * Defines and exports the User model based on the IUser interface and UserSchema.
  */
-export const UserModel = mongoose.model<any>("User", UserSchema);
+export const UserModel = mongoose.model<IUser>("User", UserSchema);

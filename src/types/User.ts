@@ -40,7 +40,8 @@ export interface IUser extends Document {
   billingZip?: string;
 
   // Broker and regulatory details
-  brokerId?: string; // Reference to the broker (if applicable)
+  brokerId?: string | IUser; // Reference to the broker (if applicable)
+  postedBy?: string | IUser; // Reference to the broker (if applicable)
   employeeId?: string; // Employee ID (for brokers)
   
   // Flags

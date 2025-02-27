@@ -7,6 +7,9 @@ import { applyPopulation } from "../../../utils/populateHelper";
 import { buildSearchFilter } from "../../../utils/parseSearchQuerty";
 import { parseSortQuery } from "../../../utils/parseSortQuery";
 import { createQuoteSchema, updateQuoteSchema } from "../../../schema/Quote";
+import { IUser } from "../../../types/User";
+import { hasAccess } from "../../../utils/role";
+import { UserRole } from "../../../enums/UserRole";
 
 export async function createQuote(req: Request, res: Response): Promise<void> {
   try {
@@ -66,6 +69,7 @@ export async function getQuotes(req: Request, res: Response): Promise<void> {
     const { quoteId } = req.params;
     const { page, limit, skip } = getPaginationParams(req.query);
     let filters: any = {};
+    const user = (req as Request & { user?: IUser }).user;
 
     // Fetch a single quote by ID
     if (quoteId) {
@@ -80,6 +84,14 @@ export async function getQuotes(req: Request, res: Response): Promise<void> {
 
       send(res, 200, "Retrieved successfully", quote);
       return;
+    }
+
+
+    // Role-based query conditions
+    if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_USER] })) {
+      filters.postedBy = user._id;
+    } else if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN] })) {
+      filters.brokerId = user._id;
     }
 
     // Apply dynamic filters based on query parameters

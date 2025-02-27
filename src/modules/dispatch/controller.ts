@@ -60,28 +60,6 @@ export async function createLoadHandler(
   try {
     // Validate incoming request data using Zod schema
     const validatedData = transformedCreateDispatchSchema.parse(req.body);
-    const user = (req as Request & { user?: IUser })?.user; // Extract user data from request
-
-    // Ensure that broker/admin assigns a 'postedBy' field if missing
-    if (
-      !validatedData.postedBy &&
-      user &&
-      hasAccess(user.roles, {
-        roles: [UserRole.BROKER_USER, UserRole.BROKER_ADMIN],
-      })
-    ) {
-      validatedData.postedBy = user._id; // Assign the current broker/admin as the poster
-    }
-
-    // Set the brokerId based on the user's role
-    if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN] })) {
-      validatedData.brokerId = user._id;
-    } else if (
-      user &&
-      hasAccess(user.roles, { roles: [UserRole.BROKER_USER] })
-    ) {
-      validatedData.brokerId = user.brokerId;
-    }
 
     // Handle load number logic
     if (validatedData.loadNumber) {
@@ -214,9 +192,10 @@ export async function fetchLoadsHandler(
     // Role-based query conditions
     if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_USER] })) {
       filters.postedBy = user._id; // Filter by broker's posted loads
-    } else if (user && hasAccess(user.roles, { roles: [UserRole.CUSTOMER] })) {
-      filters.customerId = user._id; // Filter by customer-specific loads
+    } if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN] })) {
+      filters.brokerId = user._id;
     }
+
 
     // Apply date range filter if provided
     const dateField = req.query.dateField as string; // Get the specific field to search

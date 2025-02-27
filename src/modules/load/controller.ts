@@ -43,40 +43,11 @@ export async function createLoadHandler(
 
     const user = (req as Request & { user?: IUser })?.user; // Extract user data from request
 
-    // Handle the case where the user is a customer
-    if (user && hasAccess(user.roles, { roles: [UserRole.CUSTOMER] })) {
-      // Associate the load with the customer and broker (if applicable)
-      validatedData.brokerId = user.brokerId;
-      validatedData.customerId = user._id;
-
-      // Validate if the customer exists and is not deleted
-      const customer = await UserModel.findById(validatedData.customerId);
-      if (!customer || customer.isDeleted) {
-        send(res, 404, "Customer not found");
-        return;
-      }
-    }
-
-    // Ensure that broker/admin assigns a 'postedBy' field if missing
-    if (
-      !validatedData.postedBy &&
-      (user && hasAccess(user.roles, { roles: [UserRole.BROKER_USER, UserRole.BROKER_ADMIN] }))
-    ) {
-      validatedData.postedBy = user._id; // Assign the current broker/admin as the poster
-    }
-
-    // Set the brokerId based on the user's role
-    if ((user && hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN] }))) {
-      validatedData.brokerId = user._id;
-    } else if ((user && hasAccess(user.roles, { roles: [UserRole.BROKER_USER] }))) {
-      validatedData.brokerId = user.brokerId;
-    }
-
     // Set default load status for non-customer roles
     if (!(user && hasAccess(user.roles, { roles: [UserRole.CUSTOMER] }))) {
       validatedData.status = LoadStatus.Published; // Brokers/Admins can publish loads
     }
-
+    
     // Handle load number logic
     if (validatedData.loadNumber) {
       // Validate if the provided loadNumber already exists in the database
@@ -214,11 +185,8 @@ export async function fetchLoadsHandler(
       filters.postedBy = user._id; // Filter by broker's posted loads
     } else if (user && hasAccess(user.roles, { roles: [UserRole.CUSTOMER] })) {
       filters.customerId = user._id; // Filter by customer-specific loads
-    }
-
-    // Show only Published Loads to the Carrier
-    if (user && hasAccess(user.roles, { roles: [UserRole.CARRIER] })) {
-      filters.status = LoadStatus.Published; // Only published loads for carriers
+    }else if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN] })) {
+      filters.brokerId = user._id;
     }
 
     const dateField = req.query.dateField as string; // Get the specific field to search

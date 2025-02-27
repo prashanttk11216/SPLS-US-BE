@@ -14,6 +14,7 @@ const baseUserSchema = z.object({
   company: z.string().optional(),
   avatarUrl: z.string().optional(),
   brokerId: z.string().optional(),
+  postedBy: z.string().optional(),
   employeeId: z.string().optional(), // Optional, required only for specific roles
 
   // Customer-specific fields

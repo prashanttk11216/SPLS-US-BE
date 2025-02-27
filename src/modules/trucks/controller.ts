@@ -27,7 +27,7 @@ export async function createTruck(req: Request, res: Response): Promise<void> {
     // Validate request body with Zod schema
     const validatedData = createTruckSchema.parse(req.body);
     validatedData.postedBy = user._id;
-    validatedData.brokerId = user.brokerId;
+    if(typeof user.brokerId === "string") validatedData.brokerId = user.brokerId;
 
     // Handle `referenceNumber` logic
     if (validatedData.referenceNumber) {

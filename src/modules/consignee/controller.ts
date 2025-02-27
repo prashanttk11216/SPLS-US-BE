@@ -22,9 +22,6 @@ export const createConsignee = async (
   try {
     // Validate request body
     const validatedData = createConsigneeSchema.parse(req.body);
-
-    const user = (req as Request & { user?: IUser })?.user;
-
     // Check for duplicate email
     const existingConsignee = await ConsigneeModel.findOne({
       email: validatedData.email.toLowerCase(),
@@ -33,13 +30,6 @@ export const createConsignee = async (
       send(res, 409, "Consignee with this Email is already registered.");
       return;
     }
-    if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN] })) {
-      validatedData.brokerId = validatedData.postedBy = user?._id!;
-    } else {
-      validatedData.postedBy = user?._id!;
-      validatedData.brokerId = user?.brokerId!;
-    }
-
 
     // Create new Consignee
     const newConsignee = await ConsigneeModel.create(validatedData);
@@ -102,6 +92,7 @@ export const getConsignee = async (req: Request, res: Response): Promise<void> =
     const { _id } = req.params;
     const { page, limit, skip } = getPaginationParams(req.query);
     let filters: any = { isDeleted: false };
+    const user = (req as Request & { user?: IUser }).user;
 
     if (_id) {
       let query = ConsigneeModel.findOne({ _id, ...filters });
@@ -117,14 +108,16 @@ export const getConsignee = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    const brokerId = req.query.brokerId;
-    if (brokerId) {
-      filters.brokerId = brokerId;
+    // Role-based query conditions
+    if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_USER] })) {
+      filters.postedBy = user._id;
+    } else if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN] })) {
+      filters.brokerId = user._id;
     }
 
     // Add all other query parameters dynamically into filters
     for (const [key, value] of Object.entries(req.query)) {
-      if (!['page', 'limit', 'skip', 'brokerId', 'sort', 'search', 'searchField', 'populate'].includes(key)) {
+      if (!['page', 'limit', 'skip', 'sort', 'search', 'searchField', 'populate'].includes(key)) {
         filters[key] = value;
       }
     }

@@ -8,6 +8,8 @@ const booleanStringToBoolean = z
 // Base schema for Quote (common fields)
 const baseQuoteSchema = z.object({
   name: z.string().min(1, "Name is required"), // Ensures name is a non-empty string
+  brokerId: z.string().optional(),
+  postedBy: z.string().optional(),
   isActive: booleanStringToBoolean, // Allows both boolean and string "true"/"false"
 });
 

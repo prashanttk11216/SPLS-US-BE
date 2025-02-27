@@ -373,6 +373,8 @@ export async function edit(req: Request, res: Response): Promise<void> {
 export async function getUsers(req: Request, res: Response): Promise<void> {
   try {
     const { _id } = req.params;
+    const user = (req as Request & { user?: IUser })?.user;
+
 
     if (_id) {
       let query = UserModel.findOne({
@@ -404,8 +406,11 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
       filters.roles = { $in: [new mongoose.Types.ObjectId(roles[role as string].id)] }
     }    
 
-    if (req.query.brokerId) {
-      filters.brokerId = req.query.brokerId;
+    // Role-based query conditions
+    if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_USER] })) {
+      filters.postedBy = user._id;
+    } else if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN] })) {
+      filters.brokerId = user._id;
     }
 
     // Search functionality
@@ -434,7 +439,7 @@ export async function getUsers(req: Request, res: Response): Promise<void> {
 
     // Add all other query parameters dynamically into filters
     for (const [key, value] of Object.entries(req.query)) {
-      if (!['page', 'limit', 'role', 'brokerId', 'sort', 'search', 'searchField', 'populate'].includes(key)) {
+      if (!['page', 'limit', 'role', 'sort', 'search', 'searchField', 'populate'].includes(key)) {
         filters[key] = value;
       }
     }
