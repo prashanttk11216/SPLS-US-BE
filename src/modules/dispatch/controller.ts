@@ -981,10 +981,10 @@ export async function accountingExport(
       .populate("brokerId postedBy customerId carrierId")
       .select("-password");
 
-    // if (!loads || loads.length === 0) {
-    //   send(res, 404, "No matching loads found for the given filters.");
-    //   return;
-    // }
+    if (!loads || loads.length === 0) {
+      send(res, 404, "No matching loads found for the given filters.");
+      return;
+    }
 
     let dataSheets: Record<string, any[]> = {};
     let formatedLoad: any = [];
