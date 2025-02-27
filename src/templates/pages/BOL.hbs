@@ -17,23 +17,23 @@
           <p style="margin-left: 5px; font-weight: 400;">Load Number</p>
         </td>
         <td style="width: 155.273px; height: 23px;">
-          <p style="margin-left: 5px; font-weight: 400;">938</p>
+          <p style="margin-left: 5px; font-weight: 400;">{{dispatcherDetails.loadNumber}}</p>
         </td>
       </tr>
-      <tr style="height: 35px;">
+      {{!-- <tr style="height: 35px;">
         <td style="width: 204.727px; height: 35px;">
           <p style="margin-left: 5px; font-weight: 400;">BOL Number</p>
         </td>
         <td style="width: 155.273px; height: 35px;">
           <p style="margin-left: 5px; font-weight: 400;">101</p>
         </td>
-      </tr>
+      </tr> --}}
       <tr style="height: 35px;">
         <td style="width: 204.727px; height: 35px;">
           <p style="margin-left: 5px; font-weight: 400;">Ship Date</p>
         </td>
         <td style="width: 155.273px; height: 35px;">
-          <p style="margin-left: 5px; font-weight: 400;">2025-02-21</p>
+          <p style="margin-left: 5px; font-weight: 400;">{{dispatcherDetails.shipDate}}</p>
         </td>
       </tr>
       <tr style="height: 35px;">
@@ -41,7 +41,7 @@
           <p style="margin-left: 5px; font-weight: 400;">Delivery Date</p>
         </td>
         <td style="width: 155.273px; height: 35px;">
-          <p style="margin-left: 5px; font-weight: 400;">2025-02-19</p>
+          <p style="margin-left: 5px; font-weight: 400;">{{dispatcherDetails.delDate}}</p>
         </td>
       </tr>
       <tr style="height: 35px;">
@@ -49,7 +49,7 @@
           <p style="margin-left: 5px; font-weight: 400;">P.O.Number</p>
         </td>
         <td style="width: 155.273px; height: 35px;">
-          <p style="margin-left: 5px; font-weight: 400;">258974</p>
+          <p style="margin-left: 5px; font-weight: 400;">{{dispatcherDetails.PO}}</p>
         </td>
       </tr>
       <tr style="height: 35px;">
@@ -57,15 +57,15 @@
           <p style="margin-left: 5px; font-weight: 400;">Freight Charges</p>
         </td>
         <td style="width: 155.273px; height: 35px;">
-          <p style="margin-left: 5px; font-weight: 400;">Prepaid</p>
+          <p style="margin-left: 5px; font-weight: 400;">{{dispatcherDetails.freightCharge}}</p>
         </td>
       </tr>
     </tbody>
   </table>
-  <p><strong>SPLS LLC</strong></p>
-  <p style="font-weight: 400;">13100 Wortham Center Dr Houston, TX 77065</p>
-  <p style="font-weight: 400;">USA</p>
-  <p style="font-weight: 400;">Tel: 832-906-0217</p>
+  <p><strong>{{companyDetails.company}}</strong></p>
+  <p style="font-weight: 400;">{{companyDetails.address}}</p>
+  <p style="font-weight: 400;">{{companyDetails.country}}</p>
+  <p style="font-weight: 400;">Tel: {{companyDetails.primaryNumber}}</p>
   {{! only space not a value }}
   <p style="text-align: center;"><br /><br /><br /><br /></p>
   <p style="text-align: center;">&nbsp;</p>
@@ -91,16 +91,18 @@
       </tr>
       <tr>
         <td style="width: 245.555px;">
-          <p style="margin-left: 5px; font-weight: 400;">STAR</p>
-          <p style="margin-left: 5px; font-weight: 400;">Acorn Lodge, CA,</p>
-          <p style="margin-left: 5px; font-weight: 400;">12385 HUMBLE RD</p>
-          <p style="margin-left: 5px; font-weight: 400;">Tel:</p>
+          <p style="margin-left: 5px; font-weight: 400;">{{shipper.name}}</p>
+          <p style="margin-left: 5px; font-weight: 400;">{{shipper.email}}</p>
+          <p style="margin-left: 5px; font-weight: 400;">{{shipper.address}}</p>
+          <p style="margin-left: 5px; font-weight: 400;">{{shipper.addressLine2}}</p>
+          <p style="margin-left: 5px; font-weight: 400;">Tel: {{shipper.primaryNumber}}</p>
         </td>
         <td style="width: 663.445px;">
-          <p style="margin-left: 5px; font-weight: 400;">META</p>
-          <p style="margin-left: 5px; font-weight: 400;">13200 WORTHAM RD</p>
-          <p style="margin-left: 5px; font-weight: 400;">A K Ranch, AZ, 23589</p>
-          <p style="margin-left: 5px; font-weight: 400;">Tel: 832-906-0217</p>
+          <p style="margin-left: 5px; font-weight: 400;">{{consignee.name}}</p>
+          <p style="margin-left: 5px; font-weight: 400;">{{consignee.email}}</p>
+          <p style="margin-left: 5px; font-weight: 400;">{{consignee.address}}</p>
+          <p style="margin-left: 5px; font-weight: 400;">{{consignee.addressLine2}}</p>
+          <p style="margin-left: 5px; font-weight: 400;">Tel: {{consignee.primaryNumber}}</p>
         </td>
       </tr>
     </tbody>
@@ -123,13 +125,14 @@
       </tr>
       <tr>
         <td style="width: 245.555px;">
-          <p>NA</p>
+          <p></p>
         </td>
         <td style="width: 663.445px;">
-          <p style="margin-left: 5px; font-weight: 400;">WSS</p>
-          <p style="margin-left: 5px; font-weight: 400;">1210 Kiner Ct</p>
-          <p style="margin-left: 5px; font-weight: 400;">A Bar Ranch, CO, 77065
-            Tel: 832-906-0217</p>
+          <p style="margin-left: 5px; font-weight: 400;">{{carrierDetails.name}}</p>
+          <p style="margin-left: 5px; font-weight: 400;">{{carrierDetails.email}}</p>
+          <p style="margin-left: 5px; font-weight: 400;">{{carrierDetails.address}}</p>
+          <p style="margin-left: 5px; font-weight: 400;">{{carrierDetails.addressLine2}}</p>
+          <p style="margin-left: 5px; font-weight: 400;">Tel: {{carrierDetails.primaryNumber}}</p>
         </td>
       </tr>
     </tbody>
@@ -166,10 +169,10 @@
         </td>
       </tr>
       <tr>
-        <td style="width: 117.25px;">&nbsp;</td>
-        <td style="width: 375.227px;">&nbsp;</td>
-        <td style="width: 167.469px;">&nbsp;</td>
-        <td style="width: 54.2734px;">&nbsp;</td>
+        <td style="width: 117.25px;">{{loadItem.qty}}</td>
+        <td style="width: 375.227px;">{{loadItem.description}}</td>
+        <td style="width: 167.469px;">{{loadItem.weight}}</td>
+        <td style="width: 54.2734px;">{{loadItem.type}}</td>
         <td style="width: 65.8438px;">&nbsp;</td>
         <td style="width: 38.3672px;">&nbsp;</td>
         <td style="width: 60.5703px;">&nbsp;</td>
@@ -230,15 +233,15 @@
       </tr>
       <tr>
         <td style="width: 117.25px;">
-          <p style="margin-left: 5px; font-weight: 400;">Total Pieces 0</p>
+          <p style="margin-left: 5px; font-weight: 400;">Total Pieces {{loadItem.qty}}</p>
         </td>
         <td style="width: 375.227px;">&nbsp;</td>
         <td style="width: 167.469px;">
-          <p style="margin-left: 5px; font-weight: 400;">Total Weight 0 LBS.</p>
+          <p style="margin-left: 5px; font-weight: 400;">Total Weight {{loadItem.weight}} LBS.</p>
         </td>
         <td style="width: 237.055px;" colspan="4">
           <p style="margin-left: 5px; font-weight: 400;">Emergency Response
-            Phone</p>
+            Phone: {{companyDetails.primaryNumber}}</p>
         </td>
       </tr>
     </tbody>
@@ -252,20 +255,28 @@
     <tbody>
       <tr>
         <td style="width: 776.141px;" rowspan="4">
-          <p style="margin-left: 5px; font-weight: 400;">Notes:</p>
+          <p style="margin-left: 5px; font-weight: 400;">
+            Shipping Notes: 
+            {{notes.shippingNote}}
+
+            <br/>
+
+            Delivery Notes: 
+            {{notes.deliveryNotes}}
+          </p>
         </td>
         <td style="width: 320.859px;">
-          <p style="margin-left: 5px; font-weight: 400;">C.O.D. Amount: $0.00</p>
+          <p style="margin-left: 5px; font-weight: 400;">C.O.D. Amount: $ {{codAmount}}</p>
         </td>
       </tr>
       <tr>
         <td style="width: 320.859px;">
-          <p style="margin-left: 5px; font-weight: 400;">C.O.D. Fee: Prepaid</p>
+          <p style="margin-left: 5px; font-weight: 400;">C.O.D. Fee: {{codFee}}</p>
         </td>
       </tr>
       <tr>
         <td style="width: 320.859px;">
-          <p style="margin-left: 5px; font-weight: 400;">Declared Value: $0.00</p>
+          <p style="margin-left: 5px; font-weight: 400;">Declared Value: $ {{declaredValue}}</p>
         </td>
       </tr>
       <tr>

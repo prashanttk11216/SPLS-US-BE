@@ -15,7 +15,7 @@
         </td>
         {{!-- Dispatcher value --}}
         <td style="width: 95px; text-align: left;">
-          <p style="margin-left: 5px;font-weight: 400;">SPLS L</p>
+          <p style="margin-left: 5px;font-weight: 400;">{{dispatcherDetails.name}}</p>
         </td>
         <td
           style="width: 90.7109px; background-color: #f3f3f3; text-align: left;"
@@ -24,7 +24,7 @@
         </td>
         {{!-- Load value --}}
         <td style="width: 78.2891px; text-align: left;">
-          <p style="margin-left: 5px;font-weight: 400;">367</p>
+          <p style="margin-left: 5px;font-weight: 400;">{{dispatcherDetails.loadNumber}}</p>
         </td>
       </tr>
       <tr>
@@ -33,7 +33,7 @@
         </td>
         {{!-- Phone# value --}}
         <td style="width: 95px; text-align: left;">
-          <p style="margin-left: 5px;font-weight: 400;">832-906-0217</p>
+          <p style="margin-left: 5px;font-weight: 400;">{{dispatcherDetails.primaryNumber}}</p>
         </td>
         <td
           style="width: 90.7109px; background-color: #f3f3f3; text-align: left;"
@@ -42,7 +42,7 @@
         </td>
         {{!-- Ship Date value --}}
         <td style="width: 78.2891px; text-align: left;">
-          <p style="margin-left: 5px;font-weight: 400;">2023-08-21</p>
+          <p style="margin-left: 5px;font-weight: 400;">{{dispatcherDetails.shipDate}}</p>
         </td>
       </tr>
       <tr>
@@ -51,7 +51,7 @@
         </td>
         {{!-- Fax# value --}}
         <td style="width: 95px; text-align: left;">
-            <p style="margin-left: 5px;font-weight: 400;">6374376747</p>
+            <p style="margin-left: 5px;font-weight: 400;"></p>
         </td>
         <td
           style="width: 90.7109px; background-color: #f3f3f3; text-align: left;"
@@ -60,7 +60,7 @@
         </td>
         {{!-- Today's Date value --}}
         <td style="width: 78.2891px; text-align: left;">
-          <p style="margin-left: 5px;font-weight: 400;">2023-08-21</p>
+          <p style="margin-left: 5px;font-weight: 400;">{{dispatcherDetails.todaysDate}}</p>
         </td>
       </tr>
       <tr>
@@ -69,9 +69,7 @@
         </td>
         {{!-- Email value --}}
         <td style="width: 264px; text-align: left;" colspan="3">
-          <p style="margin-left: 5px;font-weight: 400;"><a
-              href="mailto:accounts@spls-us.com"
-            >accounts@spls-us.com</a></p>
+          <p style="margin-left: 5px;font-weight: 400;">{{dispatcherDetails.email}}</p>
         </td>
       </tr>
       <tr>
@@ -80,15 +78,16 @@
         </td>
         {{!-- W/O value --}}
         <td style="width: 264px; text-align: left;" colspan="3">
-          <p style="margin-left: 5px;font-weight: 400;">0001481</p>
+          <p style="margin-left: 5px;font-weight: 400;">{{dispatcherDetails.WO}}</p>
         </td>
       </tr>
     </tbody>
   </table>
-  <p><strong>SPLS LLC</strong></p>
-  <p style="font-weight: 400;">13100 Wortham Center Dr</p>
-  <p style="font-weight: 400;">Houston, TX, USA 77065 Phone: 832-906-0217</p>
-  <p style="font-weight: 400;">Fax:</p>
+  <p><strong>{{companyDetails.company}}</strong></p>
+  <p style="font-weight: 400;">{{companyDetails.email}}</p>
+  <p style="font-weight: 400;">{{companyDetails.address}}</p>
+  <p style="font-weight: 400;">{{companyDetails.addressLine2}}</p>
+  <p style="font-weight: 400;"> Phone: {{companyDetails.primaryNumber}}</p>
 </div>
 <p style="text-align: center;"><br /><br /><br /><br /><br /></p>
 {{!-- Table-2 --}}
@@ -130,23 +129,22 @@
       {{!-- Table-2 Values--}}
       <tr style="height: 35px;">
         <td style="width: 229.391px; height: 35px;">
-          <p style="margin-left: 5px;font-weight:400">SOLUTION
-              TRUCK LLC</p>
+          <p style="margin-left: 5px;font-weight:400">{{carrierDetails.name}}</p>
         </td>
         <td style="width: 149.039px; height: 35px;">
-          <p style="margin-left: 5px;">407-494-0249</p>
+          <p style="margin-left: 5px;">{{carrierDetails.primaryNumber}}</p>
         </td>
         <td style="width: 67.4141px; height: 35px;">
-            <p style="margin-left: 5px;">78545675</p>
+            <p style="margin-left: 5px;">N/A</p>
         </td>
         <td style="width: 124.18px; height: 35px;">
-          <p style="margin-left: 5px;">53' Van</p>
+          <p style="margin-left: 5px;">{{carrierDetails.equipment}}</p>
         </td>
         <td style="width: 178.688px; height: 35px;">
-          <p style="margin-left: 5px;">$2,800.00USD</p>
+          <p style="margin-left: 5px;">$ {{carrierDetails.agreedAmount}} USD</p>
         </td>
         <td style="width: 136.289px; height: 35px;">
-          <p style="margin-left: 5px;">Open</p>
+          <p style="margin-left: 5px;">{{carrierDetails.loadStatus}}</p>
         </td>
       </tr>
     </tbody>
@@ -168,26 +166,25 @@
             style="display: flex; flex-direction: row; justify-content: space-between;"
           >
             <div>
-              <p style="margin-left: 5px;"><strong>Shipper 1</strong></p>
-              <p><span style="font-weight: 400; margin-left: 5px;">Arvesta PA</span></p>
-              <p><span style="font-weight: 400; margin-left: 5px;">555 Country
-                  Club Rd Dallas, PA 18612</span></p>
-              <p><span style="font-weight: 400; margin-left: 5px;">Dallas, PA,
-                  18612</span></p>
+              <p style="margin-left: 5px;"><strong>Shipper</strong></p>
+              <p><span style="font-weight: 400; margin-left: 5px;">{{shipper.name}}</span></p>
+              <p><span style="font-weight: 400; margin-left: 5px;">{{shipper.email}}</span></p>
+              <p><span style="font-weight: 400; margin-left: 5px;">{{shipper.address}}</span></p>
+              <p><span style="font-weight: 400; margin-left: 5px;">Phone: {{shipper.primaryNumber}} </span></p>
             </div>
             <div>
-              <p><strong>Date:</strong> 2023-08-21</p>
-              <p><strong>Time:</strong>07 AM - 3PM</p>
-              <p><strong>Type:</strong>Lorem</p>
-              <p><strong>Quantity:</strong>80</p>
-              <p><strong>Weight:</strong> 15000 lbs</p>
+              <p><strong>Date:</strong> {{shipper.date}}</p>
+              <p><strong>Time:</strong>{{shipper.time}}</p>
+              <p><strong>Type:</strong>{{shipper.type}}</p>
+              <p><strong>Quantity:</strong>{{shipper.qty}}</p>
+              <p><strong>Weight:</strong> {{shipper.weight}}</p>
             </div>
             <div>
-              <p><strong>Purchase Order #:</strong>536256326</p>
               <p><strong>Major Intersection:</strong>Not available</p>
-              <p><strong>Shipping Hours:</strong> 7 AM TO 5 PM</p>
-              <p><strong>Appointment:</strong> No</p>
-              <p><strong>Description:</strong>NA</p>
+              <p><strong>Shipping Hours:</strong> {{shipper.shippingHours}}</p>
+              <p><strong>Appointment:</strong> {{shipper.appointment}}</p>
+              <p><strong>Description:</strong>{{shipper.description}}</p>
+              <p><strong>Notes:</strong>{{shipper.notes}}</p>
             </div>
           </div>
         </td>
@@ -211,70 +208,25 @@
             style="display: flex; flex-direction: row; justify-content: space-between;"
           >
             <div>
-              <p style="margin-left: 5px;"><strong>Consignee 1</strong></p>
-              <p><span style="font-weight: 400; margin-left: 5px;">KREBS
-                  BROTHERS REST</span></p>
-              <p><span style="font-weight: 400; margin-left: 5px;">4310 Landers
-                  RD</span></p>
-              <p><span style="font-weight: 400; margin-left: 5px;">North Little
-                  Rock, AR, 72117</span></p>
+              <p style="margin-left: 5px;"><strong>Consignee</strong></p>
+              <p><span style="font-weight: 400; margin-left: 5px;">{{consignee.name}}</span></p>
+              <p><span style="font-weight: 400; margin-left: 5px;">{{consignee.email}}</span></p>
+              <p><span style="font-weight: 400; margin-left: 5px;">{{consignee.address}}</span></p>
+              <p><span style="font-weight: 400; margin-left: 5px;">Phone: {{consignee.primaryNumber}} </span></p>
             </div>
             <div>
-              <p><strong>Date:</strong> 2023-08-22</p>
-              <p><strong>Time:</strong>8 AM TO 3 PM</p>
-              <p><strong>Type:</strong>NA</p>
-              <p><strong>Quantity:</strong>87</p>
-              <p><strong>Weight:</strong> 15000 lbs</p>
+              <p><strong>Date:</strong> {{consignee.date}}</p>
+              <p><strong>Time:</strong>{{consignee.time}}</p>
+              <p><strong>Type:</strong>{{consignee.type}}</p>
+              <p><strong>Quantity:</strong>{{consignee.qty}}</p>
+              <p><strong>Weight:</strong> {{consignee.weight}}</p>
             </div>
             <div>
-              <p><strong>Purchase Order #:</strong></p>
-              <p><strong>Major Intersection:</strong></p>
-              <p><strong>Receiving Hours:</strong> 8 AM TO 3 PM</p>
-              <p><strong>Appointment:</strong> No</p>
-              <p><strong>Description:</strong>NA</p>
-            </div>
-          </div>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-<br />
-<div
-  style="padding-left: 50px; padding-right: 50px; font-size: 10px; font-family: 'Verdana', serif;"
->
-{{!-- Table-5 --}}
-  <table
-    style="border-collapse: collapse; background-color: #f3f3f3;"
-    border="1"
-  >
-    <tbody>
-      <tr>
-        <td style="width: 914px;">
-          <div
-            style="display: flex; flex-direction: row; justify-content: space-between;"
-          >
-            <div>
-              <p style="margin-left: 5px;"><strong>Consignee 2</strong></p>
-              <p><span style="font-weight: 400; margin-left: 5px;">Hawk Inc</span></p>
-              <p><span style="font-weight: 400; margin-left: 5px;">301 Hawk
-                  Place Montgomery, AL 36117</span></p>
-              <p><span style="font-weight: 400; margin-left: 5px;">Montgomery,
-                  AL, 36117</span></p>
-            </div>
-            <div>
-              <p><strong>Date:</strong> 2023-08-23</p>
-              <p><strong>Time:</strong>NA</p>
-              <p><strong>Type:</strong>NA</p>
-              <p><strong>Quantity:</strong>950</p>
-              <p><strong>Weight:</strong> 15000 lbs</p>
-            </div>
-            <div>
-              <p><strong>Purchase Order #:</strong>6744378</p>
-              <p><strong>Major Intersection:</strong>NA</p>
-              <p><strong>Receiving Hours:</strong> 7 AM TO 2 PM</p>
-              <p><strong>Appointment:</strong> No</p>
-              <p><strong>Description:</strong>NA</p>
+              <p><strong>Major Intersection:</strong>Not available</p>
+              <p><strong>Shipping Hours:</strong> {{consignee.shippingHours}}</p>
+              <p><strong>Appointment:</strong> {{consignee.appointment}}</p>
+              <p><strong>Description:</strong>{{consignee.description}}</p>
+              <p><strong>Notes:</strong>{{consignee.notes}}</p>
             </div>
           </div>
         </td>
@@ -287,31 +239,25 @@
   style="padding-left: 50px; padding-right: 50px; font-size: 10px; font-family: 'Verdana', serif;"
 >
   <p><strong>Dispatch Notes:</strong>
-    Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in classical literature, discovered the undoubtable source. Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of "de Finibus Bonorum et Malorum" (The Extremes of Good and Evil) by Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance. The first line of Lorem Ipsum, "Lorem ipsum dolor sit amet..", comes from a line in section 1.10.32.</p>
   <br/>
-  <br/>
-  <p><strong>Double brokering of this load is prohibited and will result in NO
-      pay.</strong></p>
+  <p><strong>Double brokering of this load is prohibited and will result in NO pay.</strong></p>
   <p><strong>***To expedite payment,please email the signed BOL(s) and/or POD(s)
       to
-    </strong><a href="mailto:shipdirect@spls-us.com"><strong
-      >shipdirect@spls-us.com</strong></a><strong>
+    </strong><strong
+      >{{brokerDetails.email}}</strong><strong>
       within 48 hours of delivery. If not submitted within timeframe, a $50 late
       fee may be incurred.***</strong></p>
   <p><strong>** We offer payments via ACH.**</strong></p>
   <p><strong>** Quickpay 3% available after delivery within 24-72 hrs. Plase
       email
-    </strong><a href="mailto:shipdirect@spls-us.com"><strong
-      >shipdirect@spls-us.com</strong></a><strong>
+    </strong><strong>{{brokerDetails.email}}</strong><strong>
       and request the quick pay form for setup.**</strong></p>
-  <p><strong>EMAIL INVOICE AT: </strong><a
-      href="mailto:accounts@spls-us.com"
-    ><strong>accounts@spls-us.com</strong></a></p>
+  <p><strong>EMAIL INVOICE AT: </strong><strong>{{dispatcherDetails.email}}</strong></p>
   <p><strong><em>Billing Email</em></strong><strong>: </strong><a
       href="mailto:accounts@spls-us.com"
-    ><strong>accounts@spls-us.com</strong></a></p>
+    ><strong>{{brokerDetails.email}}</strong></a></p>
   <p><strong><em>Billing Address</em></strong><span style="font-weight: 400;">:
-    </span><strong>13100 WORTHAM CENTER DR, Ste 314 Houston, TX 77065</strong></p>
+    </span><strong>{{brokerDetails.billingAddress}}</strong></p>
   <p><span style="font-weight: 400;">Dispatch Notes:</span></p>
   <p><span style="font-weight: 400;">By signing this agreement, CARRIER agrees
       to the following terms and is subject to rate reductions and nonpayment if
@@ -319,15 +265,15 @@
   <ol>
     <li style="font-weight: 400;"><span style="font-weight: 400;">All PODs must
         be submitted to at
-      </span><a href="mailto:shipdirect@spls-us.com"><span
+      </span><span
           style="font-weight: 400;"
-        >shipdirect@spls-us.com</span></a><span style="font-weight: 400;">
+        >{{brokerDetails.email}}</span><span style="font-weight: 400;">
         within 48 hours of delivery.</span></li>
     <li style="font-weight: 400;"><span style="font-weight: 400;">All
         accessorial charges must be authorized and submitted to
-      </span><a href="mailto:accounts@spls-us.com"><span
+      </span><span
           style="font-weight: 400;"
-        >accounts@spls-us.com</span></a><span style="font-weight: 400;">
+        >{{brokerDetails.email}}</span><span style="font-weight: 400;">
         within 48 hours of delivery for reimbursement.</span></li>
     <li style="font-weight: 400;"><span style="font-weight: 400;">Carrier must
         call and check in at pickup and delivery.</span></li>
@@ -337,9 +283,9 @@
         times must be noted on BOL for detention.</span></li>
     <li style="font-weight: 400;"><span style="font-weight: 400;">Please email
         NOAs to NOA.
-      </span><a href="mailto:accounts@spls-us.com"><span
+      </span><span
           style="font-weight: 400;"
-        >accounts@spls-us.com</span></a></li>
+        >{{brokerDetails.email}}</span></li>
     <li style="font-weight: 400;"><span style="font-weight: 400;">Missed
         deliveries and appointments may result in rate deductions.</span></li>
     <li style="font-weight: 400;"><span style="font-weight: 400;">All payments
@@ -350,16 +296,13 @@
         Submission and Payment Terms</span></li>
   </ol>
   <p><span style="font-weight: 400;">Please submit rate con, pod, and invoice to
-    </span><a href="mailto:accounts@spls-us.com"><span
+    </span><span
         style="font-weight: 400;"
-      >accounts@spls-us.com</span></a><span style="font-weight: 400;">
+      >{{brokerDetails.email}}</span><span style="font-weight: 400;">
       and include the Load # and W/O in the subject line of your e-mail.
       Standard Pay: Net 30 from receipt of complete and legible paperwork.</span></p>
-  <p><span style="font-weight: 400;">Quickpay: Submit Quickpay form to </span><a
-      href="mailto:accounts@spls-us.com"
-    ><span style="font-weight: 400;">accounts@spls-us.com</span></a></p>
-  <p><span style="font-weight: 400;">By mail: 13100 Wortham Center DR Suite 314
-      Houston Tx 77065</span></p>
+  <p><span style="font-weight: 400;">Quickpay: Submit Quickpay form to </span><span style="font-weight: 400;">{{brokerDetails.email}}</span></p>
+  <p><span style="font-weight: 400;">By mail: {{brokerDetails.address}}</span></p>
   <p><span style="font-weight: 400;">This Rate Confirmation is an agreement
       between SPLS, LLC and the carrier indicated in the above Carrier
       Information field, and is NOT a dispatch. If load is changed or canceled
@@ -482,8 +425,8 @@
         confirmation.</span></li>
   </ol>
   <p style="text-align: center;"><br /><br /></p>
-  <p><strong>Carrier Pay: </strong><span style="font-weight: 400;">Line Haul:
-      $2800.00,&nbsp;&nbsp;</span><strong>TOTAL: $2800.00 USD</strong></p>
+  <p><strong>Carrier Pay: </strong><span style="font-weight: 400;">{{loadDetails.type}}:
+      {{loadDetails.carrierFee}},&nbsp;&nbsp;</span><strong>TOTAL:{{loadDetails.carrierFee}} USD</strong></p>
   <p style="text-align: center;"><br /><br /></p>
   <p><strong>Accepted By: _________________&nbsp;</strong><strong>Date:
       ___________________&nbsp;</strong><strong

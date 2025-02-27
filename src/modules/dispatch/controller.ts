@@ -583,61 +583,75 @@ export async function rateConfirmationHandler(
     let htmlContent = await PdfService.generateHTMLTemplate({
       templateName: "rateAndLoadConfirmation",
       templateData: {
-        dispatcherDetails: {
-          name: broker?.firstName + " " + broker.lastName || "N/A",
-          loadNumber: load?.loadNumber || "N/A",
-          primaryNumber: formatPhoneNumber(broker.primaryNumber),
+        brokerDetails: {
           email: broker.email || "N/A",
-          shipDate: formatDate(load?.shipper.date!, "MM/dd/yyyy") || "N/A",
+          address: broker.address?.str || "N/A",
+          primaryNumber: formatPhoneNumber(broker.primaryNumber),
+          company: broker.company || "N/A",
+          billingAddress: broker.billingAddress?.str || "N/A",          
+        },
+        dispatcherDetails: {
+          name: (broker?.firstName + " " + broker?.lastName) || "N/A",
+          loadNumber: load?.loadNumber || "N/A",
+          primaryNumber: formatPhoneNumber(broker?.primaryNumber),
+          email: broker?.email || "N/A",
+          shipDate: formatDate(load?.shipper?.date!, "MM/dd/yyyy") || "N/A",
           todaysDate: formatDate(today, "MM/dd/yyyy") || "N/A",
           WO: load?.WONumber || "N/A",
         },
 
         companyDetails: {
-          company: broker.company || "N/A",
-          address: broker.address?.str || "N/A",
-          primaryNumber: formatPhoneNumber(broker.primaryNumber),
+          company: broker?.company || "N/A",
+          email: broker.email,
+          address: broker?.address?.str || "N/A",
+          addressLine2: broker?.addressLine2 || "N/A",
+          primaryNumber: formatPhoneNumber(broker?.primaryNumber),
         },
 
         carrierDetails: {
-          name: carrier.firstName + " " + carrier.lastName || "N/A",
-          primaryNumber: formatPhoneNumber(broker.primaryNumber),
+          name: (carrier?.firstName + " " + carrier?.lastName) || "N/A",
+          primaryNumber: formatPhoneNumber(broker?.primaryNumber),
           equipment: getEnumValue(Equipment, load?.equipment) || "N/A",
-          address: carrier.address?.str || "N/A",
-          agreedAmount: formatNumber(load?.carrierFee.totalAmount) || 0.0,
+          address: carrier?.address?.str || "N/A",
+          agreedAmount: formatNumber(load?.carrierFee?.totalAmount) || 0.0,
           loadStatus: getEnumValue(DispatchLoadStatus, load?.status) || "N/A",
         },
 
         consignee: {
-          name: (consignee.firstName + " " + consignee.lastName) || "N/A",
-          address: consignee.address.str || "N/A",
-          primaryNumber: formatPhoneNumber(consignee.primaryNumber),
-          date: formatDate(load?.consignee.date!, "MM/dd/yyyy") || "N/A",
-          time: formatDate(load?.consignee.time!, "h:mm aa") || "N/A",
-          type: load?.consignee.type || "N/A",
-          qty: load?.consignee.qty || "N/A",
-          weight: (load?.consignee.weight || 0) + " lbs",
-          shippingHours: consignee.shippingHours || "N/A",
-          appointment: consignee.isAppointments ? "Yes" : "No",
-          description: load?.consignee.description || "N/A",
-          notes: load?.consignee.notes || "N/A",
+          name: (consignee?.firstName + " " + consignee?.lastName) || "N/A",
+          address: consignee?.address?.str || "N/A",
+          primaryNumber: formatPhoneNumber(consignee?.primaryNumber),
+          date: formatDate(load?.consignee?.date!, "MM/dd/yyyy") || "N/A",
+          time: formatDate(load?.consignee?.time!, "h:mm aa") || "N/A",
+          type: load?.consignee?.type || "N/A",
+          qty: load?.consignee?.qty || "N/A",
+          weight: (load?.consignee?.weight || 0) + " lbs",
+          shippingHours: consignee?.shippingHours || "N/A",
+          appointment: consignee?.isAppointments ? "Yes" : "No",
+          description: load?.consignee?.description || "N/A",
+          notes: load?.consignee?.notes || "N/A",
         },
 
         shipper: {
-          name: shipper.firstName + " " + shipper.lastName || "N/A",
-          email: shipper.email || "N/A",
-          address: shipper.address.str || "N/A",
-          primaryNumber: formatPhoneNumber(shipper.primaryNumber),
-          date: formatDate(load?.shipper.date!, "MM/dd/yyyy") || "N/A",
-          time: formatDate(load?.shipper.time!, "h:mm aa") || "N/A",
-          type: load?.shipper.type || "N/A",
-          qty: load?.shipper.qty || "N/A",
-          weight: (load?.shipper.weight || 0) + " lbs",
-          shippingHours: shipper.shippingHours || "N/A",
-          appointment: shipper.isAppointments ? "Yes" : "No",
-          description: load?.shipper.description || "N/A",
-          notes: load?.shipper.notes || "N/A",
+          name: shipper?.firstName + " " + shipper?.lastName || "N/A",
+          email: shipper?.email || "N/A",
+          address: shipper?.address?.str || "N/A",
+          primaryNumber: formatPhoneNumber(shipper?.primaryNumber),
+          date: formatDate(load?.shipper?.date!, "MM/dd/yyyy") || "N/A",
+          time: formatDate(load?.shipper?.time!, "h:mm aa") || "N/A",
+          type: load?.shipper?.type || "N/A",
+          qty: load?.shipper?.qty || "N/A",
+          weight: (load?.shipper?.weight || 0) + " lbs",
+          shippingHours: shipper?.shippingHours || "N/A",
+          appointment: shipper?.isAppointments ? "Yes" : "No",
+          description: load?.shipper?.description || "N/A",
+          notes: load?.shipper?.notes || "N/A",
         },
+
+        loadDetails: {
+          type: getEnumValue(DispatchLoadType, load.type),
+          carrierFee: load.carrierFee ? `$ ${formatNumber(load.carrierFee.totalAmount)}` : "N/A",
+        }
       },
     });
     // Get PDF as a buffer
@@ -700,6 +714,7 @@ export async function BOLHandler(req: Request, res: Response): Promise<void> {
         companyDetails: {
           company: broker.company || "N/A",
           address: broker.address?.str || "N/A",
+          country: broker?.country || "N/A",
           primaryNumber: formatPhoneNumber(broker.primaryNumber),
         },
 
@@ -707,19 +722,24 @@ export async function BOLHandler(req: Request, res: Response): Promise<void> {
           name: shipper.firstName + " " + shipper.lastName || "N/A",
           email: shipper.email || "N/A",
           address: shipper.address.str || "N/A",
+          addressLine2: shipper.addressLine2 || "N/A",
           primaryNumber: formatPhoneNumber(shipper.primaryNumber),
         },
 
         consignee: {
           name: consignee.firstName + " " + consignee.lastName || "N/A",
+          email: shipper.email || "N/A",
           address: consignee.address.str || "N/A",
+          addressLine2: consignee.addressLine2 || "N/A",
           primaryNumber: formatPhoneNumber(consignee.primaryNumber),
         },
 
         carrierDetails: {
           name: carrier.firstName + " " + carrier.lastName || "N/A",
+          email: shipper.email || "N/A",
           primaryNumber: formatPhoneNumber(broker.primaryNumber),
           address: carrier.address?.str || "N/A",
+          addressLine2: carrier.addressLine2 || "N/A",
         },
 
         loadItem: {
@@ -734,7 +754,7 @@ export async function BOLHandler(req: Request, res: Response): Promise<void> {
           deliveryNotes: load.consignee.notes || "N/A"
         },
 
-        codAmount:  codAmount ? formatNumber(codAmount) : "N/A",
+        codAmount:  codAmount ? formatNumber(codAmount) : "0.00",
         codFee:  codFee || "N/A",
         declaredValue: declaredValue ? formatNumber(declaredValue) : "N/A",
       },
@@ -898,11 +918,13 @@ export async function accountingSummary(
 
     const formatedDetails: any[] = []
 
+    let totalAmount = 0.00;
     loads.forEach((load)=>{
       const customer = load?.customerId as IUser;
 
       let advance = 0.00;
       let balance: number = (load.allInRate && load.allInRate - advance) || 0.00;
+      totalAmount += balance;
 
       formatedDetails.push({
         loadNumber: load.loadNumber,
@@ -913,13 +935,17 @@ export async function accountingSummary(
         advance: advance,
         balance: formatNumber(balance)
       });
-    });
+    });    
     
-
+    const today = new Date();
     const pdfGenerator = new PdfGenerator();
     let htmlContent = await PdfService.generateHTMLTemplate({
       templateName: "AccountSummaryExport",
       templateData: {
+        todaysDate: formatDate(today, "MM/dd/yyyy") || "N/A",
+        fromDate: formatDate(fromDate, "MM/dd/yyyy") || "N/A",
+        toDate: formatDate(toDate, "MM/dd/yyyy") || "N/A",
+        totalAmount: totalAmount ? formatNumber(totalAmount) : 0.00,
         loadDetails: formatedDetails
       },
     });

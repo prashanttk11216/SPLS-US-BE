@@ -2,15 +2,14 @@
   <p style="text-align: center;">&nbsp;</p>
   {{!-- Title --}}
   <h3 style="text-align: center;font-size:18px;">ACCOUNTING SUMMARY REPORT</h3>
-  <p style="text-align: center;font-size:15px;">ACCOUNTING SUMMARY ID - 126609</p>
   <p style="text-align: center;font-size:15px;color: #ff0000;">The following accounting information has been summarized</p>
 {{!-- Title --}}
 {{!-- Date --}}
   <div
     style="display:flex;flex-direction:row;justify-content:space-between;align-items:center;"
   >
-    <p><strong>USD - Customers<br /></strong>Export Date: 2025-02-26</p>
-    <p style="float:right">From: 2025-02-12 To: 2025-02-26</p>
+    <p><strong>USD - Customers<br /></strong>Export Date: {{todaysDate}}</p>
+    <p style="float:right">From: {{fromDate}} To: {{toDate}}</p>
   </div>
   {{!-- Date --}}
   {{!-- Table --}}
@@ -23,7 +22,7 @@
         {{!-- Table Header--}}
       <tr>
         <td style="background-color:#f3f3f3;">
-          <p style="font-weight: 400;margin-left:5px;">IN VOICE #</p>
+          <p style="font-weight: 400;margin-left:5px;">INVOICE #</p>
         </td>
         <td style="background-color:#f3f3f3;">
           <p style="font-weight: 400;margin-left:5px;">LOAD #</p>
@@ -49,32 +48,35 @@
       </tr>
       {{!-- Table Header--}}
       {{!-- Table Values--}}
+       {{#each loadDetails}}
       <tr>
         <td style="width: 97px;">
-          <p style="font-weight: 400;margin-left:5px;">895</p>
+          <p style="font-weight: 400;margin-left:5px;">{{invoiceNumber}}</p>
         </td>
         <td style="width: 88px;">
-          <p style="font-weight: 400;margin-left:5px;">938</p>
+          <p style="font-weight: 400;margin-left:5px;">{{loadNumber}}</p>
         </td>
         <td style="width: 161px;">
-          <p style="font-weight: 400;margin-left:5px;">2025-02-26</p>
+          <p style="font-weight: 400;margin-left:5px;">{{invoiceDate}}</p>
         </td>
         <td style="width: 124px;">
-          <p style="font-weight: 400;margin-left:5px;">ABC</p>
+          <p style="font-weight: 400;margin-left:5px;">{{customerName}}</p>
         </td>
         <td style="width: 133px;">
-          <p style="font-weight: 400;margin-left:5px;">$1,200.00</p>
+          <p style="font-weight: 400;margin-left:5px;">$ {{allInRate}}</p>
         </td>
         <td style="width: 107px;">
-          <p style="font-weight: 400;margin-left:5px;">$0.00</p>
+          <p style="font-weight: 400;margin-left:5px;">$ {{advance}}</p>
         </td>
         <td style="width: 114px;">
-          <p style="font-weight: 400;margin-left:5px;">$1,200.00</p>
+          <p style="font-weight: 400;margin-left:5px;">$ {{balance}}</p>
         </td>
         <td style="width: 50px;">
           <p style="font-weight: 400;margin-left:5px;">USD</p>
         </td>
       </tr>
+      {{/each}}
+
       {{!-- Table Values--}}
       {{!-- Table Total--}}
       <tr>
@@ -82,7 +84,7 @@
           <p><strong>TOTAL</strong></p>
         </td>
         <td style="width: 114px;">
-          <p style="font-weight: 400;margin-left:5px;">$1,200.00</p>
+          <p style="font-weight: 400;margin-left:5px;">$ {{totalAmount}}</p>
         </td>
         <td style="width: 50px;">
           <p style="font-weight: 400;margin-left:5px;">USD</p>
