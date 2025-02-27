@@ -81,13 +81,15 @@ const DocumentSchema = new Schema({
 const DispatchSchema: Schema = new Schema<IDispatch>(
   {
     brokerId: { type: Schema.Types.ObjectId, ref: "User" },
+    customerId: { type: Schema.Types.ObjectId, ref: "User" },
+    carrierId: { type: Schema.Types.ObjectId, ref: "User" },
+    salesRep: { type: Schema.Types.ObjectId, ref: "User" },
+
     loadNumber: { type: Number, unique: true },
     invoiceNumber: { type: Number, unique: true },
     invoiceDate: { type: Date },
-    customerId: { type: Schema.Types.ObjectId, ref: "User" },
-    salesRep: { type: Schema.Types.ObjectId, ref: "User" },
     WONumber: { type: String, unique: true },
-    type: { type: String, enum: Object.keys(DispatchLoadType) },
+    type: { type: String, enum: Object.keys(DispatchLoadType)},
     units: { type: Number, min: 0 },
     customerRate: { type: Number, min: 0 },
     PDs: { type: Number, min: 0 },
@@ -100,7 +102,6 @@ const DispatchSchema: Schema = new Schema<IDispatch>(
       totalAmount: { type: Number, min: 0 }, // Direct amount for carrier fee
       breakdown: CarrierFeeBreakdownSchema, // Detailed breakdown structure
     },
-    carrierId: { type: Schema.Types.ObjectId, ref: "User" },
     equipment: { type: String, enum: Object.keys(Equipment) },
     allInRate: { type: Number, min: 0 },
 
