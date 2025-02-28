@@ -71,6 +71,7 @@ const DocumentSchema = z.object({
 const baseDispatchSchema = z.object({
   brokerId: z.string().optional(),
   customerId: z.string().optional(),
+  loadId: z.string().optional(),
   carrierId: z.string().optional(),
   loadNumber: z.number().optional(),
   WONumber: z.string().optional(),
@@ -113,6 +114,13 @@ export const createDispatchSchema = baseDispatchSchema.superRefine((data, ctx) =
         code: "custom",
         path: ["customerId"],
         message: "Customer ID is required for loads",
+      });
+    }
+    if (!data.loadId) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["loadId"],
+        message: "Load ID is required for loads",
       });
     }
     if (!data.carrierId) {

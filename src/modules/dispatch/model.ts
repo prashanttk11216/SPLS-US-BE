@@ -82,6 +82,7 @@ const DispatchSchema: Schema = new Schema<IDispatch>(
   {
     brokerId: { type: Schema.Types.ObjectId, ref: "User" },
     customerId: { type: Schema.Types.ObjectId, ref: "User" },
+    loadId: { type: Schema.Types.ObjectId, ref: "Load" },
     carrierId: { type: Schema.Types.ObjectId, ref: "User" },
     salesRep: { type: Schema.Types.ObjectId, ref: "User" },
 

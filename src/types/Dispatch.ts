@@ -5,6 +5,7 @@ import { DispatchLoadStatus } from "../enums/DispatchLoadStatus";
 import { IUser } from "./User";
 import { IShipper } from "../modules/shipper/model";
 import { IConsignee } from "../modules/consignee/model";
+import { ILoad } from "./Load";
 
 export interface IAddress {
   str: string; // String representation
@@ -85,6 +86,7 @@ export interface IDispatch extends Document {
   invoiceDate?: Date;
   WONumber: string;
   customerId?: Types.ObjectId | IUser;
+  loadId?: Types.ObjectId | ILoad;
   carrierId?: Types.ObjectId | IUser;
   salesRep: Types.ObjectId;
   type: DispatchLoadType;

@@ -27,6 +27,7 @@ import { formatNumber } from "../../utils/numberUtils";
 import { IShipper } from "../shipper/model";
 import { IConsignee } from "../consignee/model";
 import { formatPhoneNumber } from "../../utils/phoneUtils";
+import { LoadModel } from "../load/model";
 
 const validTransitions: Record<DispatchLoadStatus, DispatchLoadStatus[]> = {
   [DispatchLoadStatus.Draft]: [DispatchLoadStatus.Published],
@@ -383,6 +384,12 @@ export async function updateLoadStatusHandler(
 
         load.loadNumber = lastLoad ? lastLoad.loadNumber! + 1 : 1; // Start from 1 if no loads exist
       }
+    }
+
+
+    // Update the Deal load status in the database
+    if([DispatchLoadStatus.InTransit, DispatchLoadStatus.Delivered, DispatchLoadStatus.Completed].includes(status)){
+        await LoadModel.findByIdAndUpdate(load.loadId, {status: status});
     }
 
     // Update status in the database

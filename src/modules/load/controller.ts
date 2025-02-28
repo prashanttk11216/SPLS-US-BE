@@ -21,7 +21,10 @@ const validTransitions: Record<LoadStatus, LoadStatus[]> = {
   [LoadStatus.Draft]: [LoadStatus.Published],
   [LoadStatus.Published]: [LoadStatus.PendingResponse, LoadStatus.Cancelled],
   [LoadStatus.PendingResponse]: [LoadStatus.DealClosed, LoadStatus.Cancelled],
-  [LoadStatus.DealClosed]: [],
+  [LoadStatus.DealClosed]: [LoadStatus.InTransit],
+  [LoadStatus.InTransit]: [LoadStatus.Delivered],
+  [LoadStatus.Delivered]: [LoadStatus.Completed],
+  [LoadStatus.Completed]: [],
   [LoadStatus.Cancelled]: [],
 };
 
@@ -184,6 +187,10 @@ export async function fetchLoadsHandler(
     if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_USER] })) {
       filters.postedBy = user._id; // Filter by broker's posted loads
     } else if (user && hasAccess(user.roles, { roles: [UserRole.CUSTOMER] })) {
+      if(req.query.status === LoadStatus.Published){
+        filters.status = { $in : [LoadStatus.Draft, LoadStatus.Published]}
+        delete req.query.status;
+      }
       filters.customerId = user._id; // Filter by customer-specific loads
     }else if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN] })) {
       filters.brokerId = user._id;
@@ -257,6 +264,9 @@ export async function fetchLoadsHandler(
         filters[key] = value; // Add non-pagination, non-special filters
       }
     }
+
+    console.log(filters);
+    
 
     // Handle sorting functionality
     const sortQuery = req.query.sort as string | undefined;
