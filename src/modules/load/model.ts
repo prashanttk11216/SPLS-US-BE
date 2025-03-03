@@ -5,9 +5,9 @@ import { Commodity } from "../../enums/Commodity";
 import { ILoad } from "../../types/Load";
 import { formatTimeDifference } from "../../utils/globalHelper";
 import { LoadOption } from "../../enums/LoadOption";
+import { LoadStatus } from "../../enums/LoadStatus";
 
 // Define Load interface extending Mongoose's Document
-
 const originStopSchema: Schema = new Schema({
   address: {
     str: { type: String }, // String representation
@@ -91,17 +91,8 @@ const LoadSchema: Schema = new Schema<ILoad>(
     postedBy: { type: Schema.Types.ObjectId, ref: "User" },
     status: {
       type: String,
-      enum: [
-        "Draft",
-        "Published",
-        "Pending Response",
-        "Deal Closed",
-        'In Transit',
-        'Delivered',
-        'Completed',
-        "Cancelled",
-      ],
-      default: "Draft",
+      enum: LoadStatus,
+      default: LoadStatus.Draft,
     },
     age: { type: Date }, // Persistent Age Field
   },

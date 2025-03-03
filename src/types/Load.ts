@@ -3,6 +3,7 @@ import { Commodity } from "../enums/Commodity";
 import { Equipment } from "../enums/Equipment";
 import { Mode } from "fs";
 import { IUser } from "./User";
+import { LoadStatus } from "../enums/LoadStatus";
 
 export interface ILoad extends Document {
   customerId?: mongoose.Types.ObjectId | IUser;
@@ -65,7 +66,7 @@ export interface ILoad extends Document {
   commodity: Commodity;
   loadNumber?: number;
   postedBy?: mongoose.Types.ObjectId;
-  status: string;
+  status: LoadStatus;
   age?: Date;
   formattedAge?: string;
   dhoDistance?: number;

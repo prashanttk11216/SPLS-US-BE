@@ -16,6 +16,8 @@ import EmailService, { SendEmailOptions } from "../../services/EmailService";
 import { escapeAndNormalizeSearch } from "../../utils/regexHelper";
 import { getPaginationParams } from "../../utils/paginationUtils";
 import { hasAccess } from "../../utils/role";
+import { parseSortQuery } from "../../utils/parseSortQuery";
+import { buildSearchFilter } from "../../utils/parseSearchQuerty";
 
 const validTransitions: Record<LoadStatus, LoadStatus[]> = {
   [LoadStatus.Draft]: [LoadStatus.Published],
@@ -96,9 +98,7 @@ export async function createLoadHandler(
     if (error instanceof z.ZodError) {
       send(res, 400, "Invalid input data", { errors: error.errors });
       return;
-    }
-    console.log(error);
-    
+    }    
     // Handle any other unexpected errors
     send(res, 500, "Server error");
   }
@@ -179,7 +179,7 @@ export async function fetchLoadsHandler(
     }
 
     const user = (req as Request & { user?: IUser })?.user;
-    const filters: any = {}; // Parse and validate query parameters
+    let filters: any = {}; // Parse and validate query parameters
 
     const { page, limit, skip } = getPaginationParams(req.query);
 
@@ -212,33 +212,17 @@ export async function fetchLoadsHandler(
 
     // Search functionality
     const search = req.query.search as string;
-    const searchField = req.query.searchField as string;
+    const searchField = req.query.searchField as string; // Get the specific field to search
 
-    // Define numeric fields
-    const numberFields = ["loadNumber",
+    if (search && searchField) {
+      const numberFields = ["loadNumber",
       "weight",
       "width",
       "height",
       "miles",
       "customerRate",
-      "allInRate"];
-
-    if (search && searchField) {
-      const escapedSearch = escapeAndNormalizeSearch(search);
-
-      // Validate and apply filters based on the field type
-      if (numberFields.includes(searchField)) {
-        // Ensure the search value is a valid number
-        const parsedNumber = Number(escapedSearch);
-        if (!isNaN(parsedNumber)) {
-          filters[searchField] = parsedNumber;
-        } else {
-          throw new Error(`Invalid number provided for field ${searchField}`);
-        }
-      } else {
-        // Apply regex for string fields
-        filters[searchField] = { $regex: escapedSearch, $options: "i" };
-      }
+      "allInRate"]; // Define numeric fields
+      filters = { ...filters, ...buildSearchFilter(search, searchField, numberFields) };
     }
 
     // Add all other query parameters dynamically into filters
@@ -263,36 +247,12 @@ export async function fetchLoadsHandler(
       ) {
         filters[key] = value; // Add non-pagination, non-special filters
       }
-    }
+    }    
 
-    console.log(filters);
-    
-
-    // Handle sorting functionality
+    // Sort functionality
     const sortQuery = req.query.sort as string | undefined;
-    let sortOptions: [string, SortOrder][] = []; // Sorting options as an array of tuples
-
-    if (sortQuery) {
-      const sortFields = sortQuery.split(","); // Support multiple sort fields (comma-separated)
-      const validFields = [
-        "age",
-        "loadNumber",
-        "origin.str",
-        "destination.str",
-        "originEarlyPickupDate",
-        "createdAt",
-        "miles",
-        "allInRate",
-      ]; // Define valid fields for sorting
-
-      sortFields.forEach((field) => {
-        const [key, order] = field.split(":");
-        if (validFields.includes(key)) {
-          // Add valid sort fields and direction to sortOptions
-          sortOptions.push([key, order === "desc" ? -1 : 1]);
-        }
-      });
-    }
+    const validFields = ["age", "loadNumber", "origin.str", "destination.str", "originEarlyPickupDate", "createdAt", "miles", "allInRate"];
+    const sortOptions = sortQuery && parseSortQuery(sortQuery, validFields);
 
     // Handle Deadhead Origin and Destination filters
     const dhoRadius = parseFloat(req.query.dhoRadius as string) || 0; // Radius for Deadhead Origin filter

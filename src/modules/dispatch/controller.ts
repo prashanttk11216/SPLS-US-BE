@@ -28,6 +28,9 @@ import { IShipper } from "../shipper/model";
 import { IConsignee } from "../consignee/model";
 import { formatPhoneNumber } from "../../utils/phoneUtils";
 import { LoadModel } from "../load/model";
+import { parseSortQuery } from "../../utils/parseSortQuery";
+import { buildSearchFilter } from "../../utils/parseSearchQuerty";
+import { applyPopulation } from "../../utils/populateHelper";
 
 const validTransitions: Record<DispatchLoadStatus, DispatchLoadStatus[]> = {
   [DispatchLoadStatus.Draft]: [DispatchLoadStatus.Published],
@@ -186,17 +189,17 @@ export async function fetchLoadsHandler(
     }
 
     const user = (req as Request & { user?: IUser })?.user;
-    const filters: any = {}; // Parse and validate query parameters
+    let filters: any = {}; // Parse and validate query parameters
 
     const { page, limit, skip } = getPaginationParams(req.query);
 
     // Role-based query conditions
     if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_USER] })) {
       filters.postedBy = user._id; // Filter by broker's posted loads
-    } if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN] })) {
+    }
+    if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN] })) {
       filters.brokerId = user._id;
     }
-
 
     // Apply date range filter if provided
     const dateField = req.query.dateField as string; // Get the specific field to search
@@ -218,34 +221,21 @@ export async function fetchLoadsHandler(
 
     // Search functionality
     const search = req.query.search as string;
-    const searchField = req.query.searchField as string;
-
-    // Define numeric fields
-    const numberFields = [
-      "loadNumber",
-      "WONumber",
-      "invoiceNumber",
-      "shipper.weight",
-      "consignee.weight",
-      "allInRate",
-    ];
+    const searchField = req.query.searchField as string; // Get the specific field to search
 
     if (search && searchField) {
-      const escapedSearch = escapeAndNormalizeSearch(search);
-
-      // Validate and apply filters based on the field type
-      if (numberFields.includes(searchField)) {
-        // Ensure the search value is a valid number
-        const parsedNumber = Number(escapedSearch);
-        if (!isNaN(parsedNumber)) {
-          filters[searchField] = parsedNumber;
-        } else {
-          throw new Error(`Invalid number provided for field ${searchField}`);
-        }
-      } else {
-        // Apply regex for string fields
-        filters[searchField] = { $regex: escapedSearch, $options: "i" };
-      }
+      const numberFields = [
+        "loadNumber",
+        "WONumber",
+        "invoiceNumber",
+        "shipper.weight",
+        "consignee.weight",
+        "allInRate",
+      ]; // Define numeric fields
+      filters = {
+        ...filters,
+        ...buildSearchFilter(search, searchField, numberFields),
+      };
     }
 
     // Add all other query parameters dynamically into filters
@@ -268,34 +258,22 @@ export async function fetchLoadsHandler(
 
     // Handle sorting functionality
     const sortQuery = req.query.sort as string | undefined;
-    let sortOptions: [string, SortOrder][] = []; // Sorting options as an array of tuples
-
-    if (sortQuery) {
-      const sortFields = sortQuery.split(","); // Support multiple sort fields (comma-separated)
-      const validFields = [
-        "age",
-        "WONumber",
-        "invoiceNumber",
-        "invoiceDate",
-        "equipment",
-        "shipper.address",
-        "shipper.date",
-        "consignee.address",
-        "consignee.date",
-        "loadNumber",
-        "createdAt",
-        "miles",
-        "allInRate",
-      ]; // Define valid fields for sorting
-
-      sortFields.forEach((field) => {
-        const [key, order] = field.split(":");
-        if (validFields.includes(key)) {
-          // Add valid sort fields and direction to sortOptions
-          sortOptions.push([key, order === "desc" ? -1 : 1]);
-        }
-      });
-    }
+    const validFields = [
+      "age",
+      "WONumber",
+      "invoiceNumber",
+      "invoiceDate",
+      "equipment",
+      "shipper.address",
+      "shipper.date",
+      "consignee.address",
+      "consignee.date",
+      "loadNumber",
+      "createdAt",
+      "miles",
+      "allInRate",
+    ];
+    const sortOptions = sortQuery && parseSortQuery(sortQuery, validFields);
 
     // Execute the query with pagination, sorting, and populating relevant fields
     const loads = await DispatchModel.find(filters)
@@ -304,6 +282,15 @@ export async function fetchLoadsHandler(
       .skip(skip)
       .limit(limit)
       .sort(sortOptions);
+
+    // let query = DispatchModel.find(filters)
+    //   .skip(skip)
+    //   .limit(limit)
+    //   .sort(sortOptions);
+
+    // query = applyPopulation(query, req.query.populate as string);
+
+    // const loads = await query;
 
     // Get total count for pagination metadata
     const totalCount = await DispatchModel.countDocuments(filters);
@@ -343,7 +330,6 @@ export async function updateLoadStatusHandler(
   res: Response
 ): Promise<void> {
   try {
-    const user = (req as Request & { user?: IUser })?.user;
     const { status } = req.body;
 
     // Fetch the load details and populate related broker and customer info
@@ -386,10 +372,17 @@ export async function updateLoadStatusHandler(
       }
     }
 
-
     // Update the Deal load status in the database
-    if([DispatchLoadStatus.InTransit, DispatchLoadStatus.Delivered, DispatchLoadStatus.Completed].includes(status)){
-        await LoadModel.findByIdAndUpdate(load.loadId, {status: status});
+    if (
+      [
+        DispatchLoadStatus.InTransit,
+        DispatchLoadStatus.Delivered,
+        DispatchLoadStatus.Completed,
+        DispatchLoadStatus.Cancelled,
+      ].includes(status)
+    ) {
+      if (load.loadId)
+        await LoadModel.findByIdAndUpdate(load.loadId, { status: status });
     }
 
     // Update status in the database
@@ -563,10 +556,10 @@ export async function rateConfirmationHandler(
           address: broker.address?.str || "N/A",
           primaryNumber: formatPhoneNumber(broker.primaryNumber),
           company: broker.company || "N/A",
-          billingAddress: broker.billingAddress?.str || "N/A",          
+          billingAddress: broker.billingAddress?.str || "N/A",
         },
         dispatcherDetails: {
-          name: (broker?.firstName + " " + broker?.lastName) || "N/A",
+          name: broker?.firstName + " " + broker?.lastName || "N/A",
           loadNumber: load?.loadNumber || "N/A",
           primaryNumber: formatPhoneNumber(broker?.primaryNumber),
           email: broker?.email || "N/A",
@@ -584,7 +577,7 @@ export async function rateConfirmationHandler(
         },
 
         carrierDetails: {
-          name: (carrier?.firstName + " " + carrier?.lastName) || "N/A",
+          name: carrier?.firstName + " " + carrier?.lastName || "N/A",
           primaryNumber: formatPhoneNumber(broker?.primaryNumber),
           equipment: getEnumValue(Equipment, load?.equipment) || "N/A",
           address: carrier?.address?.str || "N/A",
@@ -593,7 +586,7 @@ export async function rateConfirmationHandler(
         },
 
         consignee: {
-          name: (consignee?.firstName + " " + consignee?.lastName) || "N/A",
+          name: consignee?.firstName + " " + consignee?.lastName || "N/A",
           address: consignee?.address?.str || "N/A",
           primaryNumber: formatPhoneNumber(consignee?.primaryNumber),
           date: formatDate(load?.consignee?.date!, "MM/dd/yyyy") || "N/A",
@@ -625,8 +618,10 @@ export async function rateConfirmationHandler(
 
         loadDetails: {
           type: getEnumValue(DispatchLoadType, load.type),
-          carrierFee: load.carrierFee ? `$ ${formatNumber(load.carrierFee.totalAmount)}` : "N/A",
-        }
+          carrierFee: load.carrierFee
+            ? `$ ${formatNumber(load.carrierFee.totalAmount)}`
+            : "N/A",
+        },
       },
     });
     // Get PDF as a buffer
@@ -646,10 +641,9 @@ export async function rateConfirmationHandler(
 
 export async function BOLHandler(req: Request, res: Response): Promise<void> {
   try {
-
-    const {codAmount, codFee, declaredValue} = req.body
+    const { codAmount, codFee, declaredValue } = req.body;
     const { loadId } = req.params;
-    
+
     const load = await DispatchModel.findById(loadId)
       .populate([
         { path: "brokerId", select: "-password" },
@@ -721,16 +715,16 @@ export async function BOLHandler(req: Request, res: Response): Promise<void> {
           qty: load.shipper.qty || "N/A",
           description: load.shipper.description || "N/A",
           type: load.shipper.type || "N/A",
-          weight: load.shipper.weight || "N/A"
+          weight: load.shipper.weight || "N/A",
         },
 
         notes: {
           shippingNote: load.shipper.notes || "N/A",
-          deliveryNotes: load.consignee.notes || "N/A"
+          deliveryNotes: load.consignee.notes || "N/A",
         },
 
-        codAmount:  codAmount ? formatNumber(codAmount) : "0.00",
-        codFee:  codFee || "N/A",
+        codAmount: codAmount ? formatNumber(codAmount) : "0.00",
+        codFee: codFee || "N/A",
         declaredValue: declaredValue ? formatNumber(declaredValue) : "N/A",
       },
     });
@@ -774,7 +768,7 @@ export async function invoicedHandler(
 
     let newInvoiceNumber;
     let newInvoiceDate;
-    if(!(load.invoiceNumber && load.invoiceDate)){
+    if (!(load.invoiceNumber && load.invoiceDate)) {
       // Auto-generate invoice number if not provided
       const lastLoad = await DispatchModel.findOne({
         invoiceNumber: { $exists: true, $ne: null },
@@ -783,7 +777,9 @@ export async function invoicedHandler(
         .select("invoiceNumber")
         .lean();
 
-      newInvoiceNumber = lastLoad?.invoiceNumber ? lastLoad.invoiceNumber + 1 : 1;
+      newInvoiceNumber = lastLoad?.invoiceNumber
+        ? lastLoad.invoiceNumber + 1
+        : 1;
       newInvoiceDate = new Date();
 
       // Update load with invoice details
@@ -792,7 +788,7 @@ export async function invoicedHandler(
         invoiceDate: newInvoiceDate,
       });
     }
-    
+
     const broker = load?.brokerId as IUser;
     const carrier = load?.carrierId as IUser;
     const customer = load?.customerId as IUser;
@@ -806,10 +802,16 @@ export async function invoicedHandler(
       templateData: {
         invoiceDetails: {
           loadNumber: load?.loadNumber || "N/A",
-          invoiceNumber: newInvoiceNumber ? newInvoiceNumber : load.invoiceNumber  || "N/A",
-          invoiceDate: formatDate(newInvoiceDate ? newInvoiceDate: load.invoiceDate !, "MM/dd/yyyy") || "N/A",
+          invoiceNumber: newInvoiceNumber
+            ? newInvoiceNumber
+            : load.invoiceNumber || "N/A",
+          invoiceDate:
+            formatDate(
+              newInvoiceDate ? newInvoiceDate : load.invoiceDate!,
+              "MM/dd/yyyy"
+            ) || "N/A",
           WONumber: load.WONumber || "N/A",
-          allInRate: load.allInRate ? `${formatNumber(load.allInRate)}` : 0.00,
+          allInRate: load.allInRate ? `${formatNumber(load.allInRate)}` : 0.0,
           type: getEnumValue(DispatchLoadType, load.type) || "N/A",
         },
 
@@ -913,27 +915,29 @@ export async function accountingSummary(
       return;
     }
 
-    const formatedDetails: any[] = []
+    const formatedDetails: any[] = [];
 
-    let totalAmount = 0.00;
-    loads.forEach((load)=>{
+    let totalAmount = 0.0;
+    loads.forEach((load) => {
       const customer = load?.customerId as IUser;
 
-      let advance = 0.00;
-      let balance: number = (load.allInRate && load.allInRate - advance) || 0.00;
+      let advance = 0.0;
+      let balance: number = (load.allInRate && load.allInRate - advance) || 0.0;
       totalAmount += balance;
 
       formatedDetails.push({
         loadNumber: load.loadNumber,
         invoiceNumber: load.invoiceNumber,
         invoiceDate: formatDate(load?.invoiceDate!, "MM/dd/yyyy") || "N/A",
-        customerName: customer.company ? customer.company : (customer.firstName + " " + customer.lastName),
+        customerName: customer.company
+          ? customer.company
+          : customer.firstName + " " + customer.lastName,
         allInRate: load.allInRate ? formatNumber(load.allInRate) : "N/A",
         advance: advance,
-        balance: formatNumber(balance)
+        balance: formatNumber(balance),
       });
-    });    
-    
+    });
+
     const today = new Date();
     const pdfGenerator = new PdfGenerator();
     let htmlContent = await PdfService.generateHTMLTemplate({
@@ -942,8 +946,8 @@ export async function accountingSummary(
         todaysDate: formatDate(today, "MM/dd/yyyy") || "N/A",
         fromDate: formatDate(fromDate, "MM/dd/yyyy") || "N/A",
         toDate: formatDate(toDate, "MM/dd/yyyy") || "N/A",
-        totalAmount: totalAmount ? formatNumber(totalAmount) : 0.00,
-        loadDetails: formatedDetails
+        totalAmount: totalAmount ? formatNumber(totalAmount) : 0.0,
+        loadDetails: formatedDetails,
       },
     });
     // Get PDF as a buffer
@@ -1190,8 +1194,9 @@ export async function reportsHandler(
             FuelServiceCharge: load.fuelServiceCharge?.value,
             OtherChargesTotal: load.otherCharges?.totalAmount,
             CarrierFee: load.carrierFee?.totalAmount,
-            AllInRate: load.allInRate ? `$ ${formatNumber(load.allInRate)}` : "N/A",
-
+            AllInRate: load.allInRate
+              ? `$ ${formatNumber(load.allInRate)}`
+              : "N/A",
 
             // Shipper Details
             ShipperAddress: load.shipper.address.str,
@@ -1275,8 +1280,9 @@ export async function reportsHandler(
           FuelServiceCharge: load.fuelServiceCharge?.value,
           OtherChargesTotal: load.otherCharges?.totalAmount,
           CarrierFee: load.carrierFee?.totalAmount,
-          AllInRate: load.allInRate ? `$ ${formatNumber(load.allInRate)}` : "N/A",
-
+          AllInRate: load.allInRate
+            ? `$ ${formatNumber(load.allInRate)}`
+            : "N/A",
 
           // Shipper Details
           ShipperAddress: load.shipper.address.str,

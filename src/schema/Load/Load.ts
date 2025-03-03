@@ -81,18 +81,7 @@ const baseLoadSchema = z.object({
   loadNumber: z.number().optional(),
 
   postedBy: z.string().optional(),
-  status: z
-    .enum([
-      "Draft",
-      "Published",
-      "Pending Response",
-      "Deal Closed",
-      'In Transit',
-      'Delivered',
-      'Completed',
-      "Cancelled",
-    ])
-    .optional(),
+  status: z.string().optional(),
 });
 
 // Transform logic with explicit type assertions
