@@ -12,6 +12,7 @@ import { ITruck } from "../../types/Truck";
 import { escapeAndNormalizeSearch } from "../../utils/regexHelper";
 import { getPaginationParams } from "../../utils/paginationUtils";
 import { hasAccess } from "../../utils/role";
+import { applyDateRangeFilter } from "../../utils/dateFilter";
 
 // Create Truck API
 export async function createTruck(req: Request, res: Response): Promise<void> {
@@ -106,7 +107,7 @@ export async function getTrucks(req: Request, res: Response): Promise<void> {
     }
 
     const user = (req as Request & { user?: IUser }).user;
-    const filters: any = {};
+    let filters: any = {};
 
     const { page, limit, skip } = getPaginationParams(req.query);
 
@@ -117,19 +118,14 @@ export async function getTrucks(req: Request, res: Response): Promise<void> {
       filters.brokerId = user._id;
     }
 
-    // Apply date range filter if provided
-    const dateField = req.query.dateField as string; // Get the specific field to search
-    const fromDate = req.query.fromDate ? new Date(req.query.fromDate as string) : undefined;
-    const toDate = req.query.toDate ? new Date(req.query.toDate as string) : undefined;    
-    if (dateField && (fromDate || toDate)) {
-      filters[dateField] = {};
-      if (fromDate) {
-        filters[dateField].$gte = fromDate; // Filter records on or after fromDate
-      }
-      if (toDate) {
-        filters[dateField].$lte = toDate; // Filter records on or before toDate
-      }
-    }
+  
+    // Get query parameters
+    const dateField = req.query.dateField as string;
+    const fromDate = req.query.fromDate as string;
+    const toDate = req.query.toDate as string;
+
+    // Apply the date range filter
+    filters = applyDateRangeFilter(filters, dateField, fromDate, toDate);
 
     // Search functionality
     const search = req.query.search as string;

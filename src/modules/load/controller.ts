@@ -18,6 +18,8 @@ import { getPaginationParams } from "../../utils/paginationUtils";
 import { hasAccess } from "../../utils/role";
 import { parseSortQuery } from "../../utils/parseSortQuery";
 import { buildSearchFilter } from "../../utils/parseSearchQuerty";
+import { applyPopulation } from "../../utils/populateHelper";
+import { applyDateRangeFilter } from "../../utils/dateFilter";
 
 const validTransitions: Record<LoadStatus, LoadStatus[]> = {
   [LoadStatus.Draft]: [LoadStatus.Published],
@@ -157,17 +159,13 @@ export async function fetchLoadsHandler(
 ): Promise<void> {
   try {
     const { loadId } = req.params;
+    let filters: any = {}; // Parse and validate query parameters
 
     if (loadId) {
       // Fetch a single load by its ID
-      let load;
-      if(req?.query?.isPopulate){
-        load = await LoadModel.findOne({ _id: loadId })
-        .populate("brokerId", "-password")
-        .populate("postedBy", "-password")
-      }else {
-        load = await LoadModel.findOne({ _id: loadId });
-      }   
+      let query = LoadModel.findOne({ _id: loadId, ...filters });
+      query = applyPopulation(query, req.query.populate as string);
+      const load = await query;
 
       if (!load) {
         send(res, 404, "Load not found");
@@ -179,7 +177,6 @@ export async function fetchLoadsHandler(
     }
 
     const user = (req as Request & { user?: IUser })?.user;
-    let filters: any = {}; // Parse and validate query parameters
 
     const { page, limit, skip } = getPaginationParams(req.query);
 
@@ -196,19 +193,13 @@ export async function fetchLoadsHandler(
       filters.brokerId = user._id;
     }
 
-    const dateField = req.query.dateField as string; // Get the specific field to search
-    const fromDate = req.query.fromDate ? new Date(req.query.fromDate as string) : undefined;
-    const toDate = req.query.toDate ? new Date(req.query.toDate as string) : undefined;    
-    // Apply date range filter if provided
-    if (dateField && (fromDate || toDate)) {
-      filters[dateField] = {};
-      if (fromDate) {
-        filters[dateField].$gte = fromDate; // Filter records on or after fromDate
-      }
-      if (toDate) {
-        filters[dateField].$lte = toDate; // Filter records on or before toDate
-      }
-    }
+    // Get query parameters
+    const dateField = req.query.dateField as string;
+    const fromDate = req.query.fromDate as string;
+    const toDate = req.query.toDate as string;
+
+    // Apply the date range filter
+    filters = applyDateRangeFilter(filters, dateField, fromDate, toDate);
 
     // Search functionality
     const search = req.query.search as string;
@@ -242,7 +233,8 @@ export async function fetchLoadsHandler(
           "toDate",
           "search",
           "searchField",
-          "dateField"
+          "dateField",
+          "populate"
         ].includes(key)
       ) {
         filters[key] = value; // Add non-pagination, non-special filters
@@ -329,12 +321,14 @@ export async function fetchLoadsHandler(
     }
 
     // Execute the query with pagination, sorting, and populating relevant fields
-    const loads = await LoadModel.find(filters)
-    .populate("brokerId", "-password")
-    .populate("postedBy", "-password")
-      .skip(skip)
-      .limit(limit)
-      .sort(sortOptions);
+    let query = LoadModel.find(filters)
+          .skip(skip)
+          .limit(limit)
+          .sort(sortOptions);
+    
+    query = applyPopulation(query, req.query.populate as string);
+    
+    const loads = await query;
 
     // Get total count for pagination metadata
     const totalCount = await LoadModel.countDocuments(filters);

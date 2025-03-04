@@ -6,6 +6,7 @@ import { Query } from "mongoose";
  * Supports:
  * - "field" → Populate the whole reference
  * - "field:subField1 subField2" → Populate only specific sub-fields
+ * - "field:-subField1 -subField2" → Populate the whole reference except specific sub-fields
  *
  * @param query - The Mongoose query to apply population to.
  * @param populateParam - The populate parameter from request query, supports specific sub-fields.

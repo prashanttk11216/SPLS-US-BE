@@ -31,6 +31,7 @@ import { LoadModel } from "../load/model";
 import { parseSortQuery } from "../../utils/parseSortQuery";
 import { buildSearchFilter } from "../../utils/parseSearchQuerty";
 import { applyPopulation } from "../../utils/populateHelper";
+import { applyDateRangeFilter } from "../../utils/dateFilter";
 
 const validTransitions: Record<DispatchLoadStatus, DispatchLoadStatus[]> = {
   [DispatchLoadStatus.Draft]: [DispatchLoadStatus.Published],
@@ -174,10 +175,13 @@ export async function fetchLoadsHandler(
 ): Promise<void> {
   try {
     const { loadId } = req.params;
+    let filters: any = {}; // Parse and validate query parameters
 
     if (loadId) {
       // Fetch a single load by its ID
-      const load = await DispatchModel.findOne({ _id: loadId });
+      let query = DispatchModel.findOne({ _id: loadId, ...filters });
+      query = applyPopulation(query, req.query.populate as string);
+      const load = await query;
 
       if (!load) {
         send(res, 404, "Load not found");
@@ -189,8 +193,6 @@ export async function fetchLoadsHandler(
     }
 
     const user = (req as Request & { user?: IUser })?.user;
-    let filters: any = {}; // Parse and validate query parameters
-
     const { page, limit, skip } = getPaginationParams(req.query);
 
     // Role-based query conditions
@@ -201,23 +203,14 @@ export async function fetchLoadsHandler(
       filters.brokerId = user._id;
     }
 
-    // Apply date range filter if provided
-    const dateField = req.query.dateField as string; // Get the specific field to search
-    const fromDate = req.query.fromDate
-      ? new Date(req.query.fromDate as string)
-      : undefined;
-    const toDate = req.query.toDate
-      ? new Date(req.query.toDate as string)
-      : undefined;
-    if (dateField && (fromDate || toDate)) {
-      filters[dateField] = {};
-      if (fromDate) {
-        filters[dateField].$gte = fromDate; // Filter records on or after fromDate
-      }
-      if (toDate) {
-        filters[dateField].$lte = toDate; // Filter records on or before toDate
-      }
-    }
+
+    // Get query parameters
+    const dateField = req.query.dateField as string;
+    const fromDate = req.query.fromDate as string;
+    const toDate = req.query.toDate as string;
+
+    // Apply the date range filter
+    filters = applyDateRangeFilter(filters, dateField, fromDate, toDate);
 
     // Search functionality
     const search = req.query.search as string;
@@ -250,6 +243,7 @@ export async function fetchLoadsHandler(
           "search",
           "searchField",
           "dateField",
+          "populate"
         ].includes(key)
       ) {
         filters[key] = value; // Add non-pagination, non-special filters
@@ -276,21 +270,14 @@ export async function fetchLoadsHandler(
     const sortOptions = sortQuery && parseSortQuery(sortQuery, validFields);
 
     // Execute the query with pagination, sorting, and populating relevant fields
-    const loads = await DispatchModel.find(filters)
-      .populate("brokerId", "-password")
-      .populate("postedBy", "-password")
+    let query = DispatchModel.find(filters)
       .skip(skip)
       .limit(limit)
       .sort(sortOptions);
 
-    // let query = DispatchModel.find(filters)
-    //   .skip(skip)
-    //   .limit(limit)
-    //   .sort(sortOptions);
+    query = applyPopulation(query, req.query.populate as string);
 
-    // query = applyPopulation(query, req.query.populate as string);
-
-    // const loads = await query;
+    const loads = await query;
 
     // Get total count for pagination metadata
     const totalCount = await DispatchModel.countDocuments(filters);
@@ -880,23 +867,19 @@ export async function accountingSummary(
   res: Response
 ): Promise<void> {
   try {
-    const filters: any = { status: DispatchLoadStatus.Invoiced }; // Parse and validate query parameters
-    const fromDate = req.body.fromDate;
-    const toDate = req.body.toDate;
-
+    let filters: any = { status: DispatchLoadStatus.Invoiced }; // Parse and validate query parameters
+    
+    // Get query parameters
+    const dateField = req.body.dateField as string || "createdAt";
+    const fromDate = req.body.fromDate as string;
+    const toDate = req.body.toDate as string;
     if (!fromDate) {
       send(res, 400, "Please pass date range.");
+      return;
     }
-    const dateField = "createdAt";
-    if (dateField && (fromDate || toDate)) {
-      filters[dateField] = {};
-      if (fromDate) {
-        filters[dateField].$gte = fromDate; // Filter records on or after fromDate
-      }
-      if (toDate) {
-        filters[dateField].$lte = toDate; // Filter records on or before toDate
-      }
-    }
+
+    // Apply the date range filter
+    filters = applyDateRangeFilter(filters, dateField, fromDate, toDate);
 
     const loads = await DispatchModel.find(filters)
       .populate([
@@ -944,8 +927,8 @@ export async function accountingSummary(
       templateName: "AccountSummaryExport",
       templateData: {
         todaysDate: formatDate(today, "MM/dd/yyyy") || "N/A",
-        fromDate: formatDate(fromDate, "MM/dd/yyyy") || "N/A",
-        toDate: formatDate(toDate, "MM/dd/yyyy") || "N/A",
+        fromDate: formatDate(req.body.fromDate, "MM/dd/yyyy") || "N/A",
+        toDate: formatDate(req.body.toDate, "MM/dd/yyyy") || "N/A",
         totalAmount: totalAmount ? formatNumber(totalAmount) : 0.0,
         loadDetails: formatedDetails,
       },
@@ -1091,7 +1074,7 @@ export async function reportsHandler(
   res: Response
 ): Promise<void> {
   try {
-    const { category, categoryValue, filterBy, fromDate, toDate } = req.body;
+    const { category, categoryValue, filterBy } = req.body;
     let matchQuery: any = { status: DispatchLoadStatus.Invoiced };
 
     if (categoryValue !== "ALL") {
@@ -1108,18 +1091,17 @@ export async function reportsHandler(
       sortOptions.push(["invoiceDate", 1]);
     }
 
-    const dateField = "createdAt"; // Get the specific field to search
-    const fromDateInput = fromDate ? new Date(fromDate as string) : undefined;
-    const toDateInput = toDate ? new Date(toDate as string) : undefined;
-    if (dateField && (fromDateInput || toDateInput)) {
-      matchQuery[dateField] = {};
-      if (fromDate) {
-        matchQuery[dateField].$gte = fromDateInput; // Filter records on or after fromDate
-      }
-      if (toDate) {
-        matchQuery[dateField].$lte = toDateInput; // Filter records on or before toDate
-      }
-    }
+
+    // Get query parameters
+    const dateField = req.body.dateField as string || "createdAt";
+    const fromDate = req.body.fromDate as string;
+    const toDate = req.body.toDate as string;
+
+    // Apply the date range filter
+    matchQuery = applyDateRangeFilter(matchQuery, dateField, fromDate, toDate);
+
+
+
 
     // Fetch loads and group them
     let loads;
