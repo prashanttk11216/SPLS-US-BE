@@ -191,6 +191,10 @@ export async function fetchLoadsHandler(
       filters.customerId = user._id; // Filter by customer-specific loads
     }else if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN] })) {
       filters.brokerId = user._id;
+    }if (user && hasAccess(user.roles, { roles: [UserRole.CARRIER] })) {
+      if(req.query.status !== LoadStatus.Published){
+        filters.carrierId = user._id;
+      }
     }
 
     // Get query parameters
@@ -752,7 +756,6 @@ export async function updateLoadStatusHandler(
   res: Response
 ): Promise<void> {
   try {
-    const user = (req as Request & { user?: IUser })?.user;
     const { status } = req.body;
 
     // Fetch the load details and populate related broker and customer info
@@ -762,6 +765,11 @@ export async function updateLoadStatusHandler(
 
     if (!load) {
       send(res, 404, "Load not found");
+      return;
+    }
+
+    if(status == LoadStatus.PendingResponse && !load.carrierId){
+      send(res, 400, "Please assign a carrier to the load before changing the status to Pending Response");
       return;
     }
 
