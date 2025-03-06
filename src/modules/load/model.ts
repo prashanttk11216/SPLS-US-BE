@@ -46,10 +46,6 @@ const destinationSchema = new mongoose.Schema({
 
 const LoadSchema: Schema = new Schema<ILoad>(
   {
-    customerId: { type: Schema.Types.ObjectId, ref: "User" },
-    brokerId: { type: Schema.Types.ObjectId, ref: "User" },
-    carrierId: { type: Schema.Types.ObjectId, ref: "User" },
-
     origin: {
       type: originSchema,
       required: true,
@@ -68,11 +64,13 @@ const LoadSchema: Schema = new Schema<ILoad>(
     destinationLateDropoffDate: { type: Date },
     destinationEarlyDropoffTime: { type: Date },
     destinationLateDropoffTime: { type: Date },
-
     destinationStops: [destinationStopSchema],
 
     equipment: { type: String, enum: Object.keys(Equipment), required: true },
     mode: { type: String, enum: Object.keys(Mode), required: true },
+    loadOption: { type: String, enum: Object.keys(LoadOption)},
+    commodity: { type: String, enum: Object.keys(Commodity) },
+
 
     allInRate: { type: Number, min: 0 },
     customerRate: { type: Number, min: 0 },
@@ -83,18 +81,22 @@ const LoadSchema: Schema = new Schema<ILoad>(
     pieces: { type: Number, min: 0 },
     pallets: { type: Number, min: 0 },
     miles: { type: Number, min: 0 },
-    loadOption: { type: String, enum: Object.keys(LoadOption)},
-    specialInstructions: { type: String },
-    commodity: { type: String, enum: Object.keys(Commodity) },
     loadNumber: { type: Number, unique: true },
 
-    postedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    specialInstructions: { type: String },
+    age: { type: Date },
+
     status: {
       type: String,
-      enum: LoadStatus,
+      enum: Object.values(LoadStatus),
       default: LoadStatus.Draft,
     },
-    age: { type: Date }, // Persistent Age Field
+
+    customerId: { type: Schema.Types.ObjectId, ref: "User" },
+    brokerId: { type: Schema.Types.ObjectId, ref: "User" },
+    carrierId: { type: Schema.Types.ObjectId, ref: "User" },
+    postedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    
   },
   {
     timestamps: true,

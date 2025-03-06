@@ -9,17 +9,16 @@ import { UserRole } from "../../enums/UserRole";
 import { LoadModel } from "./model";
 import logger from "../../utils/logger";
 import { LoadStatus } from "../../enums/LoadStatus";
-import { SortOrder } from "mongoose";
 import { calculateDistance } from "../../utils/globalHelper";
 import { formatDate } from "../../utils/dateFormat";
 import EmailService, { SendEmailOptions } from "../../services/EmailService";
-import { escapeAndNormalizeSearch } from "../../utils/regexHelper";
 import { getPaginationParams } from "../../utils/paginationUtils";
 import { hasAccess } from "../../utils/role";
 import { parseSortQuery } from "../../utils/parseSortQuery";
 import { buildSearchFilter } from "../../utils/parseSearchQuerty";
 import { applyPopulation } from "../../utils/populateHelper";
 import { applyDateRangeFilter } from "../../utils/dateFilter";
+import { formatNumber } from "../../utils/numberUtils";
 
 const validTransitions: Record<LoadStatus, LoadStatus[]> = {
   [LoadStatus.Draft]: [LoadStatus.Published],
@@ -48,13 +47,14 @@ export async function createLoadHandler(
     // Validate incoming request data using Zod schema
     const validatedData = createLoadSchema.parse(req.body);
 
-    const user = (req as Request & { user?: IUser })?.user; // Extract user data from request
+    // Extract user data from request
+    const user = (req as Request & { user?: IUser })?.user;
 
-    // Set default load status for non-customer roles
+    // Set default load status Published for non-customer roles
     if (!(user && hasAccess(user.roles, { roles: [UserRole.CUSTOMER] }))) {
       validatedData.status = LoadStatus.Published; // Brokers/Admins can publish loads
     }
-    
+
     // Handle load number logic
     if (validatedData.loadNumber) {
       // Validate if the provided loadNumber already exists in the database
@@ -100,7 +100,7 @@ export async function createLoadHandler(
     if (error instanceof z.ZodError) {
       send(res, 400, "Invalid input data", { errors: error.errors });
       return;
-    }    
+    }
     // Handle any other unexpected errors
     send(res, 500, "Server error");
   }
@@ -159,11 +159,10 @@ export async function fetchLoadsHandler(
 ): Promise<void> {
   try {
     const { loadId } = req.params;
-    let filters: any = {}; // Parse and validate query parameters
 
     if (loadId) {
       // Fetch a single load by its ID
-      let query = LoadModel.findOne({ _id: loadId, ...filters });
+      let query = LoadModel.findOne({ _id: loadId });
       query = applyPopulation(query, req.query.populate as string);
       const load = await query;
 
@@ -176,79 +175,73 @@ export async function fetchLoadsHandler(
       return;
     }
 
+    let filters: any = {}; // Parse and validate query parameters
     const user = (req as Request & { user?: IUser })?.user;
-
     const { page, limit, skip } = getPaginationParams(req.query);
 
+    if (!user) {
+     send(res, 500, "Server error: User not authenticated");
+     return;
+    }
+
     // Role-based query conditions
-    if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_USER] })) {
+    if (hasAccess(user.roles, { roles: [UserRole.BROKER_USER] })) {
       filters.postedBy = user._id; // Filter by broker's posted loads
-    } else if (user && hasAccess(user.roles, { roles: [UserRole.CUSTOMER] })) {
-      if(req.query.status === LoadStatus.Published){
-        filters.status = { $in : [LoadStatus.Draft, LoadStatus.Published]}
+    } else if (hasAccess(user.roles, { roles: [UserRole.CUSTOMER] })) {
+      if (req.query.status === LoadStatus.Published) {
+        filters.status = { $in: [LoadStatus.Draft, LoadStatus.Published] };
         delete req.query.status;
       }
       filters.customerId = user._id; // Filter by customer-specific loads
-    }else if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN] })) {
+    } else if (hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN] })) {
       filters.brokerId = user._id;
-    }if (user && hasAccess(user.roles, { roles: [UserRole.CARRIER] })) {
-      if(req.query.status !== LoadStatus.Published){
+    } else if (hasAccess(user.roles, { roles: [UserRole.CARRIER] })) {
+      if (req.query.status !== LoadStatus.Published) {
         filters.carrierId = user._id;
       }
     }
 
-    // Get query parameters
+    // Apply the date range filter
     const dateField = req.query.dateField as string;
     const fromDate = req.query.fromDate as string;
     const toDate = req.query.toDate as string;
-
-    // Apply the date range filter
-    filters = applyDateRangeFilter(filters, dateField, fromDate, toDate);
+    if(dateField) filters = applyDateRangeFilter(filters, dateField, fromDate, toDate);
 
     // Search functionality
     const search = req.query.search as string;
-    const searchField = req.query.searchField as string; // Get the specific field to search
-
+    const searchField = req.query.searchField as string;
     if (search && searchField) {
-      const numberFields = ["loadNumber",
-      "weight",
-      "width",
-      "height",
-      "miles",
-      "customerRate",
-      "allInRate"]; // Define numeric fields
-      filters = { ...filters, ...buildSearchFilter(search, searchField, numberFields) };
+      const numberFields = [
+        "loadNumber",
+        "weight",
+        "width",
+        "height",
+        "miles",
+        "customerRate",
+        "allInRate",
+      ]; // Define numeric fields
+      filters = {
+        ...filters,
+        ...buildSearchFilter(search, searchField, numberFields),
+      };
     }
-
-    // Add all other query parameters dynamically into filters
-    for (const [key, value] of Object.entries(req.query)) {
-      if (
-        ![
-          "page",
-          "limit",
-          "sort",
-          "dhoRadius",
-          "dhdRadius",
-          "originLat",
-          "originLng",
-          "destinationLat",
-          "destinationLng",
-          "fromDate",
-          "toDate",
-          "search",
-          "searchField",
-          "dateField",
-          "populate"
-        ].includes(key)
-      ) {
-        filters[key] = value; // Add non-pagination, non-special filters
-      }
-    }    
 
     // Sort functionality
     const sortQuery = req.query.sort as string | undefined;
-    const validFields = ["age", "loadNumber", "origin.str", "destination.str", "originEarlyPickupDate", "createdAt", "miles", "allInRate"];
-    const sortOptions = sortQuery && parseSortQuery(sortQuery, validFields);
+    const validFields = [
+      "age",
+      "loadNumber",
+      "origin.str",
+      "destination.str",
+      "originEarlyPickupDate",
+      "createdAt",
+      "miles",
+      "allInRate",
+    ];
+    let sortOptions; // Declare variable
+    if (sortQuery) {
+      sortOptions = parseSortQuery(sortQuery, validFields);
+    }
 
     // Handle Deadhead Origin and Destination filters
     const dhoRadius = parseFloat(req.query.dhoRadius as string) || 0; // Radius for Deadhead Origin filter
@@ -261,8 +254,8 @@ export async function fetchLoadsHandler(
     // Fetch all loads matching base filters
     if ((originLat && originLng) || (destinationLat && destinationLng)) {
       const allLoads = await LoadModel.find(filters)
-      .populate("brokerId", "-password")
-      .populate("postedBy", "-password")
+        .populate("brokerId", "-password")
+        .populate("postedBy", "-password")
         .skip(skip)
         .limit(limit)
         .sort(sortOptions);
@@ -324,14 +317,39 @@ export async function fetchLoadsHandler(
       return;
     }
 
+    // Add all other query parameters dynamically into filters
+    for (const [key, value] of Object.entries(req.query)) {
+      if (
+        ![
+          "page",
+          "limit",
+          "sort",
+          "dhoRadius",
+          "dhdRadius",
+          "originLat",
+          "originLng",
+          "destinationLat",
+          "destinationLng",
+          "fromDate",
+          "toDate",
+          "search",
+          "searchField",
+          "dateField",
+          "populate",
+        ].includes(key)
+      ) {
+        filters[key] = value; // Add non-pagination, non-special filters
+      }
+    }
+
     // Execute the query with pagination, sorting, and populating relevant fields
     let query = LoadModel.find(filters)
-          .skip(skip)
-          .limit(limit)
-          .sort(sortOptions);
-    
+      .skip(skip)
+      .limit(limit)
+      .sort(sortOptions);
+
     query = applyPopulation(query, req.query.populate as string);
-    
+
     const loads = await query;
 
     // Get total count for pagination metadata
@@ -370,17 +388,21 @@ export async function requestLoadHandler(
   try {
     const user = (req as Request & { user?: IUser })?.user;
 
+    if (!user) {
+      send(res, 500, "Server error: User not authenticated");
+      return;
+     }
+
     // Ensure the user is a carrier
-    if (!(user && hasAccess(user.roles, { roles: [UserRole.CARRIER] }))) {
+    if (!hasAccess(user.roles, { roles: [UserRole.CARRIER] })) {
       send(res, 403, "Only carriers can choose pending loads");
       return;
     }
 
     // Fetch the load by its ID
-    const load = await LoadModel.findById(req.params.loadId).populate<{
-      brokerId: IUser;
-    }>("brokerId", "-password").populate<{ postedBy: IUser }>("postedBy", "-password");
-    
+    let query = LoadModel.findById(req.params.loadId)
+    query = applyPopulation(query, "brokerId:-password,postedBy:-password" as string);
+    const load = await query;
 
     // Check if the load exists
     if (!load) {
@@ -394,11 +416,16 @@ export async function requestLoadHandler(
       return;
     }
 
+    const postedBy = load?.postedBy as IUser;
+    const broker = load?.brokerId as IUser;
+
     let emails: string[] = [];
-    if(load.brokerId.email !== load.postedBy.email){
-      emails.push(load.postedBy.email);
+
+    // check weather broker and postedBy is same or not 
+    if (broker.email !== postedBy.email) {
+      emails.push(postedBy.email);
     }
-    emails.push(load.brokerId.email);
+    emails.push(broker.email);
 
     // Set up the email notification options
     const emailOptions: SendEmailOptions = {
@@ -408,16 +435,43 @@ export async function requestLoadHandler(
       templateData: {
         loadDetails: {
           loadNumber: load.loadNumber,
+
           origin: load.origin.str,
+          originEarlyPickupDate: formatDate(
+            load.originEarlyPickupDate,
+            "yyyy/MM/dd"
+          ),
+          originEarlyPickupTime: formatDate(
+            load.originEarlyPickupTime!,
+            "h:mm aa"
+          ),
+          originLatePickupDate: formatDate(
+            load.originLatePickupDate!,
+            "yyyy/MM/dd"
+          ),
+          originLatePickupTime: formatDate(
+            load.originLatePickupTime!,
+            "h:mm aa"
+          ),
+
           destination: load.destination.str,
-          originEarlyPickupDate: formatDate(load.originEarlyPickupDate, "MM/dd/yyyy"),
-          originEarlyPickupTime: formatDate(load.originEarlyPickupTime!, "h:mm aa"),
-          originLatePickupDate: formatDate(load.originLatePickupDate!, "MM/dd/yyyy"),
-          originLatePickupTime: formatDate(load.originLatePickupTime!, "h:mm aa"),
-          destionationEarlyDropoffDate: formatDate(load.destinationEarlyDropoffDate!, "MM/dd/yyyy"),
-          destionationEarlyDropoffTime: formatDate(load.destinationEarlyDropoffTime!, "h:mm aa"),
-          destionationLateDropoffDate: formatDate(load.destinationLateDropoffDate!, "MM/dd/yyyy"),
-          destionationLateDropoffTime: formatDate(load.destinationLateDropoffTime!, "h:mm aa"),
+          destionationEarlyDropoffDate: formatDate(
+            load.destinationEarlyDropoffDate!,
+            "yyyy/MM/dd"
+          ),
+          destionationEarlyDropoffTime: formatDate(
+            load.destinationEarlyDropoffTime!,
+            "h:mm aa"
+          ),
+          destionationLateDropoffDate: formatDate(
+            load.destinationLateDropoffDate!,
+            "yyyy/MM/dd"
+          ),
+          destionationLateDropoffTime: formatDate(
+            load.destinationLateDropoffTime!,
+            "h:mm aa"
+          ),
+
           equipment: load.equipment,
           mode: load.mode,
           allInRate: load.allInRate,
@@ -425,7 +479,7 @@ export async function requestLoadHandler(
         },
         carrierDetails: {
           company: user.company,
-          name: user.firstName + " " +user.lastName,
+          name: user.firstName + " " + user.lastName,
           email: user.email,
           primaryNumber: user.primaryNumber,
           mailingAddress: {
@@ -446,7 +500,7 @@ export async function requestLoadHandler(
             billingZip: user.billingZip,
             billingCountry: user.billingCountry,
           },
-        }
+        },
       },
     };
 
@@ -477,9 +531,11 @@ export async function confirmRateWithCustomerHandler(
   res: Response
 ): Promise<void> {
   try {
+
     // Fetch load details and populate broker's email
-    const load = await LoadModel.findById(req.params.loadId).populate("brokerId", "-password")
-    .populate("postedBy", "-password")
+    const load = await LoadModel.findById(req.params.loadId)
+      .populate("brokerId", "-password")
+      .populate("postedBy", "-password");
 
     // Check if the load exists
     if (!load) {
@@ -489,7 +545,7 @@ export async function confirmRateWithCustomerHandler(
 
     // Validate that the load is in "PendingResponse" status
     if (load.status !== LoadStatus.PendingResponse) {
-      send(res, 400, "Only Pending Response loads can be chosen by a Broker");
+      send(res, 400, "Only Pending Response  cloadsan be chosen by a Broker");
       return;
     }
 
@@ -501,68 +557,135 @@ export async function confirmRateWithCustomerHandler(
       return;
     }
 
+    const formattedLoad: any = {};
 
-      const formattedLoad: any = {};
-    
-      // Check for each field and add it only if it has a value
-      if (load.loadNumber) formattedLoad.loadNumber = load.loadNumber;
-      if (load.formattedAge) formattedLoad.formattedAge = load.formattedAge; // Virtual getter for age
-      if (load.origin && load.origin.str) formattedLoad.origin = load.origin.str;
-      if (load.originEarlyPickupDate) formattedLoad.originEarlyPickupDate = formatDate(load.originEarlyPickupDate, "MM/dd/yyyy");
-      if (load.originEarlyPickupTime) formattedLoad.originEarlyPickupTime = formatDate(load.originEarlyPickupTime, "h:mm aa");
-      if (load.originLatePickupDate) formattedLoad.originLatePickupDate = formatDate(load.originLatePickupDate, "MM/dd/yyyy");
-      if (load.originLatePickupTime) formattedLoad.originLatePickupTime = formatDate(load.originLatePickupTime, "h:mm aa");
-    
-      if (load.originStops && load.originStops.length > 0) {
-        formattedLoad.originStops = load.originStops.map((stop) => {
-          const stopDetails: any = {};
-          if (stop.address && stop.address.str) stopDetails.address = stop.address.str;
-          if (stop.earlyPickupDate) stopDetails.earlyPickupDate = formatDate(stop.earlyPickupDate, "MM/dd/yyyy");
-          if (stop.latePickupDate) stopDetails.latePickupDate = formatDate(stop.latePickupDate, "MM/dd/yyyy");
-          if (stop.earlyPickupTime) stopDetails.earlyPickupTime = formatDate(stop.earlyPickupTime, "h:mm aa");
-          if (stop.latePickupTime) stopDetails.latePickupTime = formatDate(stop.latePickupTime, "h:mm aa");
-          return stopDetails;
-        });
-      }
-    
-      if (load.destination && load.destination.str) formattedLoad.destination = load.destination.str;
-      if (load.destinationEarlyDropoffDate) formattedLoad.destinationEarlyDropoffDate = formatDate(load.destinationEarlyDropoffDate, "MM/dd/yyyy");
-      if (load.destinationEarlyDropoffTime) formattedLoad.destinationEarlyDropoffTime = formatDate(load.destinationEarlyDropoffTime, "h:mm aa");
-      if (load.destinationLateDropoffDate) formattedLoad.destinationLateDropoffDate = formatDate(load.destinationLateDropoffDate, "MM/dd/yyyy");
-      if (load.destinationLateDropoffTime) formattedLoad.destinationLateDropoffTime = formatDate(load.destinationLateDropoffTime, "h:mm aa");
-    
-      if (load.destinationStops && load.destinationStops.length > 0) {
-        formattedLoad.destinationStops = load.destinationStops.map((stop) => {
-          const stopDetails: any = {};
-          if (stop.address && stop.address.str) stopDetails.address = stop.address.str;
-          if (stop.earlyDropoffDate) stopDetails.earlyDropoffDate = formatDate(stop.earlyDropoffDate, "MM/dd/yyyy");
-          if (stop.lateDropoffDate) stopDetails.lateDropoffDate = formatDate(stop.lateDropoffDate, "MM/dd/yyyy");
-          if (stop.earlyDropoffTime) stopDetails.earlyDropoffTime = formatDate(stop.earlyDropoffTime, "h:mm aa");
-          if (stop.lateDropoffTime) stopDetails.lateDropoffTime = formatDate(stop.lateDropoffTime, "h:mm aa");
-          return stopDetails;
-        });
-      }
-    
-      if (load.equipment) formattedLoad.equipment = load.equipment;
-      if (load.mode) formattedLoad.mode = load.mode;
-      if (load.customerRate) formattedLoad.customerRate = "$"+load.customerRate;
-      if (load.weight) formattedLoad.weight = (load.weight + "lbs");
-      if (load.length) formattedLoad.length = (load.length + "ft");
-      if (load.width) formattedLoad.width = load.width;
-      if (load.height) formattedLoad.height = load.height;
-      if (load.pieces) formattedLoad.pieces = load.pieces;
-      if (load.pallets) formattedLoad.pallets = load.pallets;
-      if (load.miles) formattedLoad.miles = load.miles;
-      if (load.commodity) formattedLoad.commodity = load.commodity;
-      if (load.postedBy) formattedLoad.postedBy = load.postedBy;
-      if (load.specialInstructions) formattedLoad.specialInstructions = load.specialInstructions;
-          
+    // Check for each field and add it only if it has a value
+    if (load.loadNumber) formattedLoad.loadNumber = load.loadNumber;
+    if (load.formattedAge) formattedLoad.formattedAge = load.formattedAge; // Virtual getter for age
+    if (load.origin && load.origin.str) formattedLoad.origin = load.origin.str;
+    if (load.originEarlyPickupDate)
+      formattedLoad.originEarlyPickupDate = formatDate(
+        load.originEarlyPickupDate,
+        "yyyy/MM/dd"
+      );
+    if (load.originEarlyPickupTime)
+      formattedLoad.originEarlyPickupTime = formatDate(
+        load.originEarlyPickupTime,
+        "h:mm aa"
+      );
+    if (load.originLatePickupDate)
+      formattedLoad.originLatePickupDate = formatDate(
+        load.originLatePickupDate,
+        "yyyy/MM/dd"
+      );
+    if (load.originLatePickupTime)
+      formattedLoad.originLatePickupTime = formatDate(
+        load.originLatePickupTime,
+        "h:mm aa"
+      );
+
+    if (load.originStops && load.originStops.length > 0) {
+      formattedLoad.originStops = load.originStops.map((stop) => {
+        const stopDetails: any = {};
+        if (stop.address && stop.address.str)
+          stopDetails.address = stop.address.str;
+        if (stop.earlyPickupDate)
+          stopDetails.earlyPickupDate = formatDate(
+            stop.earlyPickupDate,
+            "yyyy/MM/dd"
+          );
+        if (stop.latePickupDate)
+          stopDetails.latePickupDate = formatDate(
+            stop.latePickupDate,
+            "yyyy/MM/dd"
+          );
+        if (stop.earlyPickupTime)
+          stopDetails.earlyPickupTime = formatDate(
+            stop.earlyPickupTime,
+            "h:mm aa"
+          );
+        if (stop.latePickupTime)
+          stopDetails.latePickupTime = formatDate(
+            stop.latePickupTime,
+            "h:mm aa"
+          );
+        return stopDetails;
+      });
+    }
+
+    if (load.destination && load.destination.str)
+      formattedLoad.destination = load.destination.str;
+    if (load.destinationEarlyDropoffDate)
+      formattedLoad.destinationEarlyDropoffDate = formatDate(
+        load.destinationEarlyDropoffDate,
+        "yyyy/MM/dd"
+      );
+    if (load.destinationEarlyDropoffTime)
+      formattedLoad.destinationEarlyDropoffTime = formatDate(
+        load.destinationEarlyDropoffTime,
+        "h:mm aa"
+      );
+    if (load.destinationLateDropoffDate)
+      formattedLoad.destinationLateDropoffDate = formatDate(
+        load.destinationLateDropoffDate,
+        "yyyy/MM/dd"
+      );
+    if (load.destinationLateDropoffTime)
+      formattedLoad.destinationLateDropoffTime = formatDate(
+        load.destinationLateDropoffTime,
+        "h:mm aa"
+      );
+
+    if (load.destinationStops && load.destinationStops.length > 0) {
+      formattedLoad.destinationStops = load.destinationStops.map((stop) => {
+        const stopDetails: any = {};
+        if (stop.address && stop.address.str)
+          stopDetails.address = stop.address.str;
+        if (stop.earlyDropoffDate)
+          stopDetails.earlyDropoffDate = formatDate(
+            stop.earlyDropoffDate,
+            "yyyy/MM/dd"
+          );
+        if (stop.lateDropoffDate)
+          stopDetails.lateDropoffDate = formatDate(
+            stop.lateDropoffDate,
+            "yyyy/MM/dd"
+          );
+        if (stop.earlyDropoffTime)
+          stopDetails.earlyDropoffTime = formatDate(
+            stop.earlyDropoffTime,
+            "h:mm aa"
+          );
+        if (stop.lateDropoffTime)
+          stopDetails.lateDropoffTime = formatDate(
+            stop.lateDropoffTime,
+            "h:mm aa"
+          );
+        return stopDetails;
+      });
+    }
+
+    if (load.equipment) formattedLoad.equipment = load.equipment;
+    if (load.mode) formattedLoad.mode = load.mode;
+    if (load.customerRate) formattedLoad.customerRate = "$" + formatNumber(load.customerRate);
+    if (load.weight) formattedLoad.weight = load.weight + "lbs";
+    if (load.length) formattedLoad.length = load.length + "ft";
+    if (load.width) formattedLoad.width = load.width;
+    if (load.height) formattedLoad.height = load.height;
+    if (load.pieces) formattedLoad.pieces = load.pieces;
+    if (load.pallets) formattedLoad.pallets = load.pallets;
+    if (load.miles) formattedLoad.miles = load.miles;
+    if (load.commodity) formattedLoad.commodity = load.commodity;
+    if (load.postedBy) formattedLoad.postedBy = load.postedBy;
+    if (load.specialInstructions)
+      formattedLoad.specialInstructions = load.specialInstructions;
+
     // Prepare dynamic email content for the customer
     const emailOptions: SendEmailOptions = {
-      to: emails[0], // Sending to the first email in the list (can be extended to multiple)
+      to: emails,
       subject: "Load Rate Confirmation",
       templateName: "loadRateConfirmation",
-      templateData: formattedLoad
+      templateData: formattedLoad,
     };
 
     // Send the email notification
@@ -615,8 +738,9 @@ export async function notifyCarrierAboutLoadHandler(
     }
 
     // Fetch load details for the provided load IDs
-    const loads = await LoadModel.find({ _id: { $in: loadIds } }).populate("brokerId", "-password")
-    .populate("postedBy", "-password")
+    const loads = await LoadModel.find({ _id: { $in: loadIds } })
+      .populate("brokerId", "-password")
+      .populate("postedBy", "-password");
 
     if (!loads.length) {
       send(res, 404, "No loads found for the provided IDs.");
@@ -657,51 +781,119 @@ export async function notifyCarrierAboutLoadHandler(
     // Prepare load details for the email template
     const loadDetails = loads.map((load) => {
       const formattedLoad: any = {};
-    
+
       // Check for each field and add it only if it has a value
       if (load.loadNumber) formattedLoad.loadNumber = load.loadNumber;
       if (load.formattedAge) formattedLoad.formattedAge = load.formattedAge; // Virtual getter for age
-      if (load.origin && load.origin.str) formattedLoad.origin = load.origin.str;
-      if (load.originEarlyPickupDate) formattedLoad.originEarlyPickupDate = formatDate(load.originEarlyPickupDate, "MM/dd/yyyy");
-      if (load.originEarlyPickupTime) formattedLoad.originEarlyPickupTime = formatDate(load.originEarlyPickupTime, "h:mm aa");
-      if (load.originLatePickupDate) formattedLoad.originLatePickupDate = formatDate(load.originLatePickupDate, "MM/dd/yyyy");
-      if (load.originLatePickupTime) formattedLoad.originLatePickupTime = formatDate(load.originLatePickupTime, "h:mm aa");
-    
+      if (load.origin && load.origin.str)
+        formattedLoad.origin = load.origin.str;
+      if (load.originEarlyPickupDate)
+        formattedLoad.originEarlyPickupDate = formatDate(
+          load.originEarlyPickupDate,
+          "yyyy/MM/dd"
+        );
+      if (load.originEarlyPickupTime)
+        formattedLoad.originEarlyPickupTime = formatDate(
+          load.originEarlyPickupTime,
+          "h:mm aa"
+        );
+      if (load.originLatePickupDate)
+        formattedLoad.originLatePickupDate = formatDate(
+          load.originLatePickupDate,
+          "yyyy/MM/dd"
+        );
+      if (load.originLatePickupTime)
+        formattedLoad.originLatePickupTime = formatDate(
+          load.originLatePickupTime,
+          "h:mm aa"
+        );
+
       if (load.originStops && load.originStops.length > 0) {
         formattedLoad.originStops = load.originStops.map((stop) => {
           const stopDetails: any = {};
-          if (stop.address && stop.address.str) stopDetails.address = stop.address.str;
-          if (stop.earlyPickupDate) stopDetails.earlyPickupDate = formatDate(stop.earlyPickupDate, "MM/dd/yyyy");
-          if (stop.latePickupDate) stopDetails.latePickupDate = formatDate(stop.latePickupDate, "MM/dd/yyyy");
-          if (stop.earlyPickupTime) stopDetails.earlyPickupTime = formatDate(stop.earlyPickupTime, "h:mm aa");
-          if (stop.latePickupTime) stopDetails.latePickupTime = formatDate(stop.latePickupTime, "h:mm aa");
+          if (stop.address && stop.address.str)
+            stopDetails.address = stop.address.str;
+          if (stop.earlyPickupDate)
+            stopDetails.earlyPickupDate = formatDate(
+              stop.earlyPickupDate,
+              "yyyy/MM/dd"
+            );
+          if (stop.latePickupDate)
+            stopDetails.latePickupDate = formatDate(
+              stop.latePickupDate,
+              "yyyy/MM/dd"
+            );
+          if (stop.earlyPickupTime)
+            stopDetails.earlyPickupTime = formatDate(
+              stop.earlyPickupTime,
+              "h:mm aa"
+            );
+          if (stop.latePickupTime)
+            stopDetails.latePickupTime = formatDate(
+              stop.latePickupTime,
+              "h:mm aa"
+            );
           return stopDetails;
         });
       }
-    
-      if (load.destination && load.destination.str) formattedLoad.destination = load.destination.str;
-      if (load.destinationEarlyDropoffDate) formattedLoad.destinationEarlyDropoffDate = formatDate(load.destinationEarlyDropoffDate, "MM/dd/yyyy");
-      if (load.destinationEarlyDropoffTime) formattedLoad.destinationEarlyDropoffTime = formatDate(load.destinationEarlyDropoffTime, "h:mm aa");
-      if (load.destinationLateDropoffDate) formattedLoad.destinationLateDropoffDate = formatDate(load.destinationLateDropoffDate, "MM/dd/yyyy");
-      if (load.destinationLateDropoffTime) formattedLoad.destinationLateDropoffTime = formatDate(load.destinationLateDropoffTime, "h:mm aa");
-    
+
+      if (load.destination && load.destination.str)
+        formattedLoad.destination = load.destination.str;
+      if (load.destinationEarlyDropoffDate)
+        formattedLoad.destinationEarlyDropoffDate = formatDate(
+          load.destinationEarlyDropoffDate,
+          "yyyy/MM/dd"
+        );
+      if (load.destinationEarlyDropoffTime)
+        formattedLoad.destinationEarlyDropoffTime = formatDate(
+          load.destinationEarlyDropoffTime,
+          "h:mm aa"
+        );
+      if (load.destinationLateDropoffDate)
+        formattedLoad.destinationLateDropoffDate = formatDate(
+          load.destinationLateDropoffDate,
+          "yyyy/MM/dd"
+        );
+      if (load.destinationLateDropoffTime)
+        formattedLoad.destinationLateDropoffTime = formatDate(
+          load.destinationLateDropoffTime,
+          "h:mm aa"
+        );
+
       if (load.destinationStops && load.destinationStops.length > 0) {
         formattedLoad.destinationStops = load.destinationStops.map((stop) => {
           const stopDetails: any = {};
-          if (stop.address && stop.address.str) stopDetails.address = stop.address.str;
-          if (stop.earlyDropoffDate) stopDetails.earlyDropoffDate = formatDate(stop.earlyDropoffDate, "MM/dd/yyyy");
-          if (stop.lateDropoffDate) stopDetails.lateDropoffDate = formatDate(stop.lateDropoffDate, "MM/dd/yyyy");
-          if (stop.earlyDropoffTime) stopDetails.earlyDropoffTime = formatDate(stop.earlyDropoffTime, "h:mm aa");
-          if (stop.lateDropoffTime) stopDetails.lateDropoffTime = formatDate(stop.lateDropoffTime, "h:mm aa");
+          if (stop.address && stop.address.str)
+            stopDetails.address = stop.address.str;
+          if (stop.earlyDropoffDate)
+            stopDetails.earlyDropoffDate = formatDate(
+              stop.earlyDropoffDate,
+              "yyyy/MM/dd"
+            );
+          if (stop.lateDropoffDate)
+            stopDetails.lateDropoffDate = formatDate(
+              stop.lateDropoffDate,
+              "yyyy/MM/dd"
+            );
+          if (stop.earlyDropoffTime)
+            stopDetails.earlyDropoffTime = formatDate(
+              stop.earlyDropoffTime,
+              "h:mm aa"
+            );
+          if (stop.lateDropoffTime)
+            stopDetails.lateDropoffTime = formatDate(
+              stop.lateDropoffTime,
+              "h:mm aa"
+            );
           return stopDetails;
         });
       }
-    
+
       if (load.equipment) formattedLoad.equipment = load.equipment;
       if (load.mode) formattedLoad.mode = load.mode;
-      if (load.allInRate) formattedLoad.allInRate = "$"+load.allInRate;
-      if (load.weight) formattedLoad.weight = (load.weight + "lbs");
-      if (load.length) formattedLoad.length = (load.length + "ft");
+      if (load.allInRate) formattedLoad.allInRate = "$" + load.allInRate;
+      if (load.weight) formattedLoad.weight = load.weight + "lbs";
+      if (load.length) formattedLoad.length = load.length + "ft";
       if (load.width) formattedLoad.width = load.width;
       if (load.height) formattedLoad.height = load.height;
       if (load.pieces) formattedLoad.pieces = load.pieces;
@@ -709,12 +901,12 @@ export async function notifyCarrierAboutLoadHandler(
       if (load.miles) formattedLoad.miles = load.miles;
       if (load.commodity) formattedLoad.commodity = load.commodity;
       if (load.postedBy) formattedLoad.postedBy = load.postedBy;
-      if (load.specialInstructions) formattedLoad.specialInstructions = load.specialInstructions;
-    
+      if (load.specialInstructions)
+        formattedLoad.specialInstructions = load.specialInstructions;
+
       return formattedLoad;
-    });    
-    
-    
+    });
+
     // Configure email options with combined load details
     const emailOptions: SendEmailOptions = {
       to: carrierEmails,
@@ -760,16 +952,20 @@ export async function updateLoadStatusHandler(
 
     // Fetch the load details and populate related broker and customer info
     const load = await LoadModel.findById(req.params.loadId)
-    .populate("brokerId", "-password")
-    .populate("postedBy", "-password")
+      .populate("brokerId", "-password")
+      .populate("postedBy", "-password");
 
     if (!load) {
       send(res, 404, "Load not found");
       return;
     }
 
-    if(status == LoadStatus.PendingResponse && !load.carrierId){
-      send(res, 400, "Please assign a carrier to the load before changing the status to Pending Response");
+    if (status == LoadStatus.PendingResponse && !load.carrierId) {
+      send(
+        res,
+        400,
+        "Please assign a carrier to the load before changing the status to Pending Response"
+      );
       return;
     }
 
@@ -794,10 +990,18 @@ export async function updateLoadStatusHandler(
     await load.save();
 
     // Set up the email notification options
-    if((load?.brokerId as IUser).email){
+    if ((load?.brokerId as IUser).email) {
       let emails = [(load?.brokerId as IUser).email];
-      if((load?.customerId as IUser).email){
+      if (load.customerId && (load?.customerId as IUser).email) {
         emails.push((load?.customerId as IUser).email);
+      }
+
+      if (load.carrierId && (load?.carrierId as IUser).email) {
+        emails.push((load?.carrierId as IUser).email);
+      }
+
+      if (load?.postedBy && (load?.postedBy as IUser).email) {
+        emails.push((load?.postedBy as IUser).email);
       }
 
       const emailOptions: SendEmailOptions = {
@@ -806,14 +1010,13 @@ export async function updateLoadStatusHandler(
         templateName: "loadStatusNotification",
         templateData: {
           loadNumber: load.loadNumber,
-          status: status
+          status: status,
         },
       };
-  
+
       // Send email notification to the broker (uncomment this when email functionality is ready)
       await EmailService.sendNotificationEmail(emailOptions);
     }
-      
 
     // Log status change in audit trail
     // await LoadAudit.updateOne(
@@ -916,124 +1119,5 @@ export async function refreshLoadAgeHandler(
       500,
       "An unexpected server error occurred while refreshing load age"
     );
-  }
-}
-
-/**
- * Assign a carrier to a load and update its status to 'in_transit'.
- * Only brokers (admin or user) are authorized to perform this action.
- *
- * @param req - Express request object containing load and carrier IDs.
- * @param res - Express response object to send back results or errors.
- */
-export async function assignLoadToCarrierHandler(
-  req: Request,
-  res: Response
-): Promise<void> {
-  try {
-    const user = (req as Request & { user?: IUser })?.user;
-
-    // Ensure the user has a broker role
-    if (!(user && hasAccess(user.roles, { roles: [UserRole.BROKER_USER, UserRole.BROKER_ADMIN] }))) {
-      send(res, 403, "Only brokers can assign loads to carriers");
-      return;
-    }
-
-    const { loadId, carrierId } = req.body;
-
-    // Validate request payload
-    if (!loadId || !carrierId) {
-      send(res, 400, "Both load ID and carrier ID are required");
-      return;
-    }
-
-    // Fetch the load
-    const load = await LoadModel.findById(loadId);
-
-    if (!load) {
-      send(res, 404, "Load not found");
-      return;
-    }
-
-    // Ensure the load is in the correct status
-    if (load.status !== LoadStatus.Published) {
-      send(res, 400, "Only pending loads can be assigned to carriers");
-      return;
-    }
-
-    // Assign carrier and update load status
-    load.carrierId = carrierId;
-    load.status = LoadStatus.DealClosed;
-
-    await load.save();
-
-    // Respond with success and updated load details
-    send(res, 200, "Load assigned to carrier successfully", { load });
-  } catch (error) {
-    console.error("Error assigning load to carrier:", error);
-    send(res, 500, "An unexpected server error occurred.");
-  }
-}
-
-/**
- * Retrieve the list of loads assigned to the carrier.
- * Supports pagination with `page` and `limit` query parameters.
- *
- * @param req - Express request object containing load ID and pagination parameters.
- * @param res - Express response object to send back results or errors.
- */
-export async function getAssignedLoadsHandler(
-  req: Request,
-  res: Response
-): Promise<void> {
-  try {
-    const user = (req as Request & { user?: IUser })?.user;
-
-    // Ensure the user is a carrier
-    if (!(user && hasAccess(user.roles, { roles: [UserRole.CARRIER] }))) {
-      send(res, 403, "Only carriers can view their assigned loads");
-      return;
-    }
-
-    // Parse pagination parameters from the query
-    const page = parseInt(req.query.page as string, 10) || 1;
-    const limit = parseInt(req.query.limit as string, 10) || 10;
-
-    // Ensure valid pagination parameters
-    if (page < 1 || limit < 1) {
-      send(res, 400, "Invalid pagination parameters");
-      return;
-    }
-
-    const skip = (page - 1) * limit;
-
-    // Fetch assigned loads for the carrier with pagination
-    const loads = await LoadModel.find({ carrierId: user._id })
-      .skip(skip)
-      .limit(limit);
-
-    // Fetch total count of assigned loads for the carrier
-    const totalLoads = await LoadModel.countDocuments({ carrierId: user._id });
-
-    // Prepare pagination metadata
-    const totalPages = Math.ceil(totalLoads / limit);
-    const pagination = {
-      totalLoads,
-      totalPages,
-      currentPage: page,
-      pageSize: loads.length,
-    };
-
-    // Send response with assigned loads and pagination metadata
-    send(
-      res,
-      200,
-      "Assigned loads retrieved successfully",
-      { loads },
-      pagination
-    );
-  } catch (error) {
-    console.error("Error retrieving assigned loads:", error);
-    send(res, 500, "An unexpected server error occurred.");
   }
 }

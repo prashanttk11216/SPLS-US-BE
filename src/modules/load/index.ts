@@ -6,8 +6,6 @@ import {
   fetchLoadsHandler,
   updateLoadStatusHandler,
   requestLoadHandler,
-  assignLoadToCarrierHandler,
-  getAssignedLoadsHandler,
   notifyCarrierAboutLoadHandler,
   confirmRateWithCustomerHandler,
   refreshLoadAgeHandler,
@@ -33,7 +31,6 @@ loadRouter.post("/create-alert", notifyCarrierAboutLoadHandler);
  */
 loadRouter.put("/:loadId", updateLoadHandler);
 
-
 /**
  * @route   GET /api/loads/:loadId
  * @desc    Get details of list of all loads (potentially with filters) and specific load by ID
@@ -57,18 +54,6 @@ loadRouter.post("/request/:loadId", requestLoadHandler);
  * @desc    Notify the customer about rate confirmation
  */
 loadRouter.post("/rateconfirm/:loadId", confirmRateWithCustomerHandler);
-
-/**
- * @route   POST /api/loads/assign
- * @desc    Assign a load to a specific carrier
- */
-loadRouter.post("/assign", assignLoadToCarrierHandler);
-
-/**
- * @route   GET /api/loads/assigned
- * @desc    Get loads assigned to a carrier
- */
-loadRouter.get("/assigned", getAssignedLoadsHandler);
 
 /**
  * @route   DELETE /api/loads/:loadId

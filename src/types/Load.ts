@@ -4,54 +4,48 @@ import { Equipment } from "../enums/Equipment";
 import { Mode } from "fs";
 import { IUser } from "./User";
 import { LoadStatus } from "../enums/LoadStatus";
+import { LoadOption } from "../enums/LoadOption";
+
+interface Location {
+  str: string;
+  lat: number;
+  lng: number;
+}
 
 export interface ILoad extends Document {
-  customerId?: mongoose.Types.ObjectId | IUser;
-  brokerId?: mongoose.Types.ObjectId | IUser;
-  adminId?: mongoose.Types.ObjectId;
-  carrierId?: mongoose.Types.ObjectId | IUser;
-  origin: {
-    str: string; // String representation of the address
-    lat: number; // Latitude
-    lng: number; // Longitude
-  }; 
+  origin: Location
   originEarlyPickupDate: Date;
   originLatePickupDate?: Date;
   originEarlyPickupTime?: Date;
   originLatePickupTime?: Date;
   originStops?: {
-    address: {
-      str: string; // String representation of the address
-      lat: number; // Latitude
-      lng: number; // Longitude
-    };
+    address: Location;
     earlyPickupDate?: Date;
     latePickupDate?: Date;
     earlyPickupTime?: Date;
     latePickupTime?: Date;
   }[];
-  destination: {
-    str: string; // String representation of the address
-    lat: number; // Latitude
-    lng: number; // Longitude
-  };
+
+
+  destination: Location
   destinationEarlyDropoffDate?: Date;
   destinationLateDropoffDate?: Date;
   destinationEarlyDropoffTime?: Date;
   destinationLateDropoffTime?: Date;
   destinationStops?: {
-    address: {
-      str: string; // String representation of the address
-      lat: number; // Latitude
-      lng: number; // Longitude
-    };
+    address: Location;
     earlyDropoffDate?: Date;
     lateDropoffDate?: Date;
     earlyDropoffTime?: Date;
     lateDropoffTime?: Date;
   }[];
+
   equipment: Equipment;
   mode: Mode;
+  commodity?: Commodity;
+  loadOption?: LoadOption;
+  status?: LoadStatus;
+
   allInRate?: number;
   customerRate?: number;
   weight?: number;
@@ -61,16 +55,22 @@ export interface ILoad extends Document {
   pieces?: number;
   pallets?: number;
   miles?: number;
-  loadOption?: string;
-  specialInstructions?: string;
-  commodity: Commodity;
-  loadNumber?: number;
-  postedBy?: mongoose.Types.ObjectId;
-  status: LoadStatus;
-  age?: Date;
-  formattedAge?: string;
   dhoDistance?: number;
   dhdDistance?: number;
+  loadNumber: number;
+
+
+  specialInstructions?: string;
+  formattedAge?: string;
+
+
+  age?: Date;
   createdAt?: Date;
   updatedAt?: Date;
+
+  customerId?: mongoose.Types.ObjectId | IUser;
+  brokerId?: mongoose.Types.ObjectId | IUser;
+  carrierId?: mongoose.Types.ObjectId | IUser;
+  postedBy?: mongoose.Types.ObjectId | IUser;
 }
+

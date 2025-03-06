@@ -550,8 +550,8 @@ export async function rateConfirmationHandler(
           loadNumber: load?.loadNumber || "N/A",
           primaryNumber: formatPhoneNumber(broker?.primaryNumber),
           email: broker?.email || "N/A",
-          shipDate: formatDate(load?.shipper?.date!, "MM/dd/yyyy") || "N/A",
-          todaysDate: formatDate(today, "MM/dd/yyyy") || "N/A",
+          shipDate: formatDate(load?.shipper?.date!, "yyyy/MM/dd") || "N/A",
+          todaysDate: formatDate(today, "yyyy/MM/dd") || "N/A",
           WO: load?.WONumber || "N/A",
         },
 
@@ -576,7 +576,7 @@ export async function rateConfirmationHandler(
           name: consignee?.firstName + " " + consignee?.lastName || "N/A",
           address: consignee?.address?.str || "N/A",
           primaryNumber: formatPhoneNumber(consignee?.primaryNumber),
-          date: formatDate(load?.consignee?.date!, "MM/dd/yyyy") || "N/A",
+          date: formatDate(load?.consignee?.date!, "yyyy/MM/dd") || "N/A",
           time: formatDate(load?.consignee?.time!, "h:mm aa") || "N/A",
           type: load?.consignee?.type || "N/A",
           qty: load?.consignee?.qty || "N/A",
@@ -592,7 +592,7 @@ export async function rateConfirmationHandler(
           email: shipper?.email || "N/A",
           address: shipper?.address?.str || "N/A",
           primaryNumber: formatPhoneNumber(shipper?.primaryNumber),
-          date: formatDate(load?.shipper?.date!, "MM/dd/yyyy") || "N/A",
+          date: formatDate(load?.shipper?.date!, "yyyy/MM/dd") || "N/A",
           time: formatDate(load?.shipper?.time!, "h:mm aa") || "N/A",
           type: load?.shipper?.type || "N/A",
           qty: load?.shipper?.qty || "N/A",
@@ -661,8 +661,8 @@ export async function BOLHandler(req: Request, res: Response): Promise<void> {
         dispatcherDetails: {
           name: broker?.firstName + " " + broker.lastName || "N/A",
           loadNumber: load?.loadNumber || "N/A",
-          shipDate: formatDate(load?.shipper.date!, "MM/dd/yyyy") || "N/A",
-          delDate: formatDate(load?.consignee.date!, "MM/dd/yyyy") || "N/A",
+          shipDate: formatDate(load?.shipper.date!, "yyyy/MM/dd") || "N/A",
+          delDate: formatDate(load?.consignee.date!, "yyyy/MM/dd") || "N/A",
           PO: load.shipper.PO || "N/A",
           freightCharge: "Prepaid",
         },
@@ -795,7 +795,7 @@ export async function invoicedHandler(
           invoiceDate:
             formatDate(
               newInvoiceDate ? newInvoiceDate : load.invoiceDate!,
-              "MM/dd/yyyy"
+              "yyyy/MM/dd"
             ) || "N/A",
           WONumber: load.WONumber || "N/A",
           allInRate: load.allInRate ? `${formatNumber(load.allInRate)}` : 0.0,
@@ -819,7 +819,7 @@ export async function invoicedHandler(
           name: consignee.firstName + " " + consignee.lastName || "N/A",
           address: consignee.address.str || "N/A",
           primaryNumber: formatPhoneNumber(consignee.primaryNumber),
-          date: formatDate(load?.consignee.date!, "MM/dd/yyyy") || "N/A",
+          date: formatDate(load?.consignee.date!, "yyyy/MM/dd") || "N/A",
           time: formatDate(load?.consignee.time!, "h:mm aa") || "N/A",
           type: load?.consignee.type || "N/A",
           qty: load?.consignee.qty || "N/A",
@@ -835,7 +835,7 @@ export async function invoicedHandler(
           email: shipper.email || "N/A",
           address: shipper.address.str || "N/A",
           primaryNumber: formatPhoneNumber(shipper.primaryNumber),
-          date: formatDate(load?.shipper.date!, "MM/dd/yyyy") || "N/A",
+          date: formatDate(load?.shipper.date!, "yyyy/MM/dd") || "N/A",
           time: formatDate(load?.shipper.time!, "h:mm aa") || "N/A",
           type: load?.shipper.type || "N/A",
           qty: load?.shipper.qty || "N/A",
@@ -911,7 +911,7 @@ export async function accountingSummary(
       formatedDetails.push({
         loadNumber: load.loadNumber,
         invoiceNumber: load.invoiceNumber,
-        invoiceDate: formatDate(load?.invoiceDate!, "MM/dd/yyyy") || "N/A",
+        invoiceDate: formatDate(load?.invoiceDate!, "yyyy/MM/dd") || "N/A",
         customerName: customer.company
           ? customer.company
           : customer.firstName + " " + customer.lastName,
@@ -926,9 +926,9 @@ export async function accountingSummary(
     let htmlContent = await PdfService.generateHTMLTemplate({
       templateName: "AccountSummaryExport",
       templateData: {
-        todaysDate: formatDate(today, "MM/dd/yyyy") || "N/A",
-        fromDate: formatDate(req.body.fromDate, "MM/dd/yyyy") || "N/A",
-        toDate: formatDate(req.body.toDate, "MM/dd/yyyy") || "N/A",
+        todaysDate: formatDate(today, "yyyy/MM/dd") || "N/A",
+        fromDate: formatDate(req.body.fromDate, "yyyy/MM/dd") || "N/A",
+        toDate: formatDate(req.body.toDate, "yyyy/MM/dd") || "N/A",
         totalAmount: totalAmount ? formatNumber(totalAmount) : 0.0,
         loadDetails: formatedDetails,
       },
