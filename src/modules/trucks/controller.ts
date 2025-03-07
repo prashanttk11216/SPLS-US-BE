@@ -4,15 +4,15 @@ import send from "../../utils/apiResponse";
 import { IUser } from "../../types/User";
 import { TruckModal } from "./model";
 import { z } from "zod";
-import { SortOrder } from "mongoose";
 import { createTruckSchema, updateTruckSchema } from "../../schema/Truck";
 import { LoadModel } from "../load/model";
 import { calculateDistance } from "../../utils/globalHelper";
 import { ITruck } from "../../types/Truck";
-import { escapeAndNormalizeSearch } from "../../utils/regexHelper";
 import { getPaginationParams } from "../../utils/paginationUtils";
 import { hasAccess } from "../../utils/role";
 import { applyDateRangeFilter } from "../../utils/dateFilter";
+import { buildSearchFilter } from "../../utils/parseSearchQuerty";
+import { parseSortQuery } from "../../utils/parseSortQuery";
 
 // Create Truck API
 export async function createTruck(req: Request, res: Response): Promise<void> {
@@ -75,8 +75,6 @@ export async function createTruck(req: Request, res: Response): Promise<void> {
 
     send(res, 201, "Truck created successfully", truck);
   } catch (error) {
-    console.log(error);
-
     if (error instanceof z.ZodError) {
       send(res, 400, "Invalid input data", { errors: error.errors });
       return;
@@ -127,29 +125,18 @@ export async function getTrucks(req: Request, res: Response): Promise<void> {
     // Apply the date range filter
     filters = applyDateRangeFilter(filters, dateField, fromDate, toDate);
 
+  
     // Search functionality
     const search = req.query.search as string;
     const searchField = req.query.searchField as string;
-
-    // Define numeric fields
-    const numberFields = ["allInRate", "referenceNumber", "weight", "length"];
-
     if (search && searchField) {
-      const escapedSearch = escapeAndNormalizeSearch(search);
-
-      // Validate and apply filters based on the field type
-      if (numberFields.includes(searchField)) {
-        // Ensure the search value is a valid number
-        const parsedNumber = Number(escapedSearch);
-        if (!isNaN(parsedNumber)) {
-          filters[searchField] = parsedNumber;
-        } else {
-          throw new Error(`Invalid number provided for field ${searchField}`);
-        }
-      } else {
-        // Apply regex for string fields
-        filters[searchField] = { $regex: escapedSearch, $options: "i" };
-      }
+      const numberFields = [
+        "allInRate", "referenceNumber", "weight", "length"
+      ]; // Define numeric fields
+      filters = {
+        ...filters,
+        ...buildSearchFilter(search, searchField, numberFields),
+      };
     }
 
     // Additional query parameters
@@ -160,27 +147,20 @@ export async function getTrucks(req: Request, res: Response): Promise<void> {
       }
     }
 
-    // Sorting functionality
+     // Sort functionality
     const sortQuery = req.query.sort as string | undefined;
-    const sortOptions: Record<string, SortOrder> = {};
-
+    const validFields = [
+      "age",
+      "referenceNumber",
+      "origin.str",
+      "destination.str",
+      "availableDate",
+      "createdAt",
+      "allInRate",
+    ];
+    let sortOptions; // Declare variable
     if (sortQuery) {
-      const validFields = [
-        "age",
-        "referenceNumber",
-        "origin.str",
-        "destination.str",
-        "availableDate",
-        "createdAt",
-        "allInRate",
-      ];
-
-      sortQuery.split(",").forEach((field) => {
-        const [key, order] = field.split(":");
-        if (validFields.includes(key)) {
-          sortOptions[key] = order === "desc" ? -1 : 1;
-        }
-      });
+      sortOptions = parseSortQuery(sortQuery, validFields);
     }
 
     // Execute the query with pagination, sorting, and populating relevant fields
@@ -278,7 +258,7 @@ export async function getMatchingTrucks(
     const skip = (page - 1) * limit;
 
     // Filters based on the load's strict matching criteria
-    const filters: Record<string, any> = {
+    let filters: Record<string, any> = {
       equipment: load.equipment, // Compulsory match on equipment type
       availableDate: { $eq: load.originEarlyPickupDate }, // Match the exact pickup date
     };
@@ -294,37 +274,36 @@ export async function getMatchingTrucks(
       }
     }
 
-    console.log(filters);
-
-    // Handle sorting functionality
-    const sortQuery = req.query.sort as string | undefined;
-    let sortOptions: [string, SortOrder][] = []; // Sorting options as an array of tuples
-
-    if (sortQuery) {
-      const sortFields = sortQuery.split(","); // Support multiple sort fields (comma-separated)
-      const validFields = [
-        "age",
-        "referenceNumber",
-        "origin.str",
-        "destination.str",
-        "availableDate",
-        "createdAt",
-        "weight",
-        "length",
-        "allInRate",
-      ]; // Define valid fields for sorting
-
-      sortFields.forEach((field) => {
-        const [key, order] = field.split(":");
-        if (validFields.includes(key)) {
-          // Add valid sort fields and direction to sortOptions
-          sortOptions.push([key, order === "desc" ? -1 : 1]);
-        }
-      });
+    // Search functionality
+    const search = req.query.search as string;
+    const searchField = req.query.searchField as string;
+    if (search && searchField) {
+      const numberFields = [
+        "allInRate", "referenceNumber", "weight", "length"
+      ]; // Define numeric fields
+      filters = {
+        ...filters,
+        ...buildSearchFilter(search, searchField, numberFields),
+      };
     }
 
-    console.log(sortOptions);
-    
+    // Sort functionality
+    const sortQuery = req.query.sort as string | undefined;
+    const validFields = [
+      "age",
+      "referenceNumber",
+      "origin.str",
+      "destination.str",
+      "availableDate",
+      "createdAt",
+      "weight",
+      "length",
+      "allInRate",
+    ];
+    let sortOptions; // Declare variable
+    if (sortQuery) {
+      sortOptions = parseSortQuery(sortQuery, validFields);
+    }
 
     // Fetch matching trucks from the database based on filters
     let trucks = await TruckModal.find(filters)
@@ -340,10 +319,8 @@ export async function getMatchingTrucks(
       return;
     }
 
-    const dhoRadius = 500; // Distance radius for origin (DHO)
-    const dhdRadius = 500; // Distance radius for destination (DHD)
-
-    // console.log(trucks);
+    const dhoRadius = Number(req.query.dhoRadius) || 500; // Distance radius for origin (DHO)
+    const dhdRadius = Number(req.query.dhdRadius) || 500; // Distance radius for destination (DHD)
 
     // Process the trucks to calculate distances and filter based on proximity
     const enhancedTrucks = trucks.reduce<ITruck[]>((result, truck) => {

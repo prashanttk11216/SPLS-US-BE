@@ -11,7 +11,6 @@ import { DispatchModel } from "./model";
 import logger from "../../utils/logger";
 import { SortOrder } from "mongoose";
 import { DispatchLoadStatus } from "../../enums/DispatchLoadStatus";
-import { escapeAndNormalizeSearch } from "../../utils/regexHelper";
 import EmailService, { SendEmailOptions } from "../../services/EmailService";
 import { getPaginationParams } from "../../utils/paginationUtils";
 import { PdfGenerator } from "../../utils/pdfGenerator";
