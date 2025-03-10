@@ -11,7 +11,8 @@ import {
   invoicedHandler,
   reportsHandler,
   accountingSummary,
-  accountingExport
+  accountingExport,
+  deleteDocumentHandler
 } from "./controller";
 
 const dispatchRouter = express.Router();
@@ -34,11 +35,14 @@ dispatchRouter.put("/:loadId", updateLoadHandler);
  */
 dispatchRouter.get("/:loadId?", fetchLoadsHandler);
 
+dispatchRouter.put("/document/:filename", deleteDocumentHandler)
+
 /**
  * @route   PUT /api/dispatch/:loadId/status
  * @desc    Update the status of a specific load
  */
 dispatchRouter.put("/:loadId/status", updateLoadStatusHandler);
+
 
 /**
  * @route   DELETE /api/dispatch/:loadId
@@ -71,5 +75,6 @@ dispatchRouter.post("/accounting-summary", accountingSummary);
 dispatchRouter.post("/accounting-export", accountingExport);
 
 dispatchRouter.post("/reports", reportsHandler);
+
 
 export default dispatchRouter;
