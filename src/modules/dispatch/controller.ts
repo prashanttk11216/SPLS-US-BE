@@ -32,7 +32,7 @@ import { buildSearchFilter } from "../../utils/parseSearchQuerty";
 import { applyPopulation } from "../../utils/populateHelper";
 import { applyDateRangeFilter } from "../../utils/dateFilter";
 import path from "path";
-import { remove } from "fs-extra";
+import { pathExists, remove } from "fs-extra";
 
 const validTransitions: Record<DispatchLoadStatus, DispatchLoadStatus[]> = {
   [DispatchLoadStatus.Draft]: [DispatchLoadStatus.Published],
@@ -204,7 +204,6 @@ export async function fetchLoadsHandler(
       filters.brokerId = user._id;
     }
 
-
     // Get query parameters
     const dateField = req.query.dateField as string;
     const fromDate = req.query.fromDate as string;
@@ -244,7 +243,7 @@ export async function fetchLoadsHandler(
           "search",
           "searchField",
           "dateField",
-          "populate"
+          "populate",
         ].includes(key)
       ) {
         filters[key] = value; // Add non-pagination, non-special filters
@@ -869,9 +868,9 @@ export async function accountingSummary(
 ): Promise<void> {
   try {
     let filters: any = { status: DispatchLoadStatus.Invoiced }; // Parse and validate query parameters
-    
+
     // Get query parameters
-    const dateField = req.body.dateField as string || "createdAt";
+    const dateField = (req.body.dateField as string) || "createdAt";
     const fromDate = req.body.fromDate as string;
     const toDate = req.body.toDate as string;
     if (!fromDate) {
@@ -1092,17 +1091,13 @@ export async function reportsHandler(
       sortOptions.push(["invoiceDate", 1]);
     }
 
-
     // Get query parameters
-    const dateField = req.body.dateField as string || "createdAt";
+    const dateField = (req.body.dateField as string) || "createdAt";
     const fromDate = req.body.fromDate as string;
     const toDate = req.body.toDate as string;
 
     // Apply the date range filter
     matchQuery = applyDateRangeFilter(matchQuery, dateField, fromDate, toDate);
-
-
-
 
     // Fetch loads and group them
     let loads;
@@ -1336,56 +1331,62 @@ export async function reportsHandler(
   }
 }
 
-export async function deleteDocumentHandler(req: Request, res: Response): Promise<void> {
+export async function deleteDocumentHandler(
+  req: Request,
+  res: Response
+): Promise<void> {
   try {
-      const { filename } = req.params; // Get filename from request params
+    const { filename } = req.params; // Get filename from request params
 
-      if (!filename) {
-          send(res, 400, "Filename is required");
-          return;
-      }
-
-      // Find the dispatch that contains the document
-      const dispatch = await DispatchModel.findOne({ "documents.filename": filename });
-
-      if (!dispatch) {
-          send(res, 404, "Document not found");
-          return;
-      }
-
-      // Find the document inside the documents array
-      const document =  dispatch.documents && dispatch.documents.find((doc: any) => doc.filename === filename);
-
-      if (!document) {
-          send(res, 404, "Document not found in dispatch");
-          return;
-      }
-
-      // Construct the full path to the file
-      const filePath = path.join(__dirname, "../../../", document.path);
-
-      // Remove the document from the documents array
-      await DispatchModel.findOneAndUpdate(
-          { _id: dispatch._id },
-          { $pull: { documents: { filename } } },
-          { new: true }
-      );
-      
-
-      // Delete the file from the uploads folder using fs-extra
-      try {
-        await remove(filePath);
-    } catch (err) {
-        console.error("Error deleting file:", err);
-        send(res, 500, "Error deleting file from server");
-        return;
+    if (!filename) {
+      send(res, 400, "Filename is required");
+      return;
     }
 
-      send(res, 200, "Document deleted successfully");
+    // Construct the full path to the file
+    const filePath = path.join(__dirname, "../../../uploads/", filename);
+
+    // Check if the file exists
+    const fileExists = await pathExists(filePath);
+    if (!fileExists) {
+      send(res, 404, "File not found");
       return;
+    }
+
+    // Delete the file from the uploads folder using fs-extra
+    await remove(filePath);
+
+    // Find the dispatch that contains the document
+    const dispatch = await DispatchModel.findOne({
+      "documents.filename": filename,
+    });
+
+    if (!dispatch) {
+      send(res, 404, "Document not found");
+      return;
+    }
+
+    // Find the document inside the documents array
+    const document =
+      dispatch.documents &&
+      dispatch.documents.find((doc: any) => doc.filename === filename);
+
+    if (!document) {
+      send(res, 404, "Document not found in dispatch");
+      return;
+    }
+
+    // Remove the document from the documents array
+    await DispatchModel.findOneAndUpdate(
+      { _id: dispatch._id },
+      { $pull: { documents: { filename } } },
+      { new: true }
+    );
+
+    send(res, 200, "Document deleted successfully");
+    return;
   } catch (error) {
-      console.error("Error deleting document:", error);
-      res.status(500).json({ message: "Internal Server Error" });
+    console.error("Error deleting document:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 }
-

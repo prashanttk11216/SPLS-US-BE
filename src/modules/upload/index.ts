@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { uploadSingle, uploadMultiple } from "./middleware";
-import { handleSingleFileUpload, handleMultipleFileUpload } from "./controller";
+import { handleSingleFileUpload, handleMultipleFileUpload, deleteFile } from "./controller";
 
 const uploadRouter = Router();
 
@@ -9,5 +9,9 @@ uploadRouter.post("/single",uploadSingle, handleSingleFileUpload);
 
 // Multiple files upload route
 uploadRouter.post("/multiple", uploadMultiple, handleMultipleFileUpload);
+
+// delete file route
+uploadRouter.delete("/delete/:filename", deleteFile);
+
 
 export default uploadRouter;
