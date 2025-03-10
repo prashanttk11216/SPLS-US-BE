@@ -5,7 +5,6 @@ import {
   getRoles,
   updateRole,
 } from "./controller";
-import auth from "../../middleware/auth";
 
 const roleRouter = Router();
 
@@ -16,10 +15,10 @@ const roleRouter = Router();
  * @route POST /api/roles
  * @access Admin
  */
-roleRouter.post("/", auth, createRole);
+roleRouter.post("/", createRole);
 
 
-roleRouter.put("/:_id", auth, updateRole);
+roleRouter.put("/:_id", updateRole);
 
 
 /**
@@ -39,6 +38,6 @@ roleRouter.get("/:_id?", getRoles);
  * @route DELETE /api/roles/:_id
  * @access Admin
  */
-roleRouter.delete("/:_id", auth, deleteRole);
+roleRouter.delete("/:_id", deleteRole);
 
 export default roleRouter;

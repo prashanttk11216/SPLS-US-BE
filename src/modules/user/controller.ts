@@ -54,7 +54,7 @@ export async function create(req: Request, res: Response): Promise<void> {
     // Determine if the user creating the customer is an admin
     let isVerified = false;
     let verificationCode;
-    let roles = await getRoles();
+      let roles = await getRoles();
 
     if (req.query.isAdmin && (validatedData.roles.includes(roles[UserRole.CUSTOMER].id) || validatedData.roles.includes(roles[UserRole.CARRIER].id))) {
       isVerified = true;
@@ -243,7 +243,7 @@ export async function createBrokerUser(
     }
 
     // Validate the request body
-    const validatedData = createUserSchema.parse(req.body);
+    const validatedData = await createUserSchema.parseAsync(req.body);
 
     // Check for duplicate email or employeeId
     const existingUser = await UserModel.findOne({
