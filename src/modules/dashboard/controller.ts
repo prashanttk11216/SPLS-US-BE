@@ -151,14 +151,14 @@ export const getCustomerDashboardStats = async (
     const totalLoads = await LoadModel.countDocuments(filter);
 
     // Count active (ongoing) vs completed loads
-    const activeLoads = await LoadModel.countDocuments({
+    const activeLoads = await DispatchModel.countDocuments({
       ...filter,
-      status: { $in: ["Draft", "Published", "Pending Response"] },
+      status: { $in: [DispatchLoadStatus.Published, DispatchLoadStatus.InTransit, DispatchLoadStatus.Delivered]},
     });
 
-    const completedLoads = await LoadModel.countDocuments({
+    const completedLoads = await DispatchModel.countDocuments({
       ...filter,
-      status: { $in: ["Deal Closed", "Cancelled"] },
+      status: { $in: [DispatchLoadStatus.Completed, DispatchLoadStatus.Invoiced, DispatchLoadStatus.InvoicedPaid]},
     });
 
     const dispatchStatuses = Object.values(DispatchLoadStatus);
@@ -226,14 +226,14 @@ export const getCarrierDashboardStats = async (
     const activeLoads = await DispatchModel.countDocuments({
       ...filter,
       status: {
-        $in: [DispatchLoadStatus.Published, DispatchLoadStatus.InTransit],
+        $in: [DispatchLoadStatus.Published, DispatchLoadStatus.InTransit, DispatchLoadStatus.Delivered],
       },
     });
 
     const completedLoads = await DispatchModel.countDocuments({
       ...filter,
       status: {
-        $in: [DispatchLoadStatus.Delivered, DispatchLoadStatus.Completed],
+        $in: [DispatchLoadStatus.Completed, DispatchLoadStatus.Invoiced, DispatchLoadStatus.InvoicedPaid]
       },
     });
 

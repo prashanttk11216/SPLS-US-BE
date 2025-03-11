@@ -231,6 +231,10 @@ export async function fetchLoadsHandler(
       };
     }
 
+    if(req.query.isExport){
+        filters.status = { $in: [DispatchLoadStatus.Invoiced, DispatchLoadStatus.InvoicedPaid] };
+    }
+
     // Add all other query parameters dynamically into filters
     for (const [key, value] of Object.entries(req.query)) {
       if (
@@ -244,6 +248,7 @@ export async function fetchLoadsHandler(
           "searchField",
           "dateField",
           "populate",
+          "isExport"
         ].includes(key)
       ) {
         filters[key] = value; // Add non-pagination, non-special filters
@@ -867,7 +872,7 @@ export async function accountingSummary(
   res: Response
 ): Promise<void> {
   try {
-    let filters: any = { status: DispatchLoadStatus.Invoiced }; // Parse and validate query parameters
+    let filters: any = { status: { $in: [DispatchLoadStatus.Invoiced, DispatchLoadStatus.InvoicedPaid] } }; // Parse and validate query parameters
 
     // Get query parameters
     const dateField = (req.body.dateField as string) || "createdAt";
@@ -956,7 +961,7 @@ export async function accountingExport(
     const { ids } = req.body;
     let matchQuery: any = {
       _id: { $in: ids },
-      status: DispatchLoadStatus.Invoiced,
+      status: { $in: [DispatchLoadStatus.Invoiced, DispatchLoadStatus.InvoicedPaid] },
     };
 
     // Fetch loads and group them
@@ -1075,7 +1080,7 @@ export async function reportsHandler(
 ): Promise<void> {
   try {
     const { category, categoryValue, filterBy } = req.body;
-    let matchQuery: any = { status: DispatchLoadStatus.Invoiced };
+    let matchQuery: any = { status: { $in: [DispatchLoadStatus.Invoiced, DispatchLoadStatus.InvoicedPaid] } };
 
     if (categoryValue !== "ALL") {
       matchQuery[category === "CUSTOMER" ? "customerId" : "carrierId"] =

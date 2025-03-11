@@ -679,7 +679,7 @@ export async function confirmRateWithCustomerHandler(
     if (load.postedBy) formattedLoad.postedBy = load.postedBy;
     if (load.specialInstructions)
       formattedLoad.specialInstructions = load.specialInstructions;
-
+    
     // Prepare dynamic email content for the customer
     const emailOptions: SendEmailOptions = {
       to: emails,

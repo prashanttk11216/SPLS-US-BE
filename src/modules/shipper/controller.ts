@@ -110,10 +110,11 @@ export const getShipper = async (req: Request, res: Response): Promise<void> => 
     }
 
     // Role-based query conditions
-    if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_USER] })) {
-      filters.postedBy = user._id;
-    } else if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN] })) {
-      filters.brokerId = user._id;
+    // if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_USER] })) {
+    //   filters.postedBy = user._id;
+    // } else 
+    if (user && hasAccess(user.roles, { roles: [UserRole.BROKER_ADMIN, UserRole.BROKER_USER] })) {
+      filters.brokerId = user.brokerId;
     }
 
     // Add all other query parameters dynamically into filters
