@@ -35,7 +35,7 @@ dispatchRouter.put("/:loadId", updateLoadHandler);
  */
 dispatchRouter.get("/:loadId?", fetchLoadsHandler);
 
-dispatchRouter.put("/document/:filename", deleteDocumentHandler)
+dispatchRouter.put("/document/:loadId/:filename", deleteDocumentHandler)
 
 /**
  * @route   PUT /api/dispatch/:loadId/status

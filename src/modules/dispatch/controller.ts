@@ -1336,10 +1336,15 @@ export async function deleteDocumentHandler(
   res: Response
 ): Promise<void> {
   try {
-    const { filename } = req.params; // Get filename from request params
+    const { filename, loadId } = req.params; // Get filename from request params
 
     if (!filename) {
       send(res, 400, "Filename is required");
+      return;
+    }
+
+    if (!loadId) {
+      send(res, 400, "load Id is required");
       return;
     }
 
@@ -1357,9 +1362,7 @@ export async function deleteDocumentHandler(
     await remove(filePath);
 
     // Find the dispatch that contains the document
-    const dispatch = await DispatchModel.findOne({
-      "documents.filename": filename,
-    });
+    const dispatch = await DispatchModel.findById(loadId);
 
     if (!dispatch) {
       send(res, 404, "Document not found");

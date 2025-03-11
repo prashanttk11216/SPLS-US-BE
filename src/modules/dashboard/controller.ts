@@ -125,7 +125,7 @@ export const getCustomerDashboardStats = async (
 
     // If the logged-in user is a customer, filter loads posted by them
     if (user.roles.some((role) => role.name === UserRole.CUSTOMER)) {
-      filter = { postedBy: user._id };
+      filter = { customerId: user._id };
     }
 
     const statuses = [
@@ -135,6 +135,7 @@ export const getCustomerDashboardStats = async (
       "Deal Closed",
       "Cancelled",
     ];
+    
 
     const loadStats = await Promise.all(
       statuses.map(async (status) => {
