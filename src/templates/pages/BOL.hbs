@@ -3,8 +3,6 @@
 >{{! Title }}
   <p style="text-align: center; font-weight: 400; font-size: 18px;">Bill Of
     Loading</p>
-  {{! only space not a value }}
-  <p style="text-align: center;">&nbsp;</p>
   <table
     style="border-collapse: collapse; float: right;"
     border="1"
@@ -17,23 +15,27 @@
           <p style="margin-left: 5px; font-weight: 400;">Load Number</p>
         </td>
         <td style="width: 155.273px; height: 23px;">
-          <p style="margin-left: 5px; font-weight: 400;">{{dispatcherDetails.loadNumber}}</p>
+          <p
+            style="margin-left: 5px; font-weight: 400;"
+          >{{dispatcherDetails.loadNumber}}</p>
         </td>
       </tr>
-      {{!-- <tr style="height: 35px;">
+      <tr style="height: 35px;">
         <td style="width: 204.727px; height: 35px;">
           <p style="margin-left: 5px; font-weight: 400;">BOL Number</p>
         </td>
         <td style="width: 155.273px; height: 35px;">
           <p style="margin-left: 5px; font-weight: 400;">101</p>
         </td>
-      </tr> --}}
+      </tr>
       <tr style="height: 35px;">
         <td style="width: 204.727px; height: 35px;">
           <p style="margin-left: 5px; font-weight: 400;">Ship Date</p>
         </td>
         <td style="width: 155.273px; height: 35px;">
-          <p style="margin-left: 5px; font-weight: 400;">{{dispatcherDetails.shipDate}}</p>
+          <p
+            style="margin-left: 5px; font-weight: 400;"
+          >{{dispatcherDetails.shipDate}}</p>
         </td>
       </tr>
       <tr style="height: 35px;">
@@ -41,7 +43,9 @@
           <p style="margin-left: 5px; font-weight: 400;">Delivery Date</p>
         </td>
         <td style="width: 155.273px; height: 35px;">
-          <p style="margin-left: 5px; font-weight: 400;">{{dispatcherDetails.delDate}}</p>
+          <p
+            style="margin-left: 5px; font-weight: 400;"
+          >{{dispatcherDetails.delDate}}</p>
         </td>
       </tr>
       <tr style="height: 35px;">
@@ -49,7 +53,9 @@
           <p style="margin-left: 5px; font-weight: 400;">P.O.Number</p>
         </td>
         <td style="width: 155.273px; height: 35px;">
-          <p style="margin-left: 5px; font-weight: 400;">{{dispatcherDetails.PO}}</p>
+          <p
+            style="margin-left: 5px; font-weight: 400;"
+          >{{dispatcherDetails.PO}}</p>
         </td>
       </tr>
       <tr style="height: 35px;">
@@ -57,7 +63,9 @@
           <p style="margin-left: 5px; font-weight: 400;">Freight Charges</p>
         </td>
         <td style="width: 155.273px; height: 35px;">
-          <p style="margin-left: 5px; font-weight: 400;">{{dispatcherDetails.freightCharge}}</p>
+          <p
+            style="margin-left: 5px; font-weight: 400;"
+          >{{dispatcherDetails.freightCharge}}</p>
         </td>
       </tr>
     </tbody>
@@ -67,12 +75,11 @@
   <p style="font-weight: 400;">{{companyDetails.country}}</p>
   <p style="font-weight: 400;">Tel: {{companyDetails.primaryNumber}}</p>
   {{! only space not a value }}
-  <p style="text-align: center;"><br /><br /><br /><br /></p>
-  <p style="text-align: center;">&nbsp;</p>
-  <p style="text-align: center;">&nbsp;</p>
-  <p style="text-align: center;">&nbsp;</p>
-  <p style="text-align: center;">&nbsp;</p>
 </div>
+<p style="text-align: center;"><br /><br /><br /><br /></p>
+  <p style="text-align: center;">&nbsp;</p>
+  <p style="text-align: center;">&nbsp;</p>
+  <p style="text-align: center;">&nbsp;</p>
 <div
   style="padding-right: 50px; padding-left: 50px; font-size: 10px; font-family: 'Verdana', serif;"
 >
@@ -82,10 +89,10 @@
   >
     <tbody>
       <tr>
-        <td style="width: 421.742px; background-color: #f3f3f3;">
+        <td style="width: 421.742px; background-color: #ccc;">
           <p style="margin-left: 5px; font-weight: 600;">Shipper</p>
         </td>
-        <td style="width: 489.258px; background-color: #f3f3f3;">
+        <td style="width: 489.258px; background-color: #ccc;">
           <p style="margin-left: 5px; font-weight: 600;">Consignee</p>
         </td>
       </tr>
@@ -94,45 +101,65 @@
           <p style="margin-left: 5px; font-weight: 400;">{{shipper.name}}</p>
           <p style="margin-left: 5px; font-weight: 400;">{{shipper.email}}</p>
           <p style="margin-left: 5px; font-weight: 400;">{{shipper.address}}</p>
-          <p style="margin-left: 5px; font-weight: 400;">{{shipper.addressLine2}}</p>
-          <p style="margin-left: 5px; font-weight: 400;">Tel: {{shipper.primaryNumber}}</p>
+          <p
+            style="margin-left: 5px; font-weight: 400;"
+          >{{shipper.addressLine2}}</p>
+          <p style="margin-left: 5px; font-weight: 400;">Tel:
+            {{shipper.primaryNumber}}</p>
         </td>
         <td style="width: 663.445px;">
           <p style="margin-left: 5px; font-weight: 400;">{{consignee.name}}</p>
           <p style="margin-left: 5px; font-weight: 400;">{{consignee.email}}</p>
-          <p style="margin-left: 5px; font-weight: 400;">{{consignee.address}}</p>
-          <p style="margin-left: 5px; font-weight: 400;">{{consignee.addressLine2}}</p>
-          <p style="margin-left: 5px; font-weight: 400;">Tel: {{consignee.primaryNumber}}</p>
+          <p
+            style="margin-left: 5px; font-weight: 400;"
+          >{{consignee.address}}</p>
+          <p
+            style="margin-left: 5px; font-weight: 400;"
+          >{{consignee.addressLine2}}</p>
+          <p style="margin-left: 5px; font-weight: 400;">Tel:
+            {{consignee.primaryNumber}}</p>
         </td>
       </tr>
     </tbody>
   </table>
 </div>
-<p><br /> <br /> </p>
 <p style="text-align: center;"><br /><br /><br /><br /></p>
+  <p style="text-align: center;">&nbsp;</p>
+  <p style="text-align: center;">&nbsp;</p>
+  <p style="text-align: center;">&nbsp;</p>
+  <p style="text-align: center;">&nbsp;</p>
+<p style="text-align: center;">&nbsp;</p>
+  <p style="text-align: center;">&nbsp;</p>
 <div
   style="padding-right: 50px; padding-left: 50px; font-size: 10px; font-family: 'Verdana', serif;"
->{{! Value }}
+>
   <table style="height: 136px; border-collapse: collapse;" border="1">
     <tbody>
       <tr>
-        <td style="width: 245.555px; background-color: #f3f3f3;">
+        <td style="width: 421.742px; background-color: #ccc;">
           <p style="margin-left: 5px; font-weight: 600;">3rd Party Billing</p>
         </td>
-        <td style="width: 663.445px; background-color: #f3f3f3;">
+        <td style="width: 489.258px; background-color: #ccc;">
           <p style="margin-left: 5px; font-weight: 600;">Transportation Company</p>
         </td>
       </tr>
       <tr>
-        <td style="width: 245.555px;">
-          <p></p>
-        </td>
+        <td style="width: 245.555px;">&nbsp;</td>
         <td style="width: 663.445px;">
-          <p style="margin-left: 5px; font-weight: 400;">{{carrierDetails.name}}</p>
-          <p style="margin-left: 5px; font-weight: 400;">{{carrierDetails.email}}</p>
-          <p style="margin-left: 5px; font-weight: 400;">{{carrierDetails.address}}</p>
-          <p style="margin-left: 5px; font-weight: 400;">{{carrierDetails.addressLine2}}</p>
-          <p style="margin-left: 5px; font-weight: 400;">Tel: {{carrierDetails.primaryNumber}}</p>
+          <p
+            style="margin-left: 5px; font-weight: 400;"
+          >{{carrierDetails.name}}</p>
+          <p
+            style="margin-left: 5px; font-weight: 400;"
+          >{{carrierDetails.email}}</p>
+          <p
+            style="margin-left: 5px; font-weight: 400;"
+          >{{carrierDetails.address}}</p>
+          <p
+            style="margin-left: 5px; font-weight: 400;"
+          >{{carrierDetails.addressLine2}}</p>
+          <p style="margin-left: 5px; font-weight: 400;">Tel:
+            {{carrierDetails.primaryNumber}}</p>
         </td>
       </tr>
     </tbody>
@@ -145,26 +172,26 @@
   <table style="height: 224px; border-collapse: collapse;" border="1">
     <tbody>
       <tr>
-        <td style="width: 117.25px; background-color: #f3f3f3;">
+        <td style="width: 117.25px; background-color: #ccc;">
           <p style="margin-left: 5px; font-weight: 400;"># of pieces</p>
         </td>
-        <td style="width: 375.227px; background-color: #f3f3f3;">
+        <td style="width: 375.227px; background-color: #ccc;">
           <p style="margin-left: 5px; font-weight: 400;">Description of the
             goods, marks, exceptions</p>
         </td>
-        <td style="width: 167.469px; background-color: #f3f3f3;">
+        <td style="width: 167.469px; background-color: #ccc;">
           <p style="margin-left: 5px; font-weight: 400;">Weight in LBS.</p>
         </td>
-        <td style="width: 54.2734px; background-color: #f3f3f3;">
+        <td style="width: 54.2734px; background-color: #ccc;">
           <p style="margin-left: 5px; font-weight: 400;">Type</p>
         </td>
-        <td style="width: 65.8438px; background-color: #f3f3f3;">
+        <td style="width: 65.8438px; background-color: #ccc;">
           <p style="margin-left: 5px; font-weight: 400;">NMFC</p>
         </td>
-        <td style="width: 38.3672px; background-color: #f3f3f3;">
+        <td style="width: 38.3672px; background-color: #ccc;">
           <p style="margin-left: 5px; font-weight: 400;">HM</p>
         </td>
-        <td style="width: 60.5703px; background-color: #f3f3f3;">
+        <td style="width: 60.5703px; background-color: #ccc;">
           <p style="margin-left: 5px; font-weight: 400;">Class</p>
         </td>
       </tr>
@@ -233,15 +260,19 @@
       </tr>
       <tr>
         <td style="width: 117.25px;">
-          <p style="margin-left: 5px; font-weight: 400;">Total Pieces {{loadItem.qty}}</p>
+          <p style="margin-left: 5px; font-weight: 400;">Total Pieces
+            {{loadItem.qty}}</p>
         </td>
         <td style="width: 375.227px;">&nbsp;</td>
         <td style="width: 167.469px;">
-          <p style="margin-left: 5px; font-weight: 400;">Total Weight {{loadItem.weight}} LBS.</p>
+          <p style="margin-left: 5px; font-weight: 400;">Total Weight
+            {{loadItem.weight}}
+            LBS.</p>
         </td>
         <td style="width: 237.055px;" colspan="4">
           <p style="margin-left: 5px; font-weight: 400;">Emergency Response
-            Phone: {{companyDetails.primaryNumber}}</p>
+            Phone:
+            {{companyDetails.primaryNumber}}</p>
         </td>
       </tr>
     </tbody>
@@ -255,28 +286,27 @@
     <tbody>
       <tr>
         <td style="width: 776.141px;" rowspan="4">
-          <p style="margin-left: 5px; font-weight: 400;">
-            Shipping Notes: 
+          <p style="margin-left: 5px; font-weight: 400;">Shipping Notes:
             {{notes.shippingNote}}
-
-            <br/>
-
-            Delivery Notes: 
-            {{notes.deliveryNotes}}
-          </p>
+            <br />
+            Delivery Notes:
+            {{notes.deliveryNotes}}</p>
         </td>
         <td style="width: 320.859px;">
-          <p style="margin-left: 5px; font-weight: 400;">C.O.D. Amount: $ {{codAmount}}</p>
+          <p style="margin-left: 5px; font-weight: 400;">C.O.D. Amount: $
+            {{codAmount}}</p>
         </td>
       </tr>
       <tr>
         <td style="width: 320.859px;">
-          <p style="margin-left: 5px; font-weight: 400;">C.O.D. Fee: {{codFee}}</p>
+          <p style="margin-left: 5px; font-weight: 400;">C.O.D. Fee:
+            {{codFee}}</p>
         </td>
       </tr>
       <tr>
         <td style="width: 320.859px;">
-          <p style="margin-left: 5px; font-weight: 400;">Declared Value: $ {{declaredValue}}</p>
+          <p style="margin-left: 5px; font-weight: 400;">Declared Value: $
+            {{declaredValue}}</p>
         </td>
       </tr>
       <tr>
@@ -288,36 +318,45 @@
     </tbody>
   </table>
 </div>
-<p><br /> <br /> <br /> <br /> <br /> <br /> </p>
+<p>&nbsp;</p>
 <div
   style="padding-right: 50px; padding-left: 50px; font-size: 10px; font-family: 'Verdana', serif;"
 >
   <table style="height: 87px; border-collapse: collapse;" border="1">
     <tbody>
-      <tr>
-        <td style="width: 149.969px;">
+      <tr style="height: 40px;">
+        <td style="width: 149.969px; height: 40px;">
           <p style="margin-left: 5px; font-weight: 400;">Shipper</p>
+          <p style="margin-left: 5px; font-weight: 400;">&nbsp;</p>
         </td>
-        <td style="width: 135.031px;">
+        <td style="width: 135.031px; height: 40px;">
           <p style="margin-left: 5px; font-weight: 400;">Carrier</p>
+          <p style="margin-left: 5px; font-weight: 400;">&nbsp;</p>
         </td>
-        <td style="width: 98.9219px;">
+        <td style="width: 98.9219px; height: 40px;">
           <p style="margin-left: 5px; font-weight: 400;">Date</p>
+          <p style="margin-left: 5px; font-weight: 400;">&nbsp;</p>
         </td>
-        <td style="width: 511.078px;" rowspan="2">
+        <td style="width: 511.078px; height: 80px;" rowspan="2">
           <p style="margin-left: 5px; font-weight: 400;">Number Of Pieces
             Received</p>
+          <p style="margin-left: 5px; font-weight: 400;">&nbsp;</p>
+          <p style="margin-left: 5px; font-weight: 400;">&nbsp;</p>
+          <p style="margin-left: 5px; font-weight: 400;">&nbsp;</p>
         </td>
       </tr>
-      <tr>
-        <td style="width: 149.969px;">
+      <tr style="height: 40px;">
+        <td style="width: 149.969px; height: 40px;">
           <p style="margin-left: 5px; font-weight: 400;">Per</p>
+          <p style="margin-left: 5px; font-weight: 400;">&nbsp;</p>
         </td>
-        <td style="width: 135.031px;">
+        <td style="width: 135.031px; height: 40px;">
           <p style="margin-left: 5px;">Per</p>
+          <p style="margin-left: 5px;">&nbsp;</p>
         </td>
-        <td style="width: 98.9219px;">
+        <td style="width: 98.9219px; height: 40px;">
           <p style="margin-left: 5px; font-weight: 400;">Time</p>
+          <p style="margin-left: 5px; font-weight: 400;">&nbsp;</p>
         </td>
       </tr>
     </tbody>
@@ -327,25 +366,25 @@
 <div
   style="padding-right: 50px; padding-left: 50px; font-size: 10px; font-family: 'Verdana', serif;"
 >
-  <table
-    style="height: 70px; border-collapse: collapse;"
-    border="1"
-    width="700"
-  >
+  <table style="height: 87px; border-collapse: collapse;" border="1">
     <tbody>
-      <tr>
-        <td>
+      <tr style="height: 40px;">
+        <td style="width: 149.969px; height: 40px;">
           <p style="margin-left: 5px; font-weight: 400;">Consignee Name</p>
+          <p style="margin-left: 5px; font-weight: 400;">&nbsp;</p>
         </td>
-        <td>
+        <td style="width: 135.031px; height: 40px;">
           <p style="margin-left: 5px; font-weight: 400;">Date</p>
+          <p style="margin-left: 5px; font-weight: 400;">&nbsp;</p>
         </td>
-        <td>
+        <td style="width: 98.9219px; height: 40px;">
           <p style="margin-left: 5px; font-weight: 400;">Signature</p>
+          <p style="margin-left: 5px; font-weight: 400;">&nbsp;</p>
         </td>
-        <td>
+        <td style="width: 511.078px; height: 80px;" rowspan="2">
           <p style="margin-left: 5px; font-weight: 400;">Number Of Pieces
             Received</p>
+          <p style="margin-left: 5px; font-weight: 400;">&nbsp;</p>
         </td>
       </tr>
     </tbody>
