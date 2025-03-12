@@ -17,6 +17,7 @@ export const createTruckSchema = z.object({
   allInRate: z.number().min(0).optional(),
   weight: z.number().min(0).optional(),
   length: z.number().min(0).optional(),
+  miles: z.number().optional(),
   comments: z.string().optional(),
   referenceNumber: z.number().optional(),
   brokerId: z.string().optional(),
