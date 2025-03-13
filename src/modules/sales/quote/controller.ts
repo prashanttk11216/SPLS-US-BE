@@ -21,8 +21,8 @@ export async function createQuote(req: Request, res: Response): Promise<void> {
     }
 
     // Create new quote
-    const { name, isActive } = parsedBody.data;
-    const newQuote = await QuoteModel.create({ name, isActive });
+    const { name, isActive, brokerId, postedBy } = parsedBody.data;
+    const newQuote = await QuoteModel.create({ name, isActive, brokerId, postedBy });
 
     send(res, 201, "Quote created successfully", newQuote);
   } catch (error) {

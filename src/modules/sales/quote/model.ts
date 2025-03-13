@@ -5,11 +5,7 @@ const QuoteSchema: Schema = new Schema(
   {
     name: { type: String, required: true }, // User's first name
     isActive: { type: Boolean, default: true }, // Activation status
-    brokerId: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
+    brokerId: { type: Schema.Types.ObjectId, ref: "User"},
     postedBy: { type: Schema.Types.ObjectId, ref: "User" },
   },
   {

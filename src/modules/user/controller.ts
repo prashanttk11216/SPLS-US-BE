@@ -180,11 +180,11 @@ export async function login(req: Request, res: Response): Promise<void> {
 
     // Generate JWT token for the authenticated user
     const token = await generateToken(userResponse, env.JWT_PRIVATE_KEY, {
-      expiresIn: "5h",
+      expiresIn: "12h",
     });
 
     if (validatedData.employeeId) {
-      let mainAdmin = await UserModel.findOne({ roles: ['67ab4baab772037ca62f66e1'] });
+      let mainAdmin = await UserModel.findOne({ roles: ['67cefceb42c5de89fae83399'] });
 
       // Get the current login time
       const loginTime = new Date().toISOString();
