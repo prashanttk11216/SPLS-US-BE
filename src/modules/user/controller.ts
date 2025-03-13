@@ -107,11 +107,7 @@ export async function create(req: Request, res: Response): Promise<void> {
       201,
       isVerified
         ? "Account created successfully"
-        : "Signup successful. Verify your email.",
-      {
-        otp: verificationCode,
-      }
-    );
+        : "Signup successful. Verify your email.");
   } catch (error) {    
     if (error instanceof z.ZodError) {
       logger.error("Validation error:", error.errors);
