@@ -879,7 +879,7 @@ export async function accountingSummary(
     const fromDate = req.body.fromDate as string;
     const toDate = req.body.toDate as string;
     if (!fromDate) {
-      send(res, 400, "Please pass date range.");
+      send(res, 400, "Please pass date range.", null, {}, true);
       return;
     }
 
@@ -899,7 +899,7 @@ export async function accountingSummary(
 
     // Handle case when no loads are found
     if (!loads || loads.length === 0) {
-      send(res, 404, "No matching loads found.");
+      send(res, 404, "No matching loads found.", null, {}, true);
       return;
     }
 
