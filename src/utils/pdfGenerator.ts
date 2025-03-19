@@ -7,10 +7,7 @@ export class PdfGenerator {
   // Initialize Puppeteer
   private async getBrowser(): Promise<Browser> {
     if (!this.browser) {
-      this.browser = await puppeteer.launch({
-        executablePath: '/root/.cache/puppeteer/chrome/linux-134.0.6998.35/chrome-linux64/chrome',
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-      });
+      this.browser = await puppeteer.launch();
     }
     return this.browser;
   }

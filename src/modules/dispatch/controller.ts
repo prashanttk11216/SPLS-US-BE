@@ -574,7 +574,7 @@ export async function rateConfirmationHandler(
           equipment: getEnumValue(Equipment, load?.equipment) || "N/A",
           address: carrier?.address?.str || "N/A",
           agreedAmount: formatNumber(load?.carrierFee?.totalAmount) || 0.0,
-          loadStatus: getEnumValue(DispatchLoadStatus, load?.status) || "N/A",
+          loadStatus: getEnumValue(DispatchLoadStatus, load?.status),
         },
 
         consignee: {

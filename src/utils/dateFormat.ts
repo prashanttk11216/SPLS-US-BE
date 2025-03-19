@@ -11,13 +11,13 @@ export const formatDate = (dateString: Date, formatString: string): string => {
     const parsedDate = new Date(dateString);
 
     if (isNaN(parsedDate.getTime())) {
-      throw new Error("Invalid date");
+      return "";
     }
 
     return format(parsedDate, formatString);
   } catch (error) {
     console.error("Error formatting date:", error);
-    return "Invalid date";
+    return "";
   }
 };
 
