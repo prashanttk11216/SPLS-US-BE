@@ -958,6 +958,8 @@ export async function accountingExport(
   res: Response
 ): Promise<void> {
   try {
+    res.setHeader("Content-Disposition", `attachment; filename=report.xlsx`);
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     const { ids } = req.body;
     let matchQuery: any = {
       _id: { $in: ids },
@@ -971,8 +973,8 @@ export async function accountingExport(
       .select("-password");
 
     if (!loads || loads.length === 0) {
-      send(res, 404, "No matching loads found for the given filters.");
-      return;
+      res.send(null);
+        return;
     }
 
     let dataSheets: Record<string, any[]> = {};
@@ -991,7 +993,7 @@ export async function accountingExport(
         Equipment: getEnumValue(Equipment, load.equipment),
         SalesRep: load.salesRep,
         Type: getEnumValue(DispatchLoadType, load.type),
-        Units: load.units,
+        Units: load.units || 0,
         CustomerRate: load.customerRate,
         PDs: load.PDs,
         FuelServiceCharge: load.fuelServiceCharge?.value,
@@ -1054,16 +1056,14 @@ export async function accountingExport(
         PostedByAddress: postedBy?.address?.str || "",
       });
     });
-    dataSheets["Loads"] = formatedLoad;
+    dataSheets["Loads"] = [];
+
     excelBuffer = generateExcelBuffer(dataSheets);
 
-    res.setHeader("Content-Disposition", "attachment; filename=report.xlsx");
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
+    
+  
+    res.send(excelBuffer);
 
-    send(res, 200, "Generated Successfully", excelBuffer, {});
   } catch (error) {
     logger.error("Error generating report:", error);
     send(
@@ -1079,6 +1079,11 @@ export async function reportsHandler(
   res: Response
 ): Promise<void> {
   try {
+    res.setHeader("Content-Disposition", "attachment; filename=report.xlsx");
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
     const { category, categoryValue, filterBy } = req.body;
     let matchQuery: any = { status: { $in: [DispatchLoadStatus.Invoiced, DispatchLoadStatus.InvoicedPaid] } };
 
@@ -1152,7 +1157,7 @@ export async function reportsHandler(
       ]);
       // Handle case when no loads are found
       if (!loads || loads.length === 0) {
-        send(res, 404, "No matching loads found for the given filters.");
+        res.send(null);
         return;
       }
 
@@ -1239,7 +1244,7 @@ export async function reportsHandler(
         .sort(sortOptions);
 
       if (!loads || loads.length === 0) {
-        send(res, 404, "No matching loads found for the given filters.");
+        res.send(null);
         return;
       }
 
@@ -1319,13 +1324,7 @@ export async function reportsHandler(
       excelBuffer = generateExcelBuffer(dataSheets);
     }
 
-    res.setHeader("Content-Disposition", "attachment; filename=report.xlsx");
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
-
-    send(res, 200, "Generated Successfully", excelBuffer, {});
+    res.send(excelBuffer);
   } catch (error) {
     logger.error("Error generating report:", error);
     send(
