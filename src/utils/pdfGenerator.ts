@@ -7,7 +7,9 @@ export class PdfGenerator {
   // Initialize Puppeteer
   private async getBrowser(): Promise<Browser> {
     if (!this.browser) {
-      this.browser = await puppeteer.launch();
+      this.browser = await puppeteer.launch({
+        headless: false
+      });
     }
     return this.browser;
   }
