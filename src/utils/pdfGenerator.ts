@@ -9,6 +9,7 @@ export class PdfGenerator {
     if (!this.browser) {
       this.browser = await puppeteer.launch({
         executablePath: '/usr/bin/chromium-browser',
+        args: [ '--disable-gpu', '--disable-setuid-sandbox', '--no-sandbox', '--no-zygote' ],
         ignoreDefaultArgs: ['--disable-extensions'] 
       });
     }
