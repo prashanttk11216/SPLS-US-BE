@@ -1,6 +1,5 @@
+import puppeteer, { Browser, PDFOptions } from "puppeteer";
 import { Buffer } from "buffer";
-import puppeteer, { Browser, PDFOptions } from 'puppeteer-core';
-
 
 export class PdfGenerator {
   private browser: Browser | null = null;
@@ -8,11 +7,7 @@ export class PdfGenerator {
   // Initialize Puppeteer
   private async getBrowser(): Promise<Browser> {
     if (!this.browser) {
-      this.browser = await puppeteer.launch({
-        executablePath: '/usr/bin/chromium-browser',
-        args: [ '--disable-gpu', '--disable-setuid-sandbox', '--no-sandbox', '--no-zygote' ],
-        ignoreDefaultArgs: ['--disable-extensions'] 
-      });
+      this.browser = await puppeteer.launch();
     }
     return this.browser;
   }
