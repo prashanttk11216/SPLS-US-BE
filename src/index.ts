@@ -19,6 +19,7 @@ import errorHandler from "./middleware/errorHandler";
 import logger from "./utils/logger";
 import path from "path";
 import sgMail from '@sendgrid/mail';
+import puppeteer from "puppeteer-core";
 
 const app: Express = express();
 const PORT: number = env.PORT || 5000;
@@ -76,6 +77,21 @@ const startApp = async () => {
   app.get("/health", (req,res)=>{
     res.send("working");
   });
+
+  (async () => {
+    try {
+      const browser = await puppeteer.launch({
+        executablePath: '/snap/bin/chromium',
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        headless: true
+      });
+  
+      console.log('Puppeteer launched successfully');
+      await browser.close();
+    } catch (error) {
+      console.error('Error launching Puppeteer:', error);
+    }
+  })();
 
   // Use global error handler
   app.use(errorHandler); // Use the imported error handler middleware
