@@ -86,7 +86,7 @@ const startApp = async () => {
         headless: true
       });
   
-      console.log('Puppeteer launched successfully');
+      logger.info('Puppeteer launched successfully');
       await browser.close();
     } catch (error) {
       console.error('Error launching Puppeteer:', error);
