@@ -78,20 +78,20 @@ const startApp = async () => {
     res.send("working");
   });
 
-  (async () => {
-    try {
-      const browser = await puppeteer.launch({
-        executablePath: '/usr/bin/chromium-browser',
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        headless: true
-      });
+  // (async () => {
+  //   try {
+  //     const browser = await puppeteer.launch({
+  //       executablePath: '/usr/bin/chromium-browser',
+  //       args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  //       headless: true
+  //     });
   
-      logger.info('Puppeteer launched successfully');
-      await browser.close();
-    } catch (error) {
-      logger.error('Error launching Puppeteer:', error);
-    }
-  })();
+  //     logger.info('Puppeteer launched successfully');
+  //     await browser.close();
+  //   } catch (error) {
+  //     logger.error('Error launching Puppeteer:', error);
+  //   }
+  // })();
 
   // Use global error handler
   app.use(errorHandler); // Use the imported error handler middleware
