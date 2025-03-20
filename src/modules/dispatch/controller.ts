@@ -33,6 +33,7 @@ import { applyPopulation } from "../../utils/populateHelper";
 import { applyDateRangeFilter } from "../../utils/dateFilter";
 import path from "path";
 import { pathExists, remove } from "fs-extra";
+import { generatePdf } from "html-pdf-node";
 
 const validTransitions: Record<DispatchLoadStatus, DispatchLoadStatus[]> = {
   [DispatchLoadStatus.Draft]: [DispatchLoadStatus.Published],
@@ -231,8 +232,10 @@ export async function fetchLoadsHandler(
       };
     }
 
-    if(req.query.isExport){
-        filters.status = { $in: [DispatchLoadStatus.Invoiced, DispatchLoadStatus.InvoicedPaid] };
+    if (req.query.isExport) {
+      filters.status = {
+        $in: [DispatchLoadStatus.Invoiced, DispatchLoadStatus.InvoicedPaid],
+      };
     }
 
     // Add all other query parameters dynamically into filters
@@ -248,7 +251,7 @@ export async function fetchLoadsHandler(
           "searchField",
           "dateField",
           "populate",
-          "isExport"
+          "isExport",
         ].includes(key)
       ) {
         filters[key] = value; // Add non-pagination, non-special filters
@@ -527,7 +530,7 @@ export async function rateConfirmationHandler(
 
     // Handle case when no loads are found
     if (!load) {
-      send(res, 404, "No matching loads found.");
+      send(res, 404, "No matching loads found.", null, {}, true);
       return;
     }
 
@@ -551,7 +554,10 @@ export async function rateConfirmationHandler(
           billingAddress: broker.billingAddress?.str || "N/A",
         },
         dispatcherDetails: {
-          name: broker?.firstName + " " + broker?.lastName || "N/A",
+          name:
+            broker?.firstName || broker?.lastName
+              ? `${broker?.firstName || ""} ${broker?.lastName || ""}`.trim()
+              : "N/A",
           loadNumber: load?.loadNumber || "N/A",
           primaryNumber: formatPhoneNumber(broker?.primaryNumber),
           email: broker?.email || "N/A",
@@ -562,30 +568,40 @@ export async function rateConfirmationHandler(
 
         companyDetails: {
           company: broker?.company || "N/A",
-          email: broker.email,
+          email: broker.email || "N/A",
           address: broker?.address?.str || "N/A",
           addressLine2: broker?.addressLine2 || "N/A",
           primaryNumber: formatPhoneNumber(broker?.primaryNumber),
         },
 
         carrierDetails: {
-          name: carrier?.firstName + " " + carrier?.lastName || "N/A",
+          name:
+            carrier?.firstName || carrier?.lastName
+              ? `${carrier?.firstName || ""} ${carrier?.lastName || ""}`.trim()
+              : "N/A",
           primaryNumber: formatPhoneNumber(broker?.primaryNumber),
           equipment: getEnumValue(Equipment, load?.equipment) || "N/A",
           address: carrier?.address?.str || "N/A",
-          agreedAmount: formatNumber(load?.carrierFee?.totalAmount) || 0.0,
+          agreedAmount: formatNumber(load?.carrierFee?.totalAmount) || "0.00",
           loadStatus: getEnumValue(DispatchLoadStatus, load?.status),
         },
 
         consignee: {
-          name: consignee?.firstName + " " + consignee?.lastName || "N/A",
+          name:
+            consignee?.firstName || consignee?.lastName
+              ? `${consignee?.firstName || ""} ${
+                  consignee?.lastName || ""
+                }`.trim()
+              : "N/A",
           address: consignee?.address?.str || "N/A",
           primaryNumber: formatPhoneNumber(consignee?.primaryNumber),
           date: formatDate(load?.consignee?.date!, "yyyy/MM/dd") || "N/A",
           time: formatDate(load?.consignee?.time!, "h:mm aa") || "N/A",
           type: load?.consignee?.type || "N/A",
           qty: load?.consignee?.qty || "N/A",
-          weight: (load?.consignee?.weight || 0) + " lbs",
+          weight: load?.consignee?.weight
+            ? load?.consignee?.weight + " lbs"
+            : "N/A",
           shippingHours: consignee?.shippingHours || "N/A",
           appointment: consignee?.isAppointments ? "Yes" : "No",
           description: load?.consignee?.description || "N/A",
@@ -593,7 +609,10 @@ export async function rateConfirmationHandler(
         },
 
         shipper: {
-          name: shipper?.firstName + " " + shipper?.lastName || "N/A",
+          name:
+            shipper?.firstName || shipper?.lastName
+              ? `${shipper?.firstName || ""} ${shipper?.lastName || ""}`.trim()
+              : "N/A",
           email: shipper?.email || "N/A",
           address: shipper?.address?.str || "N/A",
           primaryNumber: formatPhoneNumber(shipper?.primaryNumber),
@@ -601,7 +620,9 @@ export async function rateConfirmationHandler(
           time: formatDate(load?.shipper?.time!, "h:mm aa") || "N/A",
           type: load?.shipper?.type || "N/A",
           qty: load?.shipper?.qty || "N/A",
-          weight: (load?.shipper?.weight || 0) + " lbs",
+          weight: load?.consignee?.weight
+            ? load?.consignee?.weight + " lbs"
+            : "N/A",
           shippingHours: shipper?.shippingHours || "N/A",
           appointment: shipper?.isAppointments ? "Yes" : "No",
           description: load?.shipper?.description || "N/A",
@@ -610,17 +631,28 @@ export async function rateConfirmationHandler(
 
         loadDetails: {
           type: getEnumValue(DispatchLoadType, load.type),
-          carrierFee: load.carrierFee
-            ? `$ ${formatNumber(load.carrierFee.totalAmount)}`
+          carrierFee: load?.carrierFee?.totalAmount
+            ? `$ ${formatNumber(load.carrierFee.totalAmount)} USD`
             : "N/A",
         },
       },
     });
     // Get PDF as a buffer
-    const pdfBuffer = await pdfGenerator.generatePdf(htmlContent, {
-      format: "A4",
+    // const pdfBuffer = await pdfGenerator.generatePdf(htmlContent, {
+    //   format: "A4",
+    // });
+    // send(res, 200, `Generated Successfully`, pdfBuffer!, {}, true);
+
+    let options = { format: "A4" };
+    let file = { content: htmlContent };
+    generatePdf(file, options, (err: Error, buffer: Buffer) => {
+      if (err) {
+        send(res, 200, `Generated Successfully`, null!, {}, true);
+        return;
+      }
+      send(res, 200, `Generated Successfully`, buffer!, {}, true);
+      return;
     });
-    send(res, 200, `Generated Successfully`, pdfBuffer!, {}, true);
   } catch (error) {
     logger.error("Error generating PDF:", error);
     send(
@@ -649,7 +681,7 @@ export async function BOLHandler(req: Request, res: Response): Promise<void> {
 
     // Handle case when no loads are found
     if (!load) {
-      send(res, 404, "No matching loads found.");
+      send(res, 404, "No matching loads found.", null, {}, true);
       return;
     }
     const broker = load?.brokerId as IUser;
@@ -664,7 +696,10 @@ export async function BOLHandler(req: Request, res: Response): Promise<void> {
       templateName: "BOL",
       templateData: {
         dispatcherDetails: {
-          name: broker?.firstName + " " + broker.lastName || "N/A",
+          name:
+            broker?.firstName || broker?.lastName
+              ? `${broker?.firstName || ""} ${broker?.lastName || ""}`.trim()
+              : "N/A",
           loadNumber: load?.loadNumber || "N/A",
           shipDate: formatDate(load?.shipper.date!, "yyyy/MM/dd") || "N/A",
           delDate: formatDate(load?.consignee.date!, "yyyy/MM/dd") || "N/A",
@@ -680,7 +715,10 @@ export async function BOLHandler(req: Request, res: Response): Promise<void> {
         },
 
         shipper: {
-          name: shipper.firstName + " " + shipper.lastName || "N/A",
+          name:
+            shipper?.firstName || shipper?.lastName
+              ? `${shipper?.firstName || ""} ${shipper?.lastName || ""}`.trim()
+              : "N/A",
           email: shipper.email || "N/A",
           address: shipper.address.str || "N/A",
           addressLine2: shipper.addressLine2 || "N/A",
@@ -688,16 +726,24 @@ export async function BOLHandler(req: Request, res: Response): Promise<void> {
         },
 
         consignee: {
-          name: consignee.firstName + " " + consignee.lastName || "N/A",
-          email: shipper.email || "N/A",
+          name:
+            consignee?.firstName || consignee?.lastName
+              ? `${consignee?.firstName || ""} ${
+                  consignee?.lastName || ""
+                }`.trim()
+              : "N/A",
+          email: consignee.email || "N/A",
           address: consignee.address.str || "N/A",
           addressLine2: consignee.addressLine2 || "N/A",
           primaryNumber: formatPhoneNumber(consignee.primaryNumber),
         },
 
         carrierDetails: {
-          name: carrier.firstName + " " + carrier.lastName || "N/A",
-          email: shipper.email || "N/A",
+          name:
+            carrier?.firstName || carrier?.lastName
+              ? `${carrier?.firstName || ""} ${carrier?.lastName || ""}`.trim()
+              : "N/A",
+          email: carrier.email || "N/A",
           primaryNumber: formatPhoneNumber(broker.primaryNumber),
           address: carrier.address?.str || "N/A",
           addressLine2: carrier.addressLine2 || "N/A",
@@ -707,7 +753,9 @@ export async function BOLHandler(req: Request, res: Response): Promise<void> {
           qty: load.shipper.qty || "N/A",
           description: load.shipper.description || "N/A",
           type: load.shipper.type || "N/A",
-          weight: load.shipper.weight || "N/A",
+          weight: load?.shipper?.weight
+            ? load?.shipper?.weight + " lbs"
+            : "N/A",
         },
 
         notes: {
@@ -721,10 +769,21 @@ export async function BOLHandler(req: Request, res: Response): Promise<void> {
       },
     });
     // Get PDF as a buffer
-    const pdfBuffer = await pdfGenerator.generatePdf(htmlContent, {
-      format: "A4",
+    // const pdfBuffer = await pdfGenerator.generatePdf(htmlContent, {
+    //   format: "A4",
+    // });
+    // send(res, 200, `Generated Successfully`, pdfBuffer!, {}, true);
+
+    let options = { format: "A4" };
+    let file = { content: htmlContent };
+    generatePdf(file, options, (err: Error, buffer: Buffer) => {
+      if (err) {
+        send(res, 200, `Generated Successfully`, null!, {}, true);
+        return;
+      }
+      send(res, 200, `Generated Successfully`, buffer!, {}, true);
+      return;
     });
-    send(res, 200, `Generated Successfully`, pdfBuffer!, {}, true);
   } catch (error) {
     logger.error("Error generating PDF:", error);
     send(
@@ -754,7 +813,7 @@ export async function invoicedHandler(
 
     // Handle case when no loads are found
     if (!load) {
-      send(res, 404, "No matching loads found.");
+      send(res, 404, "No matching loads found.", null, {}, true);
       return;
     }
 
@@ -803,8 +862,10 @@ export async function invoicedHandler(
               "yyyy/MM/dd"
             ) || "N/A",
           WONumber: load.WONumber || "N/A",
-          allInRate: load.allInRate ? `${formatNumber(load.allInRate)}` : 0.0,
-          type: getEnumValue(DispatchLoadType, load.type) || "N/A",
+          allInRate: load?.allInRate
+            ? `$ ${formatNumber(load.allInRate)} USD`
+            : "$ 0.00 USD",
+          type: getEnumValue(DispatchLoadType, load.type),
         },
 
         payableTo: {
@@ -814,21 +875,33 @@ export async function invoicedHandler(
         },
 
         billTo: {
-          name: customer.firstName + " " + customer.lastName || "N/A",
+          name:
+            customer?.firstName || customer?.lastName
+              ? `${customer?.firstName || ""} ${
+                  customer?.lastName || ""
+                }`.trim()
+              : "N/A",
           email: shipper.email || "N/A",
           address: shipper.address.str || "N/A",
           primaryNumber: formatPhoneNumber(shipper.primaryNumber),
         },
 
         consignee: {
-          name: consignee.firstName + " " + consignee.lastName || "N/A",
+          name:
+            consignee?.firstName || consignee?.lastName
+              ? `${consignee?.firstName || ""} ${
+                  consignee?.lastName || ""
+                }`.trim()
+              : "N/A",
           address: consignee.address.str || "N/A",
           primaryNumber: formatPhoneNumber(consignee.primaryNumber),
           date: formatDate(load?.consignee.date!, "yyyy/MM/dd") || "N/A",
           time: formatDate(load?.consignee.time!, "h:mm aa") || "N/A",
           type: load?.consignee.type || "N/A",
           qty: load?.consignee.qty || "N/A",
-          weight: (load?.consignee.weight || 0) + " lbs",
+          weight: load?.consignee?.weight
+            ? load?.consignee?.weight + " lbs"
+            : "N/A",
           shippingHours: consignee.shippingHours || "N/A",
           appointment: consignee.isAppointments ? "Yes" : "No",
           description: load?.consignee.description || "N/A",
@@ -836,7 +909,10 @@ export async function invoicedHandler(
         },
 
         shipper: {
-          name: shipper.firstName + " " + shipper.lastName || "N/A",
+          name:
+            shipper?.firstName || shipper?.lastName
+              ? `${shipper?.firstName || ""} ${shipper?.lastName || ""}`.trim()
+              : "N/A",
           email: shipper.email || "N/A",
           address: shipper.address.str || "N/A",
           primaryNumber: formatPhoneNumber(shipper.primaryNumber),
@@ -844,7 +920,9 @@ export async function invoicedHandler(
           time: formatDate(load?.shipper.time!, "h:mm aa") || "N/A",
           type: load?.shipper.type || "N/A",
           qty: load?.shipper.qty || "N/A",
-          weight: (load?.shipper.weight || 0) + " lbs",
+          weight: load?.shipper?.weight
+            ? load?.shipper?.weight + " lbs"
+            : "N/A",
           shippingHours: shipper.shippingHours || "N/A",
           appointment: shipper.isAppointments ? "Yes" : "No",
           description: load?.shipper.description || "N/A",
@@ -853,10 +931,21 @@ export async function invoicedHandler(
       },
     });
     // Get PDF as a buffer
-    const pdfBuffer = await pdfGenerator.generatePdf(htmlContent, {
-      format: "A4",
+    // const pdfBuffer = await pdfGenerator.generatePdf(htmlContent, {
+    //   format: "A4",
+    // });
+    // send(res, 200, `Generated Successfully`, pdfBuffer!, {}, true);
+
+    let options = { format: "A4" };
+    let file = { content: htmlContent };
+    generatePdf(file, options, (err: Error, buffer: Buffer) => {
+      if (err) {
+        send(res, 200, `Generated Successfully`, null!, {}, true);
+        return;
+      }
+      send(res, 200, `Generated Successfully`, buffer!, {}, true);
+      return;
     });
-    send(res, 200, `Generated Successfully`, pdfBuffer!, {}, true);
   } catch (error) {
     logger.error("Error generating PDF:", error);
     send(
@@ -872,7 +961,11 @@ export async function accountingSummary(
   res: Response
 ): Promise<void> {
   try {
-    let filters: any = { status: { $in: [DispatchLoadStatus.Invoiced, DispatchLoadStatus.InvoicedPaid] } }; // Parse and validate query parameters
+    let filters: any = {
+      status: {
+        $in: [DispatchLoadStatus.Invoiced, DispatchLoadStatus.InvoicedPaid],
+      },
+    }; // Parse and validate query parameters
 
     // Get query parameters
     const dateField = (req.body.dateField as string) || "createdAt";
@@ -917,12 +1010,17 @@ export async function accountingSummary(
         loadNumber: load.loadNumber,
         invoiceNumber: load.invoiceNumber,
         invoiceDate: formatDate(load?.invoiceDate!, "yyyy/MM/dd") || "N/A",
-        customerName: customer.company
+        customerName: customer?.company
           ? customer.company
-          : customer.firstName + " " + customer.lastName,
-        allInRate: load.allInRate ? formatNumber(load.allInRate) : "N/A",
-        advance: advance,
-        balance: formatNumber(balance),
+          : customer?.firstName || customer?.lastName
+          ? `${customer?.firstName || ""} ${customer?.lastName || ""}`.trim()
+          : "N/A",
+
+        allInRate: load?.allInRate
+          ? `$ ${formatNumber(load.allInRate)}`
+          : "$ 0.00",
+        advance: advance ? `$ ${formatNumber(advance)}` : "$ 0.00",
+        balance: balance ? `$ ${formatNumber(balance)}` : "$ 0.00",
       });
     });
 
@@ -934,15 +1032,26 @@ export async function accountingSummary(
         todaysDate: formatDate(today, "yyyy/MM/dd") || "N/A",
         fromDate: formatDate(req.body.fromDate, "yyyy/MM/dd") || "N/A",
         toDate: formatDate(req.body.toDate, "yyyy/MM/dd") || "N/A",
-        totalAmount: totalAmount ? formatNumber(totalAmount) : 0.0,
+        totalAmount: totalAmount ? `$ ${formatNumber(totalAmount)}` : "$ 0.00",
         loadDetails: formatedDetails,
       },
     });
     // Get PDF as a buffer
-    const pdfBuffer = await pdfGenerator.generatePdf(htmlContent, {
-      format: "A4",
+    // const pdfBuffer = await pdfGenerator.generatePdf(htmlContent, {
+    //   format: "A4",
+    // });
+    // send(res, 200, `Generated Successfully`, null!, {}, true);
+
+    let options = { format: "A4" };
+    let file = { content: htmlContent };
+    generatePdf(file, options, (err: Error, buffer: Buffer) => {
+      if (err) {
+        send(res, 200, `Generated Successfully`, null!, {}, true);
+        return;
+      }
+      send(res, 200, `Generated Successfully`, buffer!, {}, true);
+      return;
     });
-    send(res, 200, `Generated Successfully`, pdfBuffer!, {}, true);
   } catch (error) {
     logger.error("Error generating PDF:", error);
     send(
@@ -959,11 +1068,16 @@ export async function accountingExport(
 ): Promise<void> {
   try {
     res.setHeader("Content-Disposition", `attachment; filename=report.xlsx`);
-    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
     const { ids } = req.body;
     let matchQuery: any = {
       _id: { $in: ids },
-      status: { $in: [DispatchLoadStatus.Invoiced, DispatchLoadStatus.InvoicedPaid] },
+      status: {
+        $in: [DispatchLoadStatus.Invoiced, DispatchLoadStatus.InvoicedPaid],
+      },
     };
 
     // Fetch loads and group them
@@ -974,7 +1088,7 @@ export async function accountingExport(
 
     if (!loads || loads.length === 0) {
       res.send(null);
-        return;
+      return;
     }
 
     let dataSheets: Record<string, any[]> = {};
@@ -1060,10 +1174,7 @@ export async function accountingExport(
 
     excelBuffer = generateExcelBuffer(dataSheets);
 
-    
-  
     res.send(excelBuffer);
-
   } catch (error) {
     logger.error("Error generating report:", error);
     send(
@@ -1085,7 +1196,11 @@ export async function reportsHandler(
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
     const { category, categoryValue, filterBy } = req.body;
-    let matchQuery: any = { status: { $in: [DispatchLoadStatus.Invoiced, DispatchLoadStatus.InvoicedPaid] } };
+    let matchQuery: any = {
+      status: {
+        $in: [DispatchLoadStatus.Invoiced, DispatchLoadStatus.InvoicedPaid],
+      },
+    };
 
     if (categoryValue !== "ALL") {
       matchQuery[category === "CUSTOMER" ? "customerId" : "carrierId"] =
