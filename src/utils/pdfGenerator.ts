@@ -8,8 +8,9 @@ export class PdfGenerator {
   private async getBrowser(): Promise<Browser> {
     if (!this.browser) {
       this.browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        executablePath: '/snap/bin/chromium',
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        headless: true
       });
     }
     return this.browser;
