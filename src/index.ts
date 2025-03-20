@@ -19,7 +19,7 @@ import errorHandler from "./middleware/errorHandler";
 import logger from "./utils/logger";
 import path from "path";
 import sgMail from '@sendgrid/mail';
-import puppeteer from "puppeteer-core";
+// import puppeteer from "puppeteer-core";
 
 const app: Express = express();
 const PORT: number = env.PORT || 5000;
