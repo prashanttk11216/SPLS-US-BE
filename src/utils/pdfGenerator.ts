@@ -1,5 +1,6 @@
-import puppeteer, { Browser, PDFOptions } from "puppeteer";
 import { Buffer } from "buffer";
+import puppeteer, { Browser, PDFOptions } from "puppeteer-core";
+
 
 export class PdfGenerator {
   private browser: Browser | null = null;
