@@ -1042,16 +1042,19 @@ export async function accountingSummary(
     // });
     // send(res, 200, `Generated Successfully`, null!, {}, true);
 
-    let options = { format: "A4" };
-    let file = { content: htmlContent };
-    generatePdf(file, options, (err: Error, buffer: Buffer) => {
-      if (err) {
-        send(res, 200, `Generated Successfully`, null!, {}, true);
-        return;
-      }
-      send(res, 200, `Generated Successfully`, buffer!, {}, true);
-      return;
-    });
+
+const buffer = Buffer.from(htmlContent, "utf-8");
+send(res, 200, `Generated Successfully`, buffer!, {}, true);
+    // let options = { format: "A4" };
+    // let file = { content: htmlContent };
+    // generatePdf(file, options, (err: Error, buffer: Buffer) => {
+    //   if (err) {
+    //     send(res, 200, `Generated Successfully`, null!, {}, true);
+    //     return;
+    //   }
+    //   send(res, 200, `Generated Successfully`, buffer!, {}, true);
+    //   return;
+    // });
   } catch (error) {
     logger.error("Error generating PDF:", error);
     send(
