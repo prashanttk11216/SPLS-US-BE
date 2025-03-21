@@ -12,7 +12,8 @@ import {
   reportsHandler,
   accountingSummary,
   accountingExport,
-  deleteDocumentHandler
+  deleteDocumentHandler,
+  mergeDocuments
 } from "./controller";
 
 const dispatchRouter = express.Router();
@@ -75,6 +76,9 @@ dispatchRouter.post("/accounting-summary", accountingSummary);
 dispatchRouter.post("/accounting-export", accountingExport);
 
 dispatchRouter.post("/reports", reportsHandler);
+
+dispatchRouter.put("/merge-documents/:loadId", mergeDocuments);
+
 
 
 export default dispatchRouter;

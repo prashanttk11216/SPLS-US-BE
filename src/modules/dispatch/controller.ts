@@ -20,7 +20,7 @@ import { generateExcelBuffer } from "../../utils/excelUtils";
 import { IDispatch } from "../../types/Dispatch";
 import { Equipment } from "../../enums/Equipment";
 import { DispatchLoadType } from "../../enums/DispatchLoadType";
-import { getEnumValue } from "../../utils/globalHelper";
+import { getEnumValue, mergePDFs } from "../../utils/globalHelper";
 import { formatDate } from "../../utils/dateFormat";
 import { formatNumber } from "../../utils/numberUtils";
 import { IShipper } from "../shipper/model";
@@ -33,7 +33,6 @@ import { applyPopulation } from "../../utils/populateHelper";
 import { applyDateRangeFilter } from "../../utils/dateFilter";
 import path from "path";
 import { pathExists, remove } from "fs-extra";
-import { chromium } from "playwright";
 
 const validTransitions: Record<DispatchLoadStatus, DispatchLoadStatus[]> = {
   [DispatchLoadStatus.Draft]: [DispatchLoadStatus.Published],
@@ -530,7 +529,7 @@ export async function rateConfirmationHandler(
 
     // Handle case when no loads are found
     if (!load) {
-      send(res, 404, "No matching loads found.", null, {}, true);
+      send(res, 404, "No matching loads found.");
       return;
     }
 
@@ -641,9 +640,7 @@ export async function rateConfirmationHandler(
     // const pdfBuffer = await pdfGenerator.generatePdf(htmlContent, {
     //   format: "A4",
     // });
-    // send(res, 200, `Generated Successfully`, pdfBuffer!, {}, true);
-
-    send(res, 200, `Generated Successfully`, null!, {}, true);
+    send(res, 200, `Generated Successfully`, {file: htmlContent});
   } catch (error) {
     logger.error("Error generating PDF:", error);
     send(
@@ -672,7 +669,7 @@ export async function BOLHandler(req: Request, res: Response): Promise<void> {
 
     // Handle case when no loads are found
     if (!load) {
-      send(res, 404, "No matching loads found.", null, {}, true);
+      send(res, 404, "No matching loads found.");
       return;
     }
     const broker = load?.brokerId as IUser;
@@ -765,7 +762,7 @@ export async function BOLHandler(req: Request, res: Response): Promise<void> {
     // });
     // send(res, 200, `Generated Successfully`, pdfBuffer!, {}, true);
 
-    send(res, 200, `Generated Successfully`, null!, {}, true);
+    send(res, 200, `Generated Successfully`, {file: htmlContent});
   } catch (error) {
     logger.error("Error generating PDF:", error);
     send(
@@ -795,7 +792,7 @@ export async function invoicedHandler(
 
     // Handle case when no loads are found
     if (!load) {
-      send(res, 404, "No matching loads found.", null, {}, true);
+      send(res, 404, "No matching loads found.");
       return;
     }
 
@@ -918,7 +915,7 @@ export async function invoicedHandler(
     // });
     // send(res, 200, `Generated Successfully`, pdfBuffer!, {}, true);
 
-    send(res, 200, `Generated Successfully`, null!, {}, true);
+    send(res, 200, `Generated Successfully`, {file: htmlContent});
   } catch (error) {
     logger.error("Error generating PDF:", error);
     send(
@@ -945,7 +942,7 @@ export async function accountingSummary(
     const fromDate = req.body.fromDate as string;
     const toDate = req.body.toDate as string;
     if (!fromDate) {
-      send(res, 400, "Please pass date range.", null, {}, true);
+      send(res, 400, "Please pass date range.");
       return;
     }
 
@@ -965,7 +962,7 @@ export async function accountingSummary(
 
     // Handle case when no loads are found
     if (!loads || loads.length === 0) {
-      send(res, 404, "No matching loads found.", null, {}, true);
+      send(res, 404, "No matching loads found.");
       return;
     }
 
@@ -1013,17 +1010,9 @@ export async function accountingSummary(
     // const pdfBuffer = await pdfGenerator.generatePdf(htmlContent, {
     //   format: "A4",
     // });
-    // send(res, 200, `Generated Successfully`, null!, {}, true);
+    // send(res, 200, `Generated Successfully`, pdfBuffer!, {}, true);
 
-    const browser = await chromium.launch();
-    const page = await browser.newPage();
-    await page.setContent(htmlContent);
-    const buffer = await page.pdf({ format: "A4" });
-
-    await browser.close();
-
-
-    send(res, 200, `Generated Successfully`, buffer!, {}, true);
+    send(res, 200, `Generated Successfully`, {file: htmlContent});
   } catch (error) {
     logger.error("Error generating PDF:", error);
     send(
@@ -1481,6 +1470,56 @@ export async function deleteDocumentHandler(
     return;
   } catch (error) {
     console.error("Error deleting document:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function mergeDocuments(req: Request,
+  res: Response
+): Promise<void>  {
+  try {
+    const { loadId } = req.params; // Get filename from request params
+
+    if (!loadId) {
+      send(res, 400, "load Id is required");
+      return;
+    }
+
+
+    // Find the dispatch that contains the document
+    const dispatch = await DispatchModel.findById(loadId);
+
+    if (!dispatch) {
+      send(res, 404, "Document not found");
+      return;
+    }
+
+    // Find the document inside the documents array
+    const inputPDFPaths: string[] = dispatch.documents && dispatch.documents.map((doc: any) => doc.path) || [];
+    const timestamp = Date.now();
+    const originalName = `${timestamp}_merged_${dispatch.loadNumber}`;
+    const outputPDFPath = `uploads/${originalName}.pdf`;
+
+    if (!inputPDFPaths) {
+      send(res, 404, "Document not found in dispatch");
+      return;
+    }
+
+    // Remove the document from the documents array
+    await DispatchModel.findOneAndUpdate(
+      { _id: dispatch._id },
+      { 
+        $push: { documents: { filename: originalName, path: outputPDFPath } } 
+      },
+      { new: true, upsert: true } // `upsert: true` creates a new entry if `_id` doesn't exist
+    );
+
+    await mergePDFs(inputPDFPaths, outputPDFPath);
+
+    send(res, 200, "Documents Merged successfully");
+    return;
+  } catch (error) {
+    console.error("Error in Merging documents:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 }

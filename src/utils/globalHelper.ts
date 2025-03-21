@@ -1,3 +1,6 @@
+import { existsSync, readFileSync, writeFileSync } from "fs-extra";
+import { PDFDocument } from "pdf-lib";
+
 // Utility function to calculate the distance between two lat/lng points (Haversine formula)
 export function calculateDistance(
   lat1: number,
@@ -69,3 +72,40 @@ export function formatTimeDifference(differenceInTime: number): string {
 }
 
 export const getEnumValue  = <T extends Record<string, any>>(enumObj: T, key: string | undefined): string => key && enumObj[key as keyof T] ? enumObj[key as keyof T] : "N/A";
+
+
+
+export async function mergePDFs(inputPDFPaths: string[], outputPDFPath: string): Promise<void> {
+  if (!Array.isArray(inputPDFPaths) || inputPDFPaths.length === 0) {
+    throw new Error('No input PDF files provided.');
+  }
+
+  const mergedPdf = await PDFDocument.create();
+
+  for (const pdfPath of inputPDFPaths) {
+    if (!existsSync(pdfPath)) {
+      console.warn(`File not found: ${pdfPath}. Skipping this file.`);
+      continue;
+    }
+
+    try {
+      const pdfBytes = readFileSync(pdfPath);
+      const pdf = await PDFDocument.load(pdfBytes);
+      const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+      copiedPages.forEach((page) => mergedPdf.addPage(page));
+    } catch (error) {
+      console.error(`Error processing PDF: ${pdfPath}. Skipping this file.`, error);
+      continue;
+    }
+  }
+
+  if (mergedPdf.getPageCount() === 0) {
+    throw new Error('No valid PDF pages were merged.');
+  }
+
+  const mergedPdfBytes = await mergedPdf.save();
+  writeFileSync(outputPDFPath, mergedPdfBytes);
+
+  console.log(`Successfully merged PDFs into ${outputPDFPath}`);
+}
+
