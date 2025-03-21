@@ -1,7 +1,6 @@
 import transporter from '../config/email';
 import { env } from '../utils/env';
 import { compileTemplateWithLayout } from '../utils/templateCompiler';
-import sgMail from '@sendgrid/mail'
 
 export interface EmailData {
   [key: string]: any; // Generic type for any data type that could be used in a template

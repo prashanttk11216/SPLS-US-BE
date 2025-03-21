@@ -18,8 +18,6 @@ import connectDB from "./db/connection";
 import errorHandler from "./middleware/errorHandler";
 import logger from "./utils/logger";
 import path from "path";
-import sgMail from '@sendgrid/mail';
-// import puppeteer from "puppeteer-core";
 
 const app: Express = express();
 const PORT: number = env.PORT || 5000;
@@ -77,21 +75,6 @@ const startApp = async () => {
   app.get("/health", (req,res)=>{
     res.send("working");
   });
-
-  // (async () => {
-  //   try {
-  //     const browser = await puppeteer.launch({
-  //       executablePath: '/usr/bin/chromium-browser',
-  //       args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  //       headless: true
-  //     });
-  
-  //     logger.info('Puppeteer launched successfully');
-  //     await browser.close();
-  //   } catch (error) {
-  //     logger.error('Error launching Puppeteer:', error);
-  //   }
-  // })();
 
   // Use global error handler
   app.use(errorHandler); // Use the imported error handler middleware
