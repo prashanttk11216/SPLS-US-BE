@@ -33,7 +33,6 @@ import { applyPopulation } from "../../utils/populateHelper";
 import { applyDateRangeFilter } from "../../utils/dateFilter";
 import path from "path";
 import { pathExists, remove } from "fs-extra";
-import { generatePdf } from "html-pdf-node";
 import { chromium } from "playwright";
 
 const validTransitions: Record<DispatchLoadStatus, DispatchLoadStatus[]> = {
@@ -644,16 +643,7 @@ export async function rateConfirmationHandler(
     // });
     // send(res, 200, `Generated Successfully`, pdfBuffer!, {}, true);
 
-    let options = { format: "A4" };
-    let file = { content: htmlContent };
-    generatePdf(file, options, (err: Error, buffer: Buffer) => {
-      if (err) {
-        send(res, 200, `Generated Successfully`, null!, {}, true);
-        return;
-      }
-      send(res, 200, `Generated Successfully`, buffer!, {}, true);
-      return;
-    });
+    send(res, 200, `Generated Successfully`, null!, {}, true);
   } catch (error) {
     logger.error("Error generating PDF:", error);
     send(
@@ -775,16 +765,7 @@ export async function BOLHandler(req: Request, res: Response): Promise<void> {
     // });
     // send(res, 200, `Generated Successfully`, pdfBuffer!, {}, true);
 
-    let options = { format: "A4" };
-    let file = { content: htmlContent };
-    generatePdf(file, options, (err: Error, buffer: Buffer) => {
-      if (err) {
-        send(res, 200, `Generated Successfully`, null!, {}, true);
-        return;
-      }
-      send(res, 200, `Generated Successfully`, buffer!, {}, true);
-      return;
-    });
+    send(res, 200, `Generated Successfully`, null!, {}, true);
   } catch (error) {
     logger.error("Error generating PDF:", error);
     send(
@@ -937,16 +918,7 @@ export async function invoicedHandler(
     // });
     // send(res, 200, `Generated Successfully`, pdfBuffer!, {}, true);
 
-    let options = { format: "A4" };
-    let file = { content: htmlContent };
-    generatePdf(file, options, (err: Error, buffer: Buffer) => {
-      if (err) {
-        send(res, 200, `Generated Successfully`, null!, {}, true);
-        return;
-      }
-      send(res, 200, `Generated Successfully`, buffer!, {}, true);
-      return;
-    });
+    send(res, 200, `Generated Successfully`, null!, {}, true);
   } catch (error) {
     logger.error("Error generating PDF:", error);
     send(
@@ -1051,17 +1023,7 @@ export async function accountingSummary(
     await browser.close();
 
 
-send(res, 200, `Generated Successfully`, buffer!, {}, true);
-    // let options = { format: "A4" };
-    // let file = { content: htmlContent };
-    // generatePdf(file, options, (err: Error, buffer: Buffer) => {
-    //   if (err) {
-    //     send(res, 200, `Generated Successfully`, null!, {}, true);
-    //     return;
-    //   }
-    //   send(res, 200, `Generated Successfully`, buffer!, {}, true);
-    //   return;
-    // });
+    send(res, 200, `Generated Successfully`, buffer!, {}, true);
   } catch (error) {
     logger.error("Error generating PDF:", error);
     send(
