@@ -34,6 +34,7 @@ import { applyDateRangeFilter } from "../../utils/dateFilter";
 import path from "path";
 import { pathExists, remove } from "fs-extra";
 import { generatePdf } from "html-pdf-node";
+import { chromium } from "playwright";
 
 const validTransitions: Record<DispatchLoadStatus, DispatchLoadStatus[]> = {
   [DispatchLoadStatus.Draft]: [DispatchLoadStatus.Published],
@@ -1042,8 +1043,14 @@ export async function accountingSummary(
     // });
     // send(res, 200, `Generated Successfully`, null!, {}, true);
 
+    const browser = await chromium.launch();
+    const page = await browser.newPage();
+    await page.setContent(htmlContent);
+    const buffer = await page.pdf({ format: "A4" });
 
-const buffer = Buffer.from(htmlContent, "utf-8");
+    await browser.close();
+
+
 send(res, 200, `Generated Successfully`, buffer!, {}, true);
     // let options = { format: "A4" };
     // let file = { content: htmlContent };
