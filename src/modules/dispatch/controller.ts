@@ -1131,18 +1131,14 @@ export async function accountingExport(
         PostedByAddress: postedBy?.address?.str || "",
       });
     });
-    dataSheets["Loads"] = [];
+    dataSheets["Loads"] = formatedLoad;
 
     excelBuffer = generateExcelBuffer(dataSheets);
 
     res.send(excelBuffer);
   } catch (error) {
     logger.error("Error generating report:", error);
-    send(
-      res,
-      500,
-      "An unexpected server error occurred while generating the report"
-    );
+    res.send(null);
   }
 }
 
